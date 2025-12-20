@@ -33,6 +33,9 @@ export const FirebaseService = {
                 name: medicine.name || '',
                 quantity: medicine.quantity || '',
                 expiryDate: medicine.expiryDate || '',
+                activeIngredient1: medicine.activeIngredient1 || '',
+                activeIngredient2: medicine.activeIngredient2 || '',
+                activeIngredient3: medicine.activeIngredient3 || '',
                 notes: medicine.notes || '',
                 createdAt: medicine.createdAt || new Date().toISOString()
             };
@@ -55,6 +58,9 @@ export const FirebaseService = {
                 name: updatedData.name || '',
                 quantity: updatedData.quantity || '',
                 expiryDate: updatedData.expiryDate || '',
+                activeIngredient1: updatedData.activeIngredient1 || '',
+                activeIngredient2: updatedData.activeIngredient2 || '',
+                activeIngredient3: updatedData.activeIngredient3 || '',
                 notes: updatedData.notes || ''
             };
 

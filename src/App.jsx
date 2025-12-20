@@ -83,7 +83,16 @@ function App() {
           const newMed = await FirebaseService.addMedicine(data);
           setMedicines(prev => [newMed, ...prev]);
         } else {
-          const newMedicine = new Medicine(null, data.name, data.quantity, data.expiryDate, data.notes);
+          const newMedicine = new Medicine(
+            null,
+            data.name,
+            data.quantity,
+            data.expiryDate,
+            data.notes,
+            data.activeIngredient1,
+            data.activeIngredient2,
+            data.activeIngredient3
+          );
           setMedicines(prev => [newMedicine, ...prev]);
         }
       }
@@ -108,7 +117,16 @@ function App() {
         setMedicines(prev => [...addedMedicines, ...prev]);
       } else {
         const newMedicines = medicinesData.map(data =>
-          new Medicine(null, data.name, data.quantity, data.expiryDate, data.notes)
+          new Medicine(
+            null,
+            data.name,
+            data.quantity,
+            data.expiryDate,
+            data.notes,
+            data.activeIngredient1,
+            data.activeIngredient2,
+            data.activeIngredient3
+          )
         );
         setMedicines(prev => [...newMedicines, ...prev]);
       }

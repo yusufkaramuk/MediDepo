@@ -7,6 +7,9 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit 
         name: '',
         quantity: '',
         expiryDate: '',
+        activeIngredient1: '',
+        activeIngredient2: '',
+        activeIngredient3: '',
         notes: ''
     });
 
@@ -17,10 +20,13 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit 
                     name: initialData.name || '',
                     quantity: initialData.quantity || '',
                     expiryDate: initialData.expiryDate || '',
+                    activeIngredient1: initialData.activeIngredient1 || '',
+                    activeIngredient2: initialData.activeIngredient2 || '',
+                    activeIngredient3: initialData.activeIngredient3 || '',
                     notes: initialData.notes || ''
                 });
             } else {
-                setFormData({ name: '', quantity: '', expiryDate: '', notes: '' });
+                setFormData({ name: '', quantity: '', expiryDate: '', activeIngredient1: '', activeIngredient2: '', activeIngredient3: '', notes: '' });
             }
         }
     }, [isOpen, initialData]);
@@ -32,7 +38,7 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit 
             return;
         }
         onSave(formData);
-        setFormData({ name: '', quantity: '', expiryDate: '', notes: '' });
+        setFormData({ name: '', quantity: '', expiryDate: '', activeIngredient1: '', activeIngredient2: '', activeIngredient3: '', notes: '' });
         onClose();
     };
 
@@ -40,8 +46,8 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit 
 
     return (
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl animate-in fade-in zoom-in duration-200">
-                <div className="flex justify-between items-center p-6 border-b">
+            <div className="bg-white rounded-2xl w-full max-w-2xl shadow-xl animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center p-6 border-b sticky top-0 bg-white z-10">
                     <h2 className="text-xl font-bold text-gray-800">
                         {isEdit ? 'İlaç Düzenle' : 'Yeni İlaç Ekle'}
                     </h2>
@@ -58,6 +64,27 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit 
                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                         required
                     />
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Input
+                            label="Etken Madde 1"
+                            placeholder="Örn: Parasetamol"
+                            value={formData.activeIngredient1}
+                            onChange={e => setFormData({ ...formData, activeIngredient1: e.target.value })}
+                        />
+                        <Input
+                            label="Etken Madde 2"
+                            placeholder="Opsiyonel"
+                            value={formData.activeIngredient2}
+                            onChange={e => setFormData({ ...formData, activeIngredient2: e.target.value })}
+                        />
+                        <Input
+                            label="Etken Madde 3"
+                            placeholder="Opsiyonel"
+                            value={formData.activeIngredient3}
+                            onChange={e => setFormData({ ...formData, activeIngredient3: e.target.value })}
+                        />
+                    </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <Input

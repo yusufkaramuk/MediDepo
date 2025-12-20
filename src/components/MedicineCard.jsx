@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Button, Badge } from './ui/BaseComponents';
-import { Edit2, Trash2, AlertCircle, Clock } from 'lucide-react';
+import { Edit2, Trash2, AlertCircle, Clock, Pill } from 'lucide-react';
 
 export const MedicineCard = ({ medicine, onEdit, onDelete }) => {
     // Calculate days/months until expiry
@@ -14,7 +14,7 @@ export const MedicineCard = ({ medicine, onEdit, onDelete }) => {
         const [year, month] = dateStr.split('-').map(Number);
 
         // Son kullanma tarihi = ayın son günü
-        const expiryDate = new Date(year, month, 0); // month index + 0 gives last day of previous month, so month gives last day of that month
+        const expiryDate = new Date(year, month, 0);
         expiryDate.setHours(23, 59, 59, 999);
 
         const diffTime = expiryDate - today;
@@ -60,6 +60,13 @@ export const MedicineCard = ({ medicine, onEdit, onDelete }) => {
         return `${monthNames[parseInt(month) - 1]} ${year}`;
     };
 
+    // Get active ingredients
+    const activeIngredients = [
+        medicine.activeIngredient1,
+        medicine.activeIngredient2,
+        medicine.activeIngredient3
+    ].filter(ing => ing && ing.trim() !== '');
+
     return (
         <Card className="flex flex-col h-full hover:shadow-md transition-shadow relative overflow-hidden group">
             {status === 'expired' && (
@@ -79,6 +86,18 @@ export const MedicineCard = ({ medicine, onEdit, onDelete }) => {
             </div>
 
             <h3 className="text-lg font-bold text-gray-800 mb-1">{medicine.name}</h3>
+
+            {activeIngredients.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-1">
+                    {activeIngredients.map((ingredient, index) => (
+                        <span key={index} className="inline-flex items-center gap-1 text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-full">
+                            <Pill size={12} />
+                            {ingredient}
+                        </span>
+                    ))}
+                </div>
+            )}
+
             <p className="text-sm text-gray-500 mb-4">{medicine.quantity}</p>
 
             {medicine.notes && (
