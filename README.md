@@ -302,8 +302,8 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 ## 📧 İletişim
 
 Sorularınız için issue açabilirsiniz veya:
-- Email: yusufkaramuk10@gmail.com
-- GitHub: [@KULLANICI_ADI](https://github.com/KULLANICI_ADI)
+- Email: iletisim@yusufkaramuk.com.tr
+- GitHub: [@yusufkaramuk](https://github.com/yusufkaramuk)
 
 ## 🙏 Teşekkürler
 
