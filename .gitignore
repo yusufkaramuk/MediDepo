@@ -7,6 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
 dist
 dist-ssr
@@ -27,6 +28,7 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+.env.production
 
 # Firebase
 .firebase/
@@ -34,3 +36,24 @@ dist-ssr
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+*.log
+
+# Build outputs
+dist/
+build/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
