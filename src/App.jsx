@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { fuzzyMatch } from './services/FuzzySearch';
 import { Plus, Search, Upload, Download, Package, PlusCircle, Cloud, HardDrive } from 'lucide-react';
 import { Medicine } from './models/Medicine';
 import { StorageManager } from './services/StorageManager';
@@ -178,15 +179,22 @@ function App() {
   };
 
   const filteredMedicines = useMemo(() => {
-    // First filter by search term
+    // First filter by search term with fuzzy matching
     const filtered = medicines.filter(m => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        m.name.toLowerCase().includes(searchLower) ||
-        (m.activeIngredient1 && m.activeIngredient1.toLowerCase().includes(searchLower)) ||
-        (m.activeIngredient2 && m.activeIngredient2.toLowerCase().includes(searchLower)) ||
-        (m.activeIngredient3 && m.activeIngredient3.toLowerCase().includes(searchLower))
-      );
+      const searchLower = searchTerm.toLowerCase().trim();
+
+      // If search is empty, show all
+      if (!searchLower) return true;
+
+      // Check name with fuzzy match
+      if (fuzzyMatch(searchLower, m.name)) return true;
+
+      // Check active ingredients with fuzzy match
+      if (m.activeIngredient1 && fuzzyMatch(searchLower, m.activeIngredient1)) return true;
+      if (m.activeIngredient2 && fuzzyMatch(searchLower, m.activeIngredient2)) return true;
+      if (m.activeIngredient3 && fuzzyMatch(searchLower, m.activeIngredient3)) return true;
+
+      return false;
     });
 
     // Group duplicates (case-insensitive)
