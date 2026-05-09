@@ -13,6 +13,7 @@ import { AddMedicineModal } from './components/AddMedicineModal';
 import { BulkAddModal } from './components/BulkAddModal';
 import { DeleteModal } from './components/DeleteModal';
 import { AuthModal } from './components/AuthModal';
+import { UsageHistoryModal } from './components/UsageHistoryModal';
 
 // ── Icons (inline SVG, matches design handoff) ──────────────────────────────
 const Ic = ({ d, size = 18, stroke = 2, className = '', extra = null }) => (
@@ -390,6 +391,7 @@ function App() {
   const [editingId, setEditingId] = useState(null);
   const [modalInitialData, setModalInitialData] = useState(null);
   const [deletingMedicine, setDeletingMedicine] = useState(null);
+  const [historyMedicine, setHistoryMedicine] = useState(null);
 
   // Toast auto-dismiss
   useEffect(() => {
@@ -856,7 +858,8 @@ function App() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredMedicines.map(m => (
-              <MedicineCard key={m.id} medicine={m} onEdit={handleEdit} onDelete={handleDeleteRequest}/>
+              <MedicineCard key={m.id} medicine={m} onEdit={handleEdit} onDelete={handleDeleteRequest}
+                onHistory={useCloud && user ? setHistoryMedicine : null}/>
             ))}
           </div>
         )}
@@ -899,6 +902,15 @@ function App() {
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
           onAuth={handleAuth}
+        />
+      )}
+
+      {/* Usage History Modal */}
+      {historyMedicine && (
+        <UsageHistoryModal
+          medicine={historyMedicine}
+          userId={user?.uid}
+          onClose={() => setHistoryMedicine(null)}
         />
       )}
 

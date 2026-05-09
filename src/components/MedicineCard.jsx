@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil, Trash2, Calendar, Clock, Droplets } from 'lucide-react';
+import { Pencil, Trash2, Calendar, Clock, Droplets, History } from 'lucide-react';
 
 const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
@@ -42,7 +42,7 @@ const StatusPill = ({ status, daysLeft }) => {
   );
 };
 
-export const MedicineCard = ({ medicine, onEdit, onDelete }) => {
+export const MedicineCard = ({ medicine, onEdit, onDelete, onHistory }) => {
   const st = calcStatus(medicine.expiryDate);
   const s = STATUS[st.key] || STATUS.unknown;
   const ingredients = [medicine.activeIngredient1, medicine.activeIngredient2, medicine.activeIngredient3].filter(Boolean);
@@ -67,6 +67,12 @@ export const MedicineCard = ({ medicine, onEdit, onDelete }) => {
           )}
         </div>
         <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+          {onHistory && (
+            <button onClick={() => onHistory(medicine)}
+              className="p-1.5 text-slate-500 hover:text-[var(--brand-700)] hover:bg-[var(--brand-50)] rounded-lg transition-colors" aria-label="Geçmiş">
+              <History size={15} />
+            </button>
+          )}
           <button onClick={() => onEdit && onEdit(medicine)}
             className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors" aria-label="Düzenle">
             <Pencil size={15} />

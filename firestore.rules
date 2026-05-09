@@ -37,7 +37,8 @@ service cloud.firestore {
           'activeIngredient2',
           'activeIngredient3',
           'notes',
-          'createdAt'
+          'createdAt',
+          'tags'
         ]) &&
         data.keys().hasAll(['name', 'createdAt']) &&
         data.name is string &&
@@ -63,6 +64,15 @@ service cloud.firestore {
           (!resource.data.keys().hasAny(['createdAt']) && validCreatedAt(request.resource.data))
         );
       allow delete: if isOwner(userId);
+
+      match /usageLog/{logId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+          request.resource.data.keys().hasOnly(['action', 'note', 'createdAt']) &&
+          request.resource.data.action in ['used', 'finished', 'added', 'edited'] &&
+          (!request.resource.data.keys().hasAny(['note']) || request.resource.data.note is string);
+        allow delete: if isOwner(userId);
+      }
     }
 
     match /{document=**} {
