@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { StorageManager } from './services/StorageManager';
 import { FirebaseService } from './services/FirebaseService';
 import { AuthService } from './services/AuthService';
 import { fuzzyMatch } from './services/FuzzySearch';
 import { normalizeAndValidateMedicine, normalizeMedicineList } from './services/MedicineValidation';
+import { exportMedicinesToCsv } from './services/CsvExport';
+import { useTheme } from './context/ThemeContext';
 import { MedicineCard } from './components/MedicineCard';
 import { AddMedicineModal } from './components/AddMedicineModal';
 import { BulkAddModal } from './components/BulkAddModal';
@@ -45,6 +47,8 @@ const Icon = {
   Trash:    (p) => <Ic {...p} extra={<><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>}/>,
   Sparkles: (p) => <Ic {...p} extra={<><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></>}/>,
   Drop:     (p) => <Ic {...p} d="M12 2.7s5 5.3 5 9.3a5 5 0 0 1-10 0c0-4 5-9.3 5-9.3Z"/>,
+  Moon:     (p) => <Ic {...p} d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>,
+  Sun:      (p) => <Ic {...p} extra={<><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></>}/>,
 };
 
 // ── Status helpers ────────────────────────────────────────────────────────────
@@ -79,15 +83,15 @@ const ACCENT = {
 const StatCard = ({ label, value, sublabel, accent = 'indigo', icon }) => {
   const [from, to, tx, bd] = ACCENT[accent].split(' ');
   return (
-    <div className="relative bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 overflow-hidden shadow-[0_1px_0_rgba(15,23,42,0.04)]">
-      <div className={`absolute inset-0 bg-gradient-to-br ${from} ${to} pointer-events-none`}></div>
+    <div className="relative bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl p-4 sm:p-5 overflow-hidden shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+      <div className={`absolute inset-0 bg-gradient-to-br ${from} ${to} pointer-events-none opacity-60 dark:opacity-30`}></div>
       <div className="relative flex items-start justify-between">
         <div>
-          <div className="text-[12px] font-medium text-slate-500 uppercase tracking-wide">{label}</div>
-          <div className="mt-2 text-3xl sm:text-4xl font-semibold text-slate-900 tabular-nums tracking-tight">{value}</div>
+          <div className="text-[12px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">{label}</div>
+          <div className="mt-2 text-3xl sm:text-4xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums tracking-tight">{value}</div>
           {sublabel && <div className={`mt-1 text-xs ${tx} font-medium`}>{sublabel}</div>}
         </div>
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${tx} bg-white border ${bd}`}>{icon}</div>
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${tx} bg-white dark:bg-slate-800 border ${bd}`}>{icon}</div>
       </div>
     </div>
   );
@@ -119,27 +123,27 @@ const MedicineRow = ({ medicine, onEdit, onDelete }) => {
   const ings = [medicine.activeIngredient1, medicine.activeIngredient2, medicine.activeIngredient3].filter(Boolean);
   const dotColor = st.key === 'expired' ? 'bg-rose-500' : st.key === 'warning' ? 'bg-amber-500' : st.key === 'soon' ? 'bg-sky-500' : 'bg-emerald-500';
   return (
-    <div className="group flex items-center gap-4 px-4 py-3 hover:bg-slate-50/70 transition-colors">
+    <div className="group flex items-center gap-4 px-4 py-3 hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
       <div className={`w-1.5 self-stretch rounded-full ${dotColor}`}></div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <h4 className="text-[14.5px] font-semibold text-slate-900 truncate">{medicine.name}</h4>
+          <h4 className="text-[14.5px] font-semibold text-slate-900 dark:text-slate-100 truncate">{medicine.name}</h4>
           {(medicine.count || 1) > 1 && (
             <span className="text-[11px] font-semibold text-[var(--brand-700)] bg-[var(--brand-50)] ring-1 ring-[var(--brand-100)] px-1.5 py-0.5 rounded-md tabular-nums">×{medicine.count}</span>
           )}
         </div>
-        <div className="flex items-center gap-2 text-[12px] text-slate-500 mt-0.5 truncate">
+        <div className="flex items-center gap-2 text-[12px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
           {medicine.quantity && <span>{medicine.quantity}</span>}
           {ings.length > 0 && <><span>·</span><span className="truncate">{ings.join(', ')}</span></>}
         </div>
       </div>
       <div className="hidden sm:block min-w-[140px]"><StatusPill status={st.key} daysLeft={st.daysLeft}/></div>
-      <div className="hidden md:flex items-center gap-1.5 text-[12.5px] text-slate-700 min-w-[110px]">
+      <div className="hidden md:flex items-center gap-1.5 text-[12.5px] text-slate-700 dark:text-slate-300 min-w-[110px]">
         <Icon.Calendar size={13} className="text-slate-400"/> {fmtExpiry(medicine.expiryDate)}
       </div>
       <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-        <button onClick={() => onEdit(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 hover:text-slate-900" aria-label="Düzenle"><Icon.Edit size={14}/></button>
-        <button onClick={() => onDelete(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-600" aria-label="Sil"><Icon.Trash size={14}/></button>
+        <button onClick={() => onEdit(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100" aria-label="Düzenle"><Icon.Edit size={14}/></button>
+        <button onClick={() => onDelete(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-600" aria-label="Sil"><Icon.Trash size={14}/></button>
       </div>
     </div>
   );
@@ -162,19 +166,19 @@ const SortMenu = ({ value, onChange }) => {
   return (
     <div className="relative">
       <button onClick={() => setOpen(o => !o)}
-        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] text-slate-700 hover:border-slate-300 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-[13px] text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
         <Icon.Filter size={14} className="text-slate-400"/>
         <span className="hidden sm:inline">Sırala:</span>
-        <span className="font-medium text-slate-900">{current.l}</span>
+        <span className="font-medium text-slate-900 dark:text-slate-100">{current.l}</span>
         <Icon.ChevDown size={14} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}/>
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)}></div>
-          <div className="absolute right-0 mt-2 w-64 z-40 bg-white rounded-2xl shadow-xl border border-slate-200 p-1 animate-[slideUp_.15s_ease]">
+          <div className="absolute right-0 mt-2 w-64 z-40 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-1 animate-[slideUp_.15s_ease]">
             {SORT_OPTS.map(o => (
               <button key={o.v} onClick={() => { onChange(o.v); setOpen(false); }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] text-left ${o.v === value ? 'bg-[var(--brand-50)] text-[var(--brand-700)]' : 'hover:bg-slate-50 text-slate-700'}`}>
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] text-left ${o.v === value ? 'bg-[var(--brand-50)] text-[var(--brand-700)]' : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
                 <span className={o.v === value ? 'text-[var(--brand-600)]' : 'text-slate-400'}>{o.ic}</span>
                 <span className="flex-1">{o.l}</span>
                 {o.v === value && <Icon.Check size={14} className="text-[var(--brand-600)]"/>}
@@ -208,14 +212,14 @@ const Toast = ({ kind = 'success', children, onClose }) => {
 
 // ── Empty State ───────────────────────────────────────────────────────────────
 const EmptyState = ({ searching, onAdd, onBulk }) => (
-  <div className="rounded-3xl border border-dashed border-slate-300 bg-white/60 px-6 py-16 text-center">
+  <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-slate-900/60 px-6 py-16 text-center">
     <div className="mx-auto w-16 h-16 rounded-2xl bg-[var(--brand-50)] grid place-items-center ring-1 ring-[var(--brand-100)] mb-4">
       <Icon.Pill size={28} className="text-[var(--brand-600)]"/>
     </div>
-    <h3 className="text-[18px] font-semibold text-slate-900 tracking-tight">
+    <h3 className="text-[18px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
       {searching ? 'Aramanızla eşleşen ilaç yok' : 'Henüz ilaç eklenmemiş'}
     </h3>
-    <p className="mt-1.5 text-[13.5px] text-slate-500 max-w-md mx-auto">
+    <p className="mt-1.5 text-[13.5px] text-slate-500 dark:text-slate-400 max-w-md mx-auto">
       {searching
         ? 'Farklı bir terim deneyin — yazımı yanlış girseniz bile bulmaya çalışırız.'
         : 'Bir ilaç eklemekle başlayın. Tek tek veya toplu olarak ekleyebilirsiniz.'}
@@ -227,7 +231,7 @@ const EmptyState = ({ searching, onAdd, onBulk }) => (
           <Icon.Plus size={15}/> İlk ilacı ekle
         </button>
         <button onClick={onBulk}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 hover:bg-slate-100 border border-slate-200 bg-white">
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
           <Icon.List size={15}/> Toplu ekle
         </button>
       </div>
@@ -236,16 +240,16 @@ const EmptyState = ({ searching, onAdd, onBulk }) => (
 );
 
 // ── Header ────────────────────────────────────────────────────────────────────
-const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut }) => (
-  <header className="sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-slate-200/80">
+const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut, theme, onToggleTheme }) => (
+  <header className="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-700/80">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
       <div className="flex items-center gap-2.5">
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] grid place-items-center shadow-[0_6px_16px_-6px_var(--brand-shadow)]">
           <Icon.Pill size={17} className="text-white"/>
         </div>
         <div className="leading-tight">
-          <div className="text-[14.5px] font-semibold text-slate-900 tracking-tight">İlaç Takip</div>
-          <div className="text-[11px] text-slate-500 hidden sm:block">{totalCount} kayıtlı ilaç · {user.displayName || user.email?.split('@')[0]}</div>
+          <div className="text-[14.5px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">İlaç Takip</div>
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">{totalCount} kayıtlı ilaç · {user.displayName || user.email?.split('@')[0]}</div>
         </div>
       </div>
 
@@ -253,19 +257,26 @@ const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut 
 
       <button onClick={onToggleCloud}
         className={`hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors border ${
-          useCloud ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-700 border-slate-200'
+          useCloud
+            ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+            : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
         }`}>
         <span className={`w-1.5 h-1.5 rounded-full ${syncing ? 'bg-amber-500 animate-pulse' : useCloud ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
         {syncing ? 'Senkronize…' : useCloud ? 'Bulut · Senkron' : 'Yerel'}
       </button>
 
-      <div className="hidden sm:block w-px h-6 bg-slate-200"/>
+      <div className="hidden sm:block w-px h-6 bg-slate-200 dark:bg-slate-700"/>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
+        <button onClick={onToggleTheme}
+          className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+          aria-label={theme === 'dark' ? 'Açık mod' : 'Karanlık mod'}>
+          {theme === 'dark' ? <Icon.Sun size={17}/> : <Icon.Moon size={17}/>}
+        </button>
         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--brand-100)] to-[var(--brand-50)] text-[var(--brand-700)] grid place-items-center text-[12px] font-semibold ring-1 ring-[var(--brand-100)]">
           {(user.displayName || user.email || 'U').slice(0, 1).toUpperCase()}
         </div>
-        <button onClick={onSignOut} className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900" aria-label="Çıkış">
+        <button onClick={onSignOut} className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100" aria-label="Çıkış">
           <Icon.Logout size={17}/>
         </button>
       </div>
@@ -281,14 +292,24 @@ const createLocalMedicine = (medicine) => ({
 
 // ── App ───────────────────────────────────────────────────────────────────────
 function App() {
+  const { theme, toggle: toggleTheme } = useTheme();
+
   const [medicines, setMedicines] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'expired' | 'warning' | 'good'
   const [sortBy, setSortBy] = useState('date-desc');
   const [view, setView] = useState('grid'); // 'grid' | 'list'
   const [loaded, setLoaded] = useState(false);
   const [useCloud, setUseCloud] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [toast, setToast] = useState(null);
+
+  // Debounce search input 300ms
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm.trim().toLowerCase()), 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
 
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -438,7 +459,13 @@ function App() {
     setDeletingMedicine(null);
   };
 
-  const handleExport = () => StorageManager.exportToJSON(medicines);
+  const handleExportCsv = () => {
+    if (medicines.length === 0) { showToast('info', 'Dışa aktarılacak ilaç yok'); return; }
+    exportMedicinesToCsv(medicines);
+    showToast('success', `${medicines.length} ilaç CSV olarak indirildi`);
+  };
+
+  const handleExportJson = () => StorageManager.exportToJSON(medicines);
 
   const handleImport = async (e) => {
     const file = e.target.files[0];
@@ -477,8 +504,15 @@ function App() {
 
   // Computed list: filter + group duplicates + sort
   const filteredMedicines = useMemo(() => {
-    const q = searchTerm.toLowerCase().trim();
+    const q = debouncedSearch;
     const filtered = medicines.filter(m => {
+      // Status filter
+      if (statusFilter !== 'all') {
+        const k = statusOf(m).key;
+        if (statusFilter === 'good' && k !== 'good' && k !== 'soon') return false;
+        if (statusFilter !== 'good' && k !== statusFilter) return false;
+      }
+      // Search filter
       if (!q) return true;
       if (fuzzyMatch(q, m.name)) return true;
       if (m.activeIngredient1 && fuzzyMatch(q, m.activeIngredient1)) return true;
@@ -520,7 +554,7 @@ function App() {
         default:            return (b.createdAt || '').localeCompare(a.createdAt || '');
       }
     });
-  }, [medicines, searchTerm, sortBy]);
+  }, [medicines, debouncedSearch, statusFilter, sortBy]);
 
   const stats = useMemo(() => {
     let total = 0, expired = 0, warning = 0, good = 0;
@@ -537,7 +571,7 @@ function App() {
   // ── Loading screen ────────────────────────────────────────────────────────
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] grid place-items-center mx-auto mb-4 shadow-[0_8px_20px_-8px_var(--brand-shadow)]">
             <Icon.Pill size={22} className="text-white"/>
@@ -563,7 +597,7 @@ function App() {
   const firstName = (user.displayName || user.email || 'Kullanıcı').split(' ')[0];
 
   return (
-    <div className="min-h-screen bg-slate-50/60 pb-24" style={{
+    <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 pb-24" style={{
       backgroundImage: 'radial-gradient(1200px 600px at 80% -10%, color-mix(in srgb, var(--brand-500) 8%, transparent), transparent), radial-gradient(800px 400px at -10% 0%, rgba(20,184,166,0.06), transparent)',
     }}>
       <Header
@@ -573,6 +607,8 @@ function App() {
         onToggleCloud={toggleCloudMode}
         syncing={syncing}
         onSignOut={handleSignOut}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8">
@@ -582,19 +618,19 @@ function App() {
             <div className="text-[12.5px] font-medium text-[var(--brand-700)] inline-flex items-center gap-1.5 bg-[var(--brand-50)] ring-1 ring-[var(--brand-100)] px-2.5 py-1 rounded-full">
               <Icon.Heart size={12}/> {todayLabel()}
             </div>
-            <h1 className="mt-2 text-[24px] sm:text-[28px] font-semibold tracking-tight text-slate-900">
+            <h1 className="mt-2 text-[24px] sm:text-[28px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
               Merhaba, {firstName} 👋
             </h1>
             {stats.warning > 0 ? (
-              <p className="text-[13.5px] sm:text-[14px] text-slate-500 mt-0.5">
+              <p className="text-[13.5px] sm:text-[14px] text-slate-500 dark:text-slate-400 mt-0.5">
                 Bugün <span className="font-semibold text-amber-700">{stats.warning}</span> ilacınız 30 gün içinde sona eriyor.
               </p>
             ) : stats.expired > 0 ? (
-              <p className="text-[13.5px] sm:text-[14px] text-slate-500 mt-0.5">
+              <p className="text-[13.5px] sm:text-[14px] text-slate-500 dark:text-slate-400 mt-0.5">
                 <span className="font-semibold text-rose-700">{stats.expired}</span> ilacınızın süresi dolmuş, kontrol etmeniz önerilir.
               </p>
             ) : (
-              <p className="text-[13.5px] sm:text-[14px] text-slate-500 mt-0.5">
+              <p className="text-[13.5px] sm:text-[14px] text-slate-500 dark:text-slate-400 mt-0.5">
                 Stoğunuz güvende görünüyor. İyi günler!
               </p>
             )}
@@ -605,15 +641,21 @@ function App() {
               <Icon.Plus size={15}/> Yeni ilaç
             </button>
             <button onClick={() => setIsBulkModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 hover:bg-slate-100 border border-slate-200 bg-white transition-colors">
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors">
               <Icon.List size={15}/> <span className="hidden sm:inline">Toplu ekle</span>
             </button>
-            <button onClick={handleExport}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 hover:bg-slate-100 border border-slate-200 bg-white transition-colors">
-              <Icon.Download size={15}/> <span className="hidden sm:inline">Dışa aktar</span>
+            <button onClick={handleExportCsv}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors"
+              title="CSV olarak indir">
+              <Icon.Download size={15}/> <span className="hidden sm:inline">CSV</span>
+            </button>
+            <button onClick={handleExportJson}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors"
+              title="JSON yedeği al">
+              <Icon.Download size={15}/> <span className="hidden sm:inline">JSON</span>
             </button>
             <label className="cursor-pointer">
-              <span className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 hover:bg-slate-100 border border-slate-200 bg-white transition-colors">
+              <span className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors">
                 <Icon.Upload size={15}/> <span className="hidden sm:inline">İçe aktar</span>
               </span>
               <input type="file" accept=".json" onChange={handleImport} className="hidden"/>
@@ -637,21 +679,21 @@ function App() {
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               placeholder="İlaç adı veya etken madde ile ara…"
-              className="w-full pl-10 pr-10 py-3 rounded-2xl border border-slate-200 bg-white focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] outline-none text-[14px] shadow-[0_1px_0_rgba(15,23,42,0.04)]"
+              className="w-full pl-10 pr-10 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] outline-none text-[14px] shadow-[0_1px_0_rgba(15,23,42,0.04)]"
             />
             {searchTerm && (
-              <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 text-slate-400">
+              <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
                 <Icon.X size={14}/>
               </button>
             )}
           </div>
           <div className="flex items-center gap-2 justify-between">
             <SortMenu value={sortBy} onChange={setSortBy}/>
-            <div className="inline-flex bg-white border border-slate-200 rounded-xl p-1 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
-              <button onClick={() => setView('grid')} className={`p-1.5 rounded-lg ${view === 'grid' ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-700'}`} aria-label="Kart görünümü">
+            <div className="inline-flex bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-1 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+              <button onClick={() => setView('grid')} className={`p-1.5 rounded-lg ${view === 'grid' ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100' : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`} aria-label="Kart görünümü">
                 <Icon.Grid size={15}/>
               </button>
-              <button onClick={() => setView('list')} className={`p-1.5 rounded-lg ${view === 'list' ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-700'}`} aria-label="Liste görünümü">
+              <button onClick={() => setView('list')} className={`p-1.5 rounded-lg ${view === 'list' ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100' : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`} aria-label="Liste görünümü">
                 <Icon.List size={15}/>
               </button>
             </div>
@@ -659,22 +701,37 @@ function App() {
         </div>
 
         {/* Result count + filter chips */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-[12.5px] text-slate-500">
-            <span className="font-semibold text-slate-700 tabular-nums">{filteredMedicines.length}</span> sonuç
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div className="text-[12.5px] text-slate-500 dark:text-slate-400">
+            <span className="font-semibold text-slate-700 dark:text-slate-300 tabular-nums">{filteredMedicines.length}</span> sonuç
+            {statusFilter !== 'all' && (
+              <button onClick={() => setStatusFilter('all')} className="ml-2 text-[var(--brand-600)] hover:underline">
+                × filtreyi kaldır
+              </button>
+            )}
           </div>
-          <div className="hidden sm:flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {[
-              { k: 'all',     l: 'Tümü',          c: medicines.length,                                                     color: null },
-              { k: 'expired', l: 'Süresi geçmiş', c: medicines.filter(m => statusOf(m).key === 'expired').length,          color: 'rose' },
-              { k: 'warning', l: 'Yakında biter',  c: medicines.filter(m => statusOf(m).key === 'warning').length,          color: 'amber' },
-              { k: 'good',    l: 'Güvenli',        c: medicines.filter(m => ['good','soon'].includes(statusOf(m).key)).length, color: 'emerald' },
-            ].map(chip => (
-              <span key={chip.k} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-slate-200 text-[11.5px] text-slate-600">
-                <span className={`w-1.5 h-1.5 rounded-full ${chip.color === 'rose' ? 'bg-rose-500' : chip.color === 'amber' ? 'bg-amber-500' : chip.color === 'emerald' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
-                {chip.l} <span className="font-semibold text-slate-900 tabular-nums">{chip.c}</span>
-              </span>
-            ))}
+              { k: 'all',     l: 'Tümü',          c: medicines.length,                                                          color: null },
+              { k: 'expired', l: 'Süresi geçmiş', c: medicines.filter(m => statusOf(m).key === 'expired').length,               color: 'rose' },
+              { k: 'warning', l: 'Yakında biter',  c: medicines.filter(m => statusOf(m).key === 'warning').length,               color: 'amber' },
+              { k: 'good',    l: 'Güvenli',        c: medicines.filter(m => ['good','soon'].includes(statusOf(m).key)).length,   color: 'emerald' },
+            ].map(chip => {
+              const active = statusFilter === chip.k;
+              const dotCls = chip.color === 'rose' ? 'bg-rose-500' : chip.color === 'amber' ? 'bg-amber-500' : chip.color === 'emerald' ? 'bg-emerald-500' : 'bg-slate-400';
+              return (
+                <button key={chip.k}
+                  onClick={() => setStatusFilter(chip.k)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11.5px] transition-colors ${
+                    active
+                      ? 'bg-[var(--brand-50)] border-[var(--brand-200)] text-[var(--brand-700)] font-semibold'
+                      : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
+                  }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${dotCls}`}></span>
+                  {chip.l} <span className={`tabular-nums ${active ? '' : 'font-semibold text-slate-900 dark:text-slate-200'}`}>{chip.c}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -686,7 +743,7 @@ function App() {
             onBulk={() => setIsBulkModalOpen(true)}
           />
         ) : view === 'list' ? (
-          <div className="rounded-2xl bg-white border border-slate-200 divide-y divide-slate-100 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
             {filteredMedicines.map(m => (
               <MedicineRow key={m.id} medicine={m} onEdit={handleEdit} onDelete={handleDeleteRequest}/>
             ))}
@@ -699,7 +756,7 @@ function App() {
           </div>
         )}
 
-        <div className="mt-10 text-center text-[11.5px] text-slate-400">
+        <div className="mt-10 text-center text-[11.5px] text-slate-400 dark:text-slate-600">
           İlaç Takip · Verileriniz {useCloud ? 'bulutta şifreli' : 'cihazınızda yerel olarak'} saklanır
         </div>
       </main>

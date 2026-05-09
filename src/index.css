@@ -24,6 +24,11 @@
   body {
     background: #f8fafc;
   }
+
+  .dark body {
+    background: #020617;
+    color: #f1f5f9;
+  }
 }
 
 @keyframes fade {
