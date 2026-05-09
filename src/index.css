@@ -3,7 +3,56 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --brand-50: #eef2ff;
+    --brand-100: #e0e7ff;
+    --brand-500: #6366f1;
+    --brand-600: #4f46e5;
+    --brand-700: #4338ca;
+    --brand-shadow: rgba(79, 70, 229, 0.35);
+    --brand-accent: #312e81;
+  }
+
+  html, body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    color: #0f172a;
+  }
+
   body {
-    @apply bg-gray-50 text-gray-900;
+    background: #f8fafc;
   }
 }
+
+@keyframes fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-fade     { animation: fade 0.18s ease; }
+.animate-slide-up { animation: slideUp 0.25s cubic-bezier(0.22, 0.61, 0.36, 1); }
+
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+input[type="month"]::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tabular-nums { font-variant-numeric: tabular-nums; }

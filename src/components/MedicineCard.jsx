@@ -1,148 +1,119 @@
-import React, { useState } from 'react';
-import { Card, Button, Badge } from './ui/BaseComponents';
-import { Edit2, Trash2, AlertCircle, Clock, Pill } from 'lucide-react';
-import { DeleteModal } from './DeleteModal';
+import React from 'react';
+import { Pencil, Trash2, Calendar, Clock, Droplets } from 'lucide-react';
+
+const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+function fmtExpiry(s) {
+  if (!s) return '—';
+  const [y, m] = s.split('-');
+  return `${TR_MONTHS[+m - 1]} ${y}`;
+}
+
+function calcStatus(expiryDate) {
+  if (!expiryDate) return { key: 'unknown', daysLeft: null };
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const [y, m] = expiryDate.split('-').map(Number);
+  const exp = new Date(y, m, 0); exp.setHours(23, 59, 59, 999);
+  const daysLeft = Math.ceil((exp - now) / 86400000);
+  if (daysLeft < 0)   return { key: 'expired', daysLeft };
+  if (daysLeft <= 30) return { key: 'warning', daysLeft };
+  if (daysLeft <= 90) return { key: 'soon',    daysLeft };
+  return { key: 'good', daysLeft };
+}
+
+const STATUS = {
+  expired: { pill: 'bg-rose-50 text-rose-700 ring-rose-200',     dot: 'bg-rose-500',    bar: 'bg-rose-500',    border: 'border-rose-200',  label: 'Süresi Dolmuş' },
+  warning: { pill: 'bg-amber-50 text-amber-800 ring-amber-200',  dot: 'bg-amber-500',   bar: 'bg-amber-500',   border: 'border-amber-200', label: 'Yakında Bitiyor' },
+  soon:    { pill: 'bg-sky-50 text-sky-700 ring-sky-200',        dot: 'bg-sky-500',     bar: 'bg-sky-500',     border: 'border-slate-200', label: 'Yaklaşıyor' },
+  good:    { pill: 'bg-emerald-50 text-emerald-700 ring-emerald-200', dot: 'bg-emerald-500', bar: 'bg-emerald-500', border: 'border-slate-200', label: 'Güvenli' },
+  unknown: { pill: 'bg-slate-100 text-slate-600 ring-slate-200', dot: 'bg-slate-400',   bar: 'bg-slate-300',   border: 'border-slate-200', label: 'Tarih Yok' },
+};
+
+const StatusPill = ({ status, daysLeft }) => {
+  const s = STATUS[status] || STATUS.unknown;
+  let label = s.label;
+  if (status === 'expired' && daysLeft != null) label = `${Math.abs(daysLeft)} gün geçti`;
+  else if (status === 'warning' && daysLeft != null) label = `${daysLeft} gün kaldı`;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded-full ring-1 ${s.pill}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`}></span>
+      {label}
+    </span>
+  );
+};
 
 export const MedicineCard = ({ medicine, onEdit, onDelete }) => {
-    const count = medicine.count || 1;
-    const allIds = medicine.allIds || [medicine.id];
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const st = calcStatus(medicine.expiryDate);
+  const s = STATUS[st.key] || STATUS.unknown;
+  const ingredients = [medicine.activeIngredient1, medicine.activeIngredient2, medicine.activeIngredient3].filter(Boolean);
+  const count = medicine.count || 1;
+  const allIds = medicine.allIds || [medicine.id];
 
-    // Calculate days/months until expiry
-    const calculateTimeLeft = (dateStr) => {
-        if (!dateStr) return null;
+  const handleDelete = () => onDelete && onDelete({ ...medicine, allIds });
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+  return (
+    <div className={`group relative bg-white rounded-2xl border ${s.border} shadow-[0_1px_0_rgba(15,23,42,0.04)] hover:shadow-[0_8px_24px_-12px_rgba(15,23,42,0.18)] hover:-translate-y-0.5 transition-all duration-200 p-5 flex flex-col`}>
+      {/* Status accent bar */}
+      <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${s.bar} opacity-90`}></div>
 
-        // dateStr format: "2025-12" (YYYY-MM)
-        const [year, month] = dateStr.split('-').map(Number);
+      {/* Top row */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <StatusPill status={st.key} daysLeft={st.daysLeft} />
+          {count > 1 && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full bg-[var(--brand-50)] text-[var(--brand-700)] ring-1 ring-[var(--brand-100)] tabular-nums">
+              ×{count} adet
+            </span>
+          )}
+        </div>
+        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+          <button onClick={() => onEdit && onEdit(medicine)}
+            className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors" aria-label="Düzenle">
+            <Pencil size={15} />
+          </button>
+          <button onClick={handleDelete}
+            className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" aria-label="Sil">
+            <Trash2 size={15} />
+          </button>
+        </div>
+      </div>
 
-        // Son kullanma tarihi = ayın son günü
-        const expiryDate = new Date(year, month, 0);
-        expiryDate.setHours(23, 59, 59, 999);
+      {/* Name */}
+      <h3 className="mt-3 text-[17px] font-semibold text-slate-900 leading-snug tracking-tight">{medicine.name}</h3>
+      {medicine.quantity && <div className="mt-0.5 text-[13px] text-slate-500">{medicine.quantity}</div>}
 
-        const diffTime = expiryDate - today;
-        const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      {/* Ingredients */}
+      {ingredients.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {ingredients.map((ing, i) => (
+            <span key={i} className="inline-flex items-center gap-1 text-[11.5px] bg-slate-50 text-slate-700 px-2 py-0.5 rounded-md ring-1 ring-slate-200/80">
+              <Droplets size={11} className="text-[var(--brand-500)]" />{ing}
+            </span>
+          ))}
+        </div>
+      )}
 
-        return { daysLeft, expiryDate };
-    };
+      {/* Notes */}
+      {medicine.notes && (
+        <div className="mt-3 text-[12.5px] text-slate-500 line-clamp-2 italic">"{medicine.notes}"</div>
+      )}
 
-    const timeInfo = calculateTimeLeft(medicine.expiryDate);
-    const daysLeft = timeInfo?.daysLeft;
-
-    let status = 'good';
-    let badgeText = 'İyi Durumda';
-
-    if (daysLeft !== null && daysLeft !== undefined) {
-        if (daysLeft < 0) {
-            status = 'expired';
-            badgeText = 'Süresi Dolmuş';
-        } else if (daysLeft <= 30) {
-            status = 'warning';
-            badgeText = 'Yakında Bitiyor';
-        }
-    }
-
-    const getStatusColor = (s) => {
-        switch (s) {
-            case 'expired': return 'danger';
-            case 'warning': return 'warning';
-            default: return 'success';
-        }
-    };
-
-    // Format date as "Aralık 2025" (Turkish month + year)
-    const formatExpiryDate = (dateStr) => {
-        if (!dateStr) return 'Tarih Yok';
-
-        const [year, month] = dateStr.split('-');
-        const monthNames = [
-            'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-            'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
-        ];
-
-        return `${monthNames[parseInt(month) - 1]} ${year}`;
-    };
-
-    // Get active ingredients
-    const activeIngredients = [
-        medicine.activeIngredient1,
-        medicine.activeIngredient2,
-        medicine.activeIngredient3
-    ].filter(ing => ing && ing.trim() !== '');
-
-    const handleDeleteConfirm = (deleteCount) => {
-        // Get the IDs to delete (first N items)
-        const idsToDelete = allIds.slice(0, deleteCount);
-        onDelete(medicine.id, idsToDelete);
-    };
-
-    return (
-        <>
-            <Card className="flex flex-col h-full hover:shadow-md transition-shadow relative overflow-hidden group">
-                {status === 'expired' && (
-                    <div className="absolute top-0 left-0 w-full h-1 bg-red-500" />
-                )}
-
-                <div className="flex justify-between items-start mb-2">
-                    <div className="flex gap-2 items-center">
-                        <Badge variant={getStatusColor(status)}>{badgeText}</Badge>
-                        {count > 1 && (
-                            <Badge variant="purple" className="font-bold">x{count}</Badge>
-                        )}
-                    </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => onEdit(medicine)} className="p-1 hover:bg-gray-100 rounded text-gray-600">
-                            <Edit2 size={16} />
-                        </button>
-                        <button onClick={() => setIsDeleteModalOpen(true)} className="p-1 hover:bg-red-50 rounded text-red-500">
-                            <Trash2 size={16} />
-                        </button>
-                    </div>
-                </div>
-
-                <h3 className="text-lg font-bold text-gray-800 mb-1">{medicine.name}</h3>
-
-                {activeIngredients.length > 0 && (
-                    <div className="mb-3 flex flex-wrap gap-1">
-                        {activeIngredients.map((ingredient, index) => (
-                            <span key={index} className="inline-flex items-center gap-1 text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-full">
-                                <Pill size={12} />
-                                {ingredient}
-                            </span>
-                        ))}
-                    </div>
-                )}
-
-                <p className="text-sm text-gray-500 mb-4">{medicine.quantity}</p>
-
-                {medicine.notes && (
-                    <p className="text-xs text-gray-400 line-clamp-2 mb-4 italic">
-                        "{medicine.notes}"
-                    </p>
-                )}
-
-                <div className="mt-auto flex items-center gap-2 text-sm text-gray-600">
-                    <Clock size={14} className={status === 'expired' ? 'text-red-500' : 'text-gray-400'} />
-                    <span className={status === 'expired' ? 'font-bold text-red-600' : ''}>
-                        {formatExpiryDate(medicine.expiryDate)}
-                    </span>
-                </div>
-
-                {status === 'warning' && daysLeft !== null && (
-                    <div className="mt-2 text-xs text-orange-600 flex items-center gap-1 font-medium bg-orange-50 p-1 rounded">
-                        <AlertCircle size={12} /> {daysLeft} gün kaldı
-                    </div>
-                )}
-            </Card>
-
-            <DeleteModal
-                isOpen={isDeleteModalOpen}
-                onClose={() => setIsDeleteModalOpen(false)}
-                medicine={medicine}
-                onConfirm={handleDeleteConfirm}
-            />
-        </>
-    );
+      {/* Footer */}
+      <div className="mt-4 pt-3 border-t border-dashed border-slate-200 flex items-center justify-between text-[13px]">
+        <div className="flex items-center gap-1.5">
+          <Calendar size={14} className="text-slate-400" />
+          <span className={st.key === 'expired' ? 'text-rose-700 font-semibold' : 'text-slate-700 font-medium'}>
+            {fmtExpiry(medicine.expiryDate)}
+          </span>
+        </div>
+        {st.daysLeft != null && st.key !== 'expired' && (
+          <span className={`inline-flex items-center gap-1 text-[12px] tabular-nums ${
+            st.key === 'warning' ? 'text-amber-700' : st.key === 'soon' ? 'text-sky-700' : 'text-slate-500'
+          }`}>
+            <Clock size={12} /> {st.daysLeft} gün
+          </span>
+        )}
+      </div>
+    </div>
+  );
 };

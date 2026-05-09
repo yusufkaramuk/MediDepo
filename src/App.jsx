@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Upload, Download, Package, PlusCircle, Cloud, HardDrive, LogOut, User } from 'lucide-react';
 import { StorageManager } from './services/StorageManager';
 import { FirebaseService } from './services/FirebaseService';
 import { AuthService } from './services/AuthService';
@@ -8,147 +7,382 @@ import { normalizeAndValidateMedicine, normalizeMedicineList } from './services/
 import { MedicineCard } from './components/MedicineCard';
 import { AddMedicineModal } from './components/AddMedicineModal';
 import { BulkAddModal } from './components/BulkAddModal';
+import { DeleteModal } from './components/DeleteModal';
 import { AuthModal } from './components/AuthModal';
-import { Button, Input, Badge } from './components/ui/BaseComponents';
 
+// ── Icons (inline SVG, matches design handoff) ──────────────────────────────
+const Ic = ({ d, size = 18, stroke = 2, className = '', extra = null }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round"
+    className={className} aria-hidden="true">
+    {extra || <path d={d} />}
+  </svg>
+);
+const Icon = {
+  Pill:     (p) => <Ic {...p} extra={<><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></>}/>,
+  Plus:     (p) => <Ic {...p} extra={<><path d="M12 5v14"/><path d="M5 12h14"/></>}/>,
+  Search:   (p) => <Ic {...p} extra={<><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></>}/>,
+  Cloud:    (p) => <Ic {...p} d="M17.5 19a4.5 4.5 0 1 0-1.4-8.78A6 6 0 0 0 4 12.5 4.5 4.5 0 0 0 6.5 19h11Z"/>,
+  HardDisk: (p) => <Ic {...p} extra={<><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></>}/>,
+  Settings: (p) => <Ic {...p} extra={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.36.16.66.43.86.78"/></>}/>,
+  Logout:   (p) => <Ic {...p} extra={<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></>}/>,
+  X:        (p) => <Ic {...p} extra={<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>}/>,
+  Filter:   (p) => <Ic {...p} d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z"/>,
+  ChevDown: (p) => <Ic {...p} d="m6 9 6 6 6-6"/>,
+  Check:    (p) => <Ic {...p} d="M20 6 9 17l-5-5"/>,
+  Calendar: (p) => <Ic {...p} extra={<><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></>}/>,
+  Clock:    (p) => <Ic {...p} extra={<><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>}/>,
+  AlertTri: (p) => <Ic {...p} extra={<><path d="m10.3 3.86-8.79 15A2 2 0 0 0 3.24 22h17.5a2 2 0 0 0 1.74-3.14l-8.78-15a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></>}/>,
+  Shield:   (p) => <Ic {...p} extra={<><path d="M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V6l8-3 8 3v7Z"/><path d="m9 12 2 2 4-4"/></>}/>,
+  Box:      (p) => <Ic {...p} extra={<><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></>}/>,
+  Heart:    (p) => <Ic {...p} d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>,
+  Grid:     (p) => <Ic {...p} extra={<><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></>}/>,
+  List:     (p) => <Ic {...p} extra={<><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></>}/>,
+  Camera:   (p) => <Ic {...p} extra={<><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></>}/>,
+  Upload:   (p) => <Ic {...p} extra={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8 12 3 7 8"/><path d="M12 3v12"/></>}/>,
+  Download: (p) => <Ic {...p} extra={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></>}/>,
+  Edit:     (p) => <Ic {...p} d="M12 20h9M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>,
+  Trash:    (p) => <Ic {...p} extra={<><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>}/>,
+  Sparkles: (p) => <Ic {...p} extra={<><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></>}/>,
+  Drop:     (p) => <Ic {...p} d="M12 2.7s5 5.3 5 9.3a5 5 0 0 1-10 0c0-4 5-9.3 5-9.3Z"/>,
+};
+
+// ── Status helpers ────────────────────────────────────────────────────────────
+const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+function fmtExpiry(s) { if (!s) return '—'; const [y, m] = s.split('-'); return `${TR_MONTHS[+m - 1]} ${y}`; }
+function statusOf(med) {
+  if (!med.expiryDate) return { key: 'unknown', daysLeft: null };
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const [y, m] = med.expiryDate.split('-').map(Number);
+  const exp = new Date(y, m, 0); exp.setHours(23, 59, 59, 999);
+  const d = Math.ceil((exp - now) / 86400000);
+  if (d < 0)    return { key: 'expired', daysLeft: d };
+  if (d <= 30)  return { key: 'warning', daysLeft: d };
+  if (d <= 90)  return { key: 'soon',    daysLeft: d };
+  return { key: 'good', daysLeft: d };
+}
+
+// ── Turkish date label ────────────────────────────────────────────────────────
+function todayLabel() {
+  const days = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+  const d = new Date();
+  return `${days[d.getDay()]} · ${d.getDate()} ${TR_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// ── Stat Card ─────────────────────────────────────────────────────────────────
+const ACCENT = {
+  indigo:  'from-indigo-500/10 to-indigo-500/0 text-indigo-700 border-indigo-100',
+  emerald: 'from-emerald-500/10 to-emerald-500/0 text-emerald-700 border-emerald-100',
+  amber:   'from-amber-500/10 to-amber-500/0 text-amber-700 border-amber-100',
+  rose:    'from-rose-500/10 to-rose-500/0 text-rose-700 border-rose-100',
+};
+const StatCard = ({ label, value, sublabel, accent = 'indigo', icon }) => {
+  const [from, to, tx, bd] = ACCENT[accent].split(' ');
+  return (
+    <div className="relative bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 overflow-hidden shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+      <div className={`absolute inset-0 bg-gradient-to-br ${from} ${to} pointer-events-none`}></div>
+      <div className="relative flex items-start justify-between">
+        <div>
+          <div className="text-[12px] font-medium text-slate-500 uppercase tracking-wide">{label}</div>
+          <div className="mt-2 text-3xl sm:text-4xl font-semibold text-slate-900 tabular-nums tracking-tight">{value}</div>
+          {sublabel && <div className={`mt-1 text-xs ${tx} font-medium`}>{sublabel}</div>}
+        </div>
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${tx} bg-white border ${bd}`}>{icon}</div>
+      </div>
+    </div>
+  );
+};
+
+// ── Status Pill ───────────────────────────────────────────────────────────────
+const STATUS_MAP = {
+  expired: { bg:'bg-rose-50', tx:'text-rose-700', dot:'bg-rose-500', ring:'ring-rose-200', label:'Süresi Dolmuş' },
+  warning: { bg:'bg-amber-50', tx:'text-amber-800', dot:'bg-amber-500', ring:'ring-amber-200', label:'Yakında Bitiyor' },
+  soon:    { bg:'bg-sky-50', tx:'text-sky-700', dot:'bg-sky-500', ring:'ring-sky-200', label:'Yaklaşıyor' },
+  good:    { bg:'bg-emerald-50', tx:'text-emerald-700', dot:'bg-emerald-500', ring:'ring-emerald-200', label:'Güvenli' },
+  unknown: { bg:'bg-slate-100', tx:'text-slate-600', dot:'bg-slate-400', ring:'ring-slate-200', label:'Tarih Yok' },
+};
+const StatusPill = ({ status, daysLeft }) => {
+  const s = STATUS_MAP[status] || STATUS_MAP.unknown;
+  let label = s.label;
+  if (status === 'expired' && daysLeft != null) label = `${Math.abs(daysLeft)} gün geçti`;
+  else if (status === 'warning' && daysLeft != null) label = `${daysLeft} gün kaldı`;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded-full ${s.bg} ${s.tx} ring-1 ${s.ring}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`}></span>{label}
+    </span>
+  );
+};
+
+// ── Medicine Row (list view) ──────────────────────────────────────────────────
+const MedicineRow = ({ medicine, onEdit, onDelete }) => {
+  const st = statusOf(medicine);
+  const ings = [medicine.activeIngredient1, medicine.activeIngredient2, medicine.activeIngredient3].filter(Boolean);
+  const dotColor = st.key === 'expired' ? 'bg-rose-500' : st.key === 'warning' ? 'bg-amber-500' : st.key === 'soon' ? 'bg-sky-500' : 'bg-emerald-500';
+  return (
+    <div className="group flex items-center gap-4 px-4 py-3 hover:bg-slate-50/70 transition-colors">
+      <div className={`w-1.5 self-stretch rounded-full ${dotColor}`}></div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h4 className="text-[14.5px] font-semibold text-slate-900 truncate">{medicine.name}</h4>
+          {(medicine.count || 1) > 1 && (
+            <span className="text-[11px] font-semibold text-[var(--brand-700)] bg-[var(--brand-50)] ring-1 ring-[var(--brand-100)] px-1.5 py-0.5 rounded-md tabular-nums">×{medicine.count}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 text-[12px] text-slate-500 mt-0.5 truncate">
+          {medicine.quantity && <span>{medicine.quantity}</span>}
+          {ings.length > 0 && <><span>·</span><span className="truncate">{ings.join(', ')}</span></>}
+        </div>
+      </div>
+      <div className="hidden sm:block min-w-[140px]"><StatusPill status={st.key} daysLeft={st.daysLeft}/></div>
+      <div className="hidden md:flex items-center gap-1.5 text-[12.5px] text-slate-700 min-w-[110px]">
+        <Icon.Calendar size={13} className="text-slate-400"/> {fmtExpiry(medicine.expiryDate)}
+      </div>
+      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+        <button onClick={() => onEdit(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 hover:text-slate-900" aria-label="Düzenle"><Icon.Edit size={14}/></button>
+        <button onClick={() => onDelete(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-600" aria-label="Sil"><Icon.Trash size={14}/></button>
+      </div>
+    </div>
+  );
+};
+
+// ── Sort dropdown ─────────────────────────────────────────────────────────────
+const SORT_OPTS = [
+  { v: 'date-desc',   l: 'En yeni eklenenler',   ic: <Icon.Clock size={14}/> },
+  { v: 'date-asc',    l: 'En eski eklenenler',    ic: <Icon.Clock size={14}/> },
+  { v: 'name-asc',    l: 'Ada göre A → Z',        ic: <Icon.List size={14}/> },
+  { v: 'name-desc',   l: 'Ada göre Z → A',        ic: <Icon.List size={14}/> },
+  { v: 'expiry-asc',  l: 'Yakında bitecekler',    ic: <Icon.Calendar size={14}/> },
+  { v: 'expiry-desc', l: 'Uzun süreli olanlar',   ic: <Icon.Calendar size={14}/> },
+  { v: 'count-desc',  l: 'Çok stokta olanlar',    ic: <Icon.Box size={14}/> },
+  { v: 'count-asc',   l: 'Az stokta olanlar',     ic: <Icon.Box size={14}/> },
+];
+const SortMenu = ({ value, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const current = SORT_OPTS.find(o => o.v === value) || SORT_OPTS[0];
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen(o => !o)}
+        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] text-slate-700 hover:border-slate-300 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+        <Icon.Filter size={14} className="text-slate-400"/>
+        <span className="hidden sm:inline">Sırala:</span>
+        <span className="font-medium text-slate-900">{current.l}</span>
+        <Icon.ChevDown size={14} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}/>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)}></div>
+          <div className="absolute right-0 mt-2 w-64 z-40 bg-white rounded-2xl shadow-xl border border-slate-200 p-1 animate-[slideUp_.15s_ease]">
+            {SORT_OPTS.map(o => (
+              <button key={o.v} onClick={() => { onChange(o.v); setOpen(false); }}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] text-left ${o.v === value ? 'bg-[var(--brand-50)] text-[var(--brand-700)]' : 'hover:bg-slate-50 text-slate-700'}`}>
+                <span className={o.v === value ? 'text-[var(--brand-600)]' : 'text-slate-400'}>{o.ic}</span>
+                <span className="flex-1">{o.l}</span>
+                {o.v === value && <Icon.Check size={14} className="text-[var(--brand-600)]"/>}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+const TOAST_MAP = {
+  success: { ic: <Icon.Check size={16}/>, bg: 'bg-emerald-600' },
+  error:   { ic: <Icon.AlertTri size={16}/>, bg: 'bg-rose-600' },
+  info:    { ic: <Icon.Cloud size={16}/>, bg: 'bg-slate-900' },
+};
+const Toast = ({ kind = 'success', children, onClose }) => {
+  const m = TOAST_MAP[kind] || TOAST_MAP.info;
+  return (
+    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] animate-[slideUp_.25s_cubic-bezier(.22,.61,.36,1)]">
+      <div className={`flex items-center gap-2.5 ${m.bg} text-white text-[13.5px] font-medium px-4 py-2.5 rounded-full shadow-2xl ring-1 ring-black/5`}>
+        <span className="grid place-items-center w-5 h-5 rounded-full bg-white/15">{m.ic}</span>
+        <span>{children}</span>
+        <button onClick={onClose} className="ml-2 opacity-70 hover:opacity-100"><Icon.X size={14}/></button>
+      </div>
+    </div>
+  );
+};
+
+// ── Empty State ───────────────────────────────────────────────────────────────
+const EmptyState = ({ searching, onAdd, onBulk }) => (
+  <div className="rounded-3xl border border-dashed border-slate-300 bg-white/60 px-6 py-16 text-center">
+    <div className="mx-auto w-16 h-16 rounded-2xl bg-[var(--brand-50)] grid place-items-center ring-1 ring-[var(--brand-100)] mb-4">
+      <Icon.Pill size={28} className="text-[var(--brand-600)]"/>
+    </div>
+    <h3 className="text-[18px] font-semibold text-slate-900 tracking-tight">
+      {searching ? 'Aramanızla eşleşen ilaç yok' : 'Henüz ilaç eklenmemiş'}
+    </h3>
+    <p className="mt-1.5 text-[13.5px] text-slate-500 max-w-md mx-auto">
+      {searching
+        ? 'Farklı bir terim deneyin — yazımı yanlış girseniz bile bulmaya çalışırız.'
+        : 'Bir ilaç eklemekle başlayın. Tek tek veya toplu olarak ekleyebilirsiniz.'}
+    </p>
+    {!searching && (
+      <div className="mt-6 flex items-center justify-center gap-2 flex-wrap">
+        <button onClick={onAdd}
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-semibold text-white bg-[var(--brand-600)] hover:bg-[var(--brand-700)] shadow-[0_8px_20px_-8px_var(--brand-shadow)]">
+          <Icon.Plus size={15}/> İlk ilacı ekle
+        </button>
+        <button onClick={onBulk}
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 hover:bg-slate-100 border border-slate-200 bg-white">
+          <Icon.List size={15}/> Toplu ekle
+        </button>
+      </div>
+    )}
+  </div>
+);
+
+// ── Header ────────────────────────────────────────────────────────────────────
+const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut }) => (
+  <header className="sticky top-0 z-30 bg-white/85 backdrop-blur-md border-b border-slate-200/80">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] grid place-items-center shadow-[0_6px_16px_-6px_var(--brand-shadow)]">
+          <Icon.Pill size={17} className="text-white"/>
+        </div>
+        <div className="leading-tight">
+          <div className="text-[14.5px] font-semibold text-slate-900 tracking-tight">İlaç Takip</div>
+          <div className="text-[11px] text-slate-500 hidden sm:block">{totalCount} kayıtlı ilaç · {user.displayName || user.email?.split('@')[0]}</div>
+        </div>
+      </div>
+
+      <div className="flex-1"/>
+
+      <button onClick={onToggleCloud}
+        className={`hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors border ${
+          useCloud ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-700 border-slate-200'
+        }`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${syncing ? 'bg-amber-500 animate-pulse' : useCloud ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+        {syncing ? 'Senkronize…' : useCloud ? 'Bulut · Senkron' : 'Yerel'}
+      </button>
+
+      <div className="hidden sm:block w-px h-6 bg-slate-200"/>
+
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--brand-100)] to-[var(--brand-50)] text-[var(--brand-700)] grid place-items-center text-[12px] font-semibold ring-1 ring-[var(--brand-100)]">
+          {(user.displayName || user.email || 'U').slice(0, 1).toUpperCase()}
+        </div>
+        <button onClick={onSignOut} className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900" aria-label="Çıkış">
+          <Icon.Logout size={17}/>
+        </button>
+      </div>
+    </div>
+  </header>
+);
+
+// ── Utility ───────────────────────────────────────────────────────────────────
 const createLocalMedicine = (medicine) => ({
   id: medicine.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  ...medicine
+  ...medicine,
 });
 
+// ── App ───────────────────────────────────────────────────────────────────────
 function App() {
   const [medicines, setMedicines] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('date-desc'); // default: newest first
+  const [sortBy, setSortBy] = useState('date-desc');
+  const [view, setView] = useState('grid'); // 'grid' | 'list'
   const [loaded, setLoaded] = useState(false);
   const [useCloud, setUseCloud] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [toast, setToast] = useState(null);
 
-  // Auth state
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [modalInitialData, setModalInitialData] = useState(null);
+  const [deletingMedicine, setDeletingMedicine] = useState(null);
 
-  // Listen to auth state changes
+  // Toast auto-dismiss
   useEffect(() => {
-    const unsubscribe = AuthService.onAuthStateChanged((currentUser) => {
-      console.log('[Auth] State changed:', currentUser?.email);
+    if (toast) { const t = setTimeout(() => setToast(null), 3000); return () => clearTimeout(t); }
+  }, [toast]);
+
+  const showToast = (kind, text) => setToast({ kind, text });
+
+  // Auth listener
+  useEffect(() => {
+    const unsub = AuthService.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
       setAuthLoading(false);
-
-      // If user logged out, clear medicines
-      if (!currentUser) {
-        setMedicines([]);
-        setLoaded(false);
-      }
+      if (!currentUser) { setMedicines([]); setLoaded(false); }
     });
-
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
-  // Load medicines when user is authenticated
+  // Load medicines
   useEffect(() => {
     if (!user || !useCloud) return;
-
     loadMedicines();
   }, [user, useCloud]);
 
-  // Save to localStorage when medicines change (local mode)
   useEffect(() => {
-    if (loaded && !useCloud) {
-      StorageManager.save(medicines);
-    }
+    if (loaded && !useCloud) StorageManager.save(medicines);
   }, [medicines, loaded, useCloud]);
 
   const loadMedicines = async () => {
-    if (!user && useCloud) {
-      console.log('[App] No user, skipping cloud load');
-      return;
-    }
-
+    if (!user && useCloud) return;
     try {
       setSyncing(true);
       if (useCloud && user) {
         const data = await FirebaseService.getAllMedicines(user.uid);
-        console.log("Loaded from Firebase:", data);
         setMedicines(data);
       } else {
-        const data = StorageManager.load();
-        console.log("Loaded from localStorage:", data);
-        setMedicines(data);
+        setMedicines(StorageManager.load());
       }
       setLoaded(true);
-    } catch (error) {
-      console.error("Load error:", error);
-      alert("Yükleme hatası: " + error.message);
+    } catch (err) {
+      showToast('error', 'Yükleme hatası: ' + err.message);
     } finally {
       setSyncing(false);
     }
   };
 
   const handleAuth = async (action, data) => {
-    try {
-      if (action === 'signup') {
-        return await AuthService.signUp(data.email, data.password, data.displayName);
-      } else if (action === 'signin') {
-        await AuthService.signIn(data.email, data.password);
-      } else if (action === 'google') {
-        await AuthService.signInWithGoogle();
-      } else if (action === 'reset') {
-        await AuthService.resetPassword(data.email);
-      } else if (action === 'resend') {
-        await AuthService.resendVerification(data.email, data.password);
-      }
-    } catch (error) {
-      throw error;
-    }
+    if (action === 'signup') return await AuthService.signUp(data.email, data.password, data.displayName);
+    else if (action === 'signin') await AuthService.signIn(data.email, data.password);
+    else if (action === 'google') await AuthService.signInWithGoogle();
+    else if (action === 'reset') await AuthService.resetPassword(data.email);
+    else if (action === 'resend') await AuthService.resendVerification(data.email, data.password);
   };
 
   const handleSignOut = async () => {
     if (!window.confirm('Çıkış yapmak istediğinize emin misiniz?')) return;
-
     try {
       await AuthService.signOut();
-      setMedicines([]);
-      setLoaded(false);
-    } catch (error) {
-      alert('Çıkış yapılamadı: ' + error.message);
+      setMedicines([]); setLoaded(false);
+    } catch (err) {
+      showToast('error', 'Çıkış yapılamadı: ' + err.message);
     }
   };
 
   const handleSave = async (data) => {
     try {
       setSyncing(true);
-      const cleanData = normalizeAndValidateMedicine(data, {
-        preserveCreatedAt: Boolean(data.createdAt)
-      });
-
+      const clean = normalizeAndValidateMedicine(data, { preserveCreatedAt: Boolean(data.createdAt) });
       if (editingId) {
-        // Update existing
-        const updated = { ...cleanData, id: editingId };
-        if (useCloud && user) {
-          await FirebaseService.updateMedicine(user.uid, editingId, cleanData);
-        }
+        const updated = { ...clean, id: editingId };
+        if (useCloud && user) await FirebaseService.updateMedicine(user.uid, editingId, clean);
         setMedicines(prev => prev.map(m => m.id === editingId ? updated : m));
+        showToast('success', `"${clean.name}" güncellendi`);
       } else {
-        // Add new
         if (useCloud && user) {
-          const newMed = await FirebaseService.addMedicine(user.uid, cleanData);
+          const newMed = await FirebaseService.addMedicine(user.uid, clean);
           setMedicines(prev => [newMed, ...prev]);
         } else {
-          const newMedicine = createLocalMedicine(cleanData);
-          setMedicines(prev => [newMedicine, ...prev]);
+          setMedicines(prev => [createLocalMedicine(clean), ...prev]);
         }
+        showToast('success', `"${clean.name}" eklendi`);
       }
-    } catch (error) {
-      console.error("Save error:", error);
-      alert("Kaydetme hatası: " + error.message);
+    } catch (err) {
+      showToast('error', 'Kaydetme hatası: ' + err.message);
     } finally {
       setSyncing(false);
     }
@@ -157,22 +391,17 @@ function App() {
   const handleBulkAdd = async (medicinesData) => {
     try {
       setSyncing(true);
-      const cleanMedicines = normalizeMedicineList(medicinesData);
-
+      const clean = normalizeMedicineList(medicinesData);
       if (useCloud && user) {
-        const addedMedicines = [];
-        for (const data of cleanMedicines) {
-          const newMed = await FirebaseService.addMedicine(user.uid, data);
-          addedMedicines.push(newMed);
-        }
-        setMedicines(prev => [...addedMedicines, ...prev]);
+        const added = [];
+        for (const d of clean) { added.push(await FirebaseService.addMedicine(user.uid, d)); }
+        setMedicines(prev => [...added, ...prev]);
       } else {
-        const newMedicines = cleanMedicines.map(createLocalMedicine);
-        setMedicines(prev => [...newMedicines, ...prev]);
+        setMedicines(prev => [...clean.map(createLocalMedicine), ...prev]);
       }
-    } catch (error) {
-      console.error("Bulk add error:", error);
-      alert("Toplu ekleme hatası: " + error.message);
+      showToast('success', `${clean.length} ilaç eklendi`);
+    } catch (err) {
+      showToast('error', 'Toplu ekleme hatası: ' + err.message);
     } finally {
       setSyncing(false);
     }
@@ -184,53 +413,52 @@ function App() {
     setIsAddModalOpen(true);
   };
 
-  const handleDelete = async (id, idsToDelete = [id]) => {
+  const handleDeleteRequest = (medicine) => setDeletingMedicine(medicine);
+
+  const handleDeleteConfirm = async (n) => {
+    if (!deletingMedicine) return;
+    const med = deletingMedicine;
+    const idsToDelete = (med.allIds || [med.id]).slice(0, n);
     try {
       setSyncing(true);
       if (useCloud && user) {
-        for (const deleteId of idsToDelete) {
-          await FirebaseService.deleteMedicine(user.uid, deleteId);
-        }
+        for (const id of idsToDelete) await FirebaseService.deleteMedicine(user.uid, id);
       }
-      setMedicines(prev => prev.filter(m => !idsToDelete.includes(m.id)));
-    } catch (error) {
-      console.error("Delete error:", error);
-      alert("Silme hatası: " + error.message);
+      if (n >= (med.count || 1)) {
+        setMedicines(prev => prev.filter(m => !idsToDelete.includes(m.id)));
+      } else {
+        setMedicines(prev => prev.map(m => m.id === med.id ? { ...m, count: (m.count || 1) - n } : m));
+      }
+      showToast('info', `${n} adet silindi`);
+    } catch (err) {
+      showToast('error', 'Silme hatası: ' + err.message);
     } finally {
       setSyncing(false);
     }
+    setDeletingMedicine(null);
   };
 
-  const handleExport = () => {
-    StorageManager.exportToJSON(medicines);
-  };
+  const handleExport = () => StorageManager.exportToJSON(medicines);
 
   const handleImport = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     try {
       setSyncing(true);
       const data = await StorageManager.importFromJSON(file);
-
       if (Array.isArray(data)) {
         if (useCloud && user) {
-          // Upload all medicines to Firebase
-          const uploadedMedicines = [];
-          for (const medicine of data) {
-            const newMed = await FirebaseService.addMedicine(user.uid, medicine);
-            uploadedMedicines.push(newMed);
-          }
-          setMedicines(uploadedMedicines);
-          alert(`${uploadedMedicines.length} ilaç başarıyla Firebase'e yüklendi!`);
+          const uploaded = [];
+          for (const m of data) uploaded.push(await FirebaseService.addMedicine(user.uid, m));
+          setMedicines(uploaded);
+          showToast('success', `${uploaded.length} ilaç Firebase'e yüklendi`);
         } else {
-          // Just set to localStorage
           setMedicines(data.map(createLocalMedicine));
-          alert("Veriler başarıyla yüklendi!");
+          showToast('success', 'Veriler yüklendi');
         }
       }
     } catch (err) {
-      alert("Hata: " + err.message);
+      showToast('error', 'İçe aktarma hatası: ' + err.message);
     } finally {
       setSyncing(false);
     }
@@ -238,282 +466,282 @@ function App() {
   };
 
   const toggleCloudMode = async () => {
-    if (!user && !useCloud) {
-      alert('Bulut moda geçmek için giriş yapmalısınız');
-      setShowAuthModal(true);
-      return;
-    }
-
+    if (!user && !useCloud) { setShowAuthModal(true); return; }
     const newMode = !useCloud;
     setUseCloud(newMode);
     setLoaded(false);
-
-    if (newMode && user) {
-      await loadMedicines();
-    } else if (!newMode) {
-      const localData = StorageManager.load();
-      setMedicines(localData);
-      setLoaded(true);
-    }
+    if (newMode && user) { await loadMedicines(); }
+    else { setMedicines(StorageManager.load()); setLoaded(true); }
+    showToast('info', newMode ? 'Bulut senkronu açıldı' : 'Yerel depolamaya geçildi');
   };
 
+  // Computed list: filter + group duplicates + sort
   const filteredMedicines = useMemo(() => {
+    const q = searchTerm.toLowerCase().trim();
     const filtered = medicines.filter(m => {
-      const searchLower = searchTerm.toLowerCase().trim();
-
-      if (!searchLower) return true;
-
-      if (fuzzyMatch(searchLower, m.name)) return true;
-      if (m.activeIngredient1 && fuzzyMatch(searchLower, m.activeIngredient1)) return true;
-      if (m.activeIngredient2 && fuzzyMatch(searchLower, m.activeIngredient2)) return true;
-      if (m.activeIngredient3 && fuzzyMatch(searchLower, m.activeIngredient3)) return true;
-
+      if (!q) return true;
+      if (fuzzyMatch(q, m.name)) return true;
+      if (m.activeIngredient1 && fuzzyMatch(q, m.activeIngredient1)) return true;
+      if (m.activeIngredient2 && fuzzyMatch(q, m.activeIngredient2)) return true;
+      if (m.activeIngredient3 && fuzzyMatch(q, m.activeIngredient3)) return true;
       return false;
     });
 
     const grouped = [];
-    const processedIds = new Set();
-
-    filtered.forEach(medicine => {
-      if (processedIds.has(medicine.id)) return;
-
-      const duplicates = filtered.filter(m => {
-        if (processedIds.has(m.id)) return false;
-
+    const seen = new Set();
+    filtered.forEach(med => {
+      if (seen.has(med.id)) return;
+      const dupes = filtered.filter(m => {
+        if (seen.has(m.id)) return false;
         return (
-          m.name.toLowerCase() === medicine.name.toLowerCase() &&
-          (m.activeIngredient1 || '').toLowerCase() === (medicine.activeIngredient1 || '').toLowerCase() &&
-          (m.activeIngredient2 || '').toLowerCase() === (medicine.activeIngredient2 || '').toLowerCase() &&
-          (m.activeIngredient3 || '').toLowerCase() === (medicine.activeIngredient3 || '').toLowerCase() &&
-          (m.quantity || '').toLowerCase() === (medicine.quantity || '').toLowerCase() &&
-          m.expiryDate === medicine.expiryDate &&
-          (m.notes || '').toLowerCase() === (medicine.notes || '').toLowerCase()
+          m.name.toLowerCase() === med.name.toLowerCase() &&
+          (m.activeIngredient1 || '').toLowerCase() === (med.activeIngredient1 || '').toLowerCase() &&
+          (m.activeIngredient2 || '').toLowerCase() === (med.activeIngredient2 || '').toLowerCase() &&
+          (m.activeIngredient3 || '').toLowerCase() === (med.activeIngredient3 || '').toLowerCase() &&
+          (m.quantity || '').toLowerCase() === (med.quantity || '').toLowerCase() &&
+          m.expiryDate === med.expiryDate &&
+          (m.notes || '').toLowerCase() === (med.notes || '').toLowerCase()
         );
       });
-
-      duplicates.forEach(d => processedIds.add(d.id));
-
-      grouped.push({
-        ...medicine,
-        count: duplicates.length,
-        allIds: duplicates.map(d => d.id)
-      });
+      dupes.forEach(d => seen.add(d.id));
+      grouped.push({ ...med, count: dupes.length, allIds: dupes.map(d => d.id) });
     });
 
-    // Apply sorting
-    const sorted = [...grouped].sort((a, b) => {
+    return [...grouped].sort((a, b) => {
       switch (sortBy) {
-        case 'name-asc':
-          return a.name.localeCompare(b.name, 'tr');
-        case 'name-desc':
-          return b.name.localeCompare(a.name, 'tr');
-        case 'expiry-asc':
-          if (!a.expiryDate) return 1;
-          if (!b.expiryDate) return -1;
-          return a.expiryDate.localeCompare(b.expiryDate);
-        case 'expiry-desc':
-          if (!a.expiryDate) return 1;
-          if (!b.expiryDate) return -1;
-          return b.expiryDate.localeCompare(a.expiryDate);
-        case 'count-asc':
-          return a.count - b.count;
-        case 'count-desc':
-          return b.count - a.count;
-        case 'date-asc':
-          return (a.createdAt || '').localeCompare(b.createdAt || '');
+        case 'name-asc':    return a.name.localeCompare(b.name, 'tr');
+        case 'name-desc':   return b.name.localeCompare(a.name, 'tr');
+        case 'expiry-asc':  return (a.expiryDate || '9999').localeCompare(b.expiryDate || '9999');
+        case 'expiry-desc': return (b.expiryDate || '0').localeCompare(a.expiryDate || '0');
+        case 'count-asc':   return (a.count || 1) - (b.count || 1);
+        case 'count-desc':  return (b.count || 1) - (a.count || 1);
+        case 'date-asc':    return (a.createdAt || '').localeCompare(b.createdAt || '');
         case 'date-desc':
-        default:
-          return (b.createdAt || '').localeCompare(a.createdAt || '');
+        default:            return (b.createdAt || '').localeCompare(a.createdAt || '');
       }
     });
-
-    return sorted;
   }, [medicines, searchTerm, sortBy]);
 
-  // Show loading screen
+  const stats = useMemo(() => {
+    let total = 0, expired = 0, warning = 0, good = 0;
+    medicines.forEach(m => {
+      const c = 1; total += c;
+      const k = statusOf(m).key;
+      if (k === 'expired') expired += c;
+      else if (k === 'warning') warning += c;
+      else good += c;
+    });
+    return { total, expired, warning, good };
+  }, [medicines]);
+
+  // ── Loading screen ────────────────────────────────────────────────────────
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Yükleniyor...</p>
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] grid place-items-center mx-auto mb-4 shadow-[0_8px_20px_-8px_var(--brand-shadow)]">
+            <Icon.Pill size={22} className="text-white"/>
+          </div>
+          <div className="w-6 h-6 border-2 border-[var(--brand-200)] border-t-[var(--brand-600)] rounded-full animate-spin mx-auto"/>
         </div>
       </div>
     );
   }
 
-  // Show auth modal if not logged in
+  // ── Auth gate ─────────────────────────────────────────────────────────────
   if (!user) {
     return (
-      <>
-        <div className="min-h-screen bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 flex items-center justify-center p-4">
-          <div className="text-center text-white">
-            <Package size={64} className="mx-auto mb-4" />
-            <h1 className="text-4xl font-bold mb-2">İlaç Stok Takip Sistemi</h1>
-            <p className="text-lg mb-8 opacity-90">Evinizdeki ilaçları dijital ortamda takip edin</p>
-            <Button onClick={() => setShowAuthModal(true)} className="bg-white text-purple-600 hover:bg-gray-100">
-              Giriş Yap / Kayıt Ol
-            </Button>
-          </div>
-        </div>
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
-          onAuth={handleAuth}
-        />
-      </>
+      <AuthModal
+        isOpen={true}
+        onClose={() => {}}
+        onAuth={handleAuth}
+      />
     );
   }
 
+  // ── Dashboard ─────────────────────────────────────────────────────────────
+  const firstName = (user.displayName || user.email || 'Kullanıcı').split(' ')[0];
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-purple-700 to-indigo-800 text-white shadow-lg sticky top-0 z-30">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Package size={32} />
-              <div>
-                <h1 className="text-2xl font-bold">İlaç Stok Takip</h1>
-                <p className="text-sm text-purple-200">
-                  {filteredMedicines.length} ilaç • {user.displayName || user.email}
-                </p>
-              </div>
+    <div className="min-h-screen bg-slate-50/60 pb-24" style={{
+      backgroundImage: 'radial-gradient(1200px 600px at 80% -10%, color-mix(in srgb, var(--brand-500) 8%, transparent), transparent), radial-gradient(800px 400px at -10% 0%, rgba(20,184,166,0.06), transparent)',
+    }}>
+      <Header
+        user={user}
+        totalCount={filteredMedicines.length}
+        useCloud={useCloud}
+        onToggleCloud={toggleCloudMode}
+        syncing={syncing}
+        onSignOut={handleSignOut}
+      />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8">
+        {/* Hero / greeting */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+          <div>
+            <div className="text-[12.5px] font-medium text-[var(--brand-700)] inline-flex items-center gap-1.5 bg-[var(--brand-50)] ring-1 ring-[var(--brand-100)] px-2.5 py-1 rounded-full">
+              <Icon.Heart size={12}/> {todayLabel()}
             </div>
-
-            <div className="flex items-center gap-2">
-              <Badge variant={syncing ? 'warning' : useCloud ? 'success' : 'default'}>
-                {syncing ? 'Senkronize ediliyor...' : useCloud ? 'Bulut' : 'Yerel'}
-              </Badge>
-
-              <button
-                onClick={toggleCloudMode}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                title={useCloud ? "Yerel Depolamaya Geç" : "Bulut Depolamaya Geç"}
-              >
-                {useCloud ? <HardDrive size={18} /> : <Cloud size={18} />}
-              </button>
-
-              <button
-                onClick={handleSignOut}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2"
-                title="Çıkış Yap"
-              >
-                <LogOut size={18} />
-                <span className="hidden md:inline text-sm">Çıkış</span>
-              </button>
-            </div>
+            <h1 className="mt-2 text-[24px] sm:text-[28px] font-semibold tracking-tight text-slate-900">
+              Merhaba, {firstName} 👋
+            </h1>
+            {stats.warning > 0 ? (
+              <p className="text-[13.5px] sm:text-[14px] text-slate-500 mt-0.5">
+                Bugün <span className="font-semibold text-amber-700">{stats.warning}</span> ilacınız 30 gün içinde sona eriyor.
+              </p>
+            ) : stats.expired > 0 ? (
+              <p className="text-[13.5px] sm:text-[14px] text-slate-500 mt-0.5">
+                <span className="font-semibold text-rose-700">{stats.expired}</span> ilacınızın süresi dolmuş, kontrol etmeniz önerilir.
+              </p>
+            ) : (
+              <p className="text-[13.5px] sm:text-[14px] text-slate-500 mt-0.5">
+                Stoğunuz güvende görünüyor. İyi günler!
+              </p>
+            )}
           </div>
-        </div>
-      </header>
-
-      {/* Actions Toolbar */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-wrap gap-3 justify-between items-center mb-8">
-          <div className="flex gap-2">
-            <Button onClick={() => { setEditingId(null); setModalInitialData(null); setIsAddModalOpen(true); }}>
-              <Plus size={20} /> Tek İlaç Ekle
-            </Button>
-            <Button onClick={() => setIsBulkModalOpen(true)} variant="secondary">
-              <PlusCircle size={20} /> Toplu Ekle
-            </Button>
-          </div>
-
-          <div className="flex gap-2">
-            <Button onClick={handleExport} variant="secondary">
-              <Download size={18} /> Dışa Aktar
-            </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={() => { setEditingId(null); setModalInitialData(null); setIsAddModalOpen(true); }}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-semibold text-white bg-[var(--brand-600)] hover:bg-[var(--brand-700)] shadow-[0_8px_20px_-8px_var(--brand-shadow)] transition-colors">
+              <Icon.Plus size={15}/> Yeni ilaç
+            </button>
+            <button onClick={() => setIsBulkModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 hover:bg-slate-100 border border-slate-200 bg-white transition-colors">
+              <Icon.List size={15}/> <span className="hidden sm:inline">Toplu ekle</span>
+            </button>
+            <button onClick={handleExport}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 hover:bg-slate-100 border border-slate-200 bg-white transition-colors">
+              <Icon.Download size={15}/> <span className="hidden sm:inline">Dışa aktar</span>
+            </button>
             <label className="cursor-pointer">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200">
-                <Upload size={18} /> İçe Aktar
-              </div>
-              <input type="file" accept=".json" onChange={handleImport} className="hidden" />
+              <span className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 hover:bg-slate-100 border border-slate-200 bg-white transition-colors">
+                <Icon.Upload size={15}/> <span className="hidden sm:inline">İçe aktar</span>
+              </span>
+              <input type="file" accept=".json" onChange={handleImport} className="hidden"/>
             </label>
           </div>
         </div>
 
-        {/* Search and Sort Bar */}
-        <div className="mb-6 space-y-3">
-          {/* Sort Dropdown */}
-          <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-              Sırala:
-            </label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all bg-white"
-            >
-              <option value="date-desc">🕐 En Yeni Önce</option>
-              <option value="date-asc">🕐 En Eski Önce</option>
-              <option value="name-asc">🔤 A → Z</option>
-              <option value="name-desc">🔤 Z → A</option>
-              <option value="expiry-asc">📅 Yakında Bitecekler</option>
-              <option value="expiry-desc">📅 Uzun Süreliler</option>
-              <option value="count-desc">📦 Çok Olanlar Önce</option>
-              <option value="count-asc">📦 Az Olanlar Önce</option>
-            </select>
-            <span className="text-xs text-gray-500">
-              ({filteredMedicines.length} ilaç)
-            </span>
-          </div>
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          <StatCard label="Toplam İlaç"     value={stats.total}   sublabel={`${medicines.length} farklı kayıt`}         accent="indigo"  icon={<Icon.Box size={16}/>}/>
+          <StatCard label="Süresi Geçmiş"   value={stats.expired} sublabel={stats.expired > 0 ? 'Kontrol önerilir' : 'Şu an temiz'} accent="rose"    icon={<Icon.AlertTri size={16}/>}/>
+          <StatCard label="Yakında Bitiyor" value={stats.warning} sublabel="30 gün eşiği"                               accent="amber"   icon={<Icon.Clock size={16}/>}/>
+          <StatCard label="Güvenli Stokta"  value={stats.good}    sublabel="3 ay üstü süre"                             accent="emerald" icon={<Icon.Shield size={16}/>}/>
+        </div>
 
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        {/* Search + sort + view toggle */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="relative flex-1">
+            <Icon.Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"/>
             <input
-              type="text"
-              placeholder="İlaç ara (fuzzy search: yanlış yazımlar da bulunur)"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="İlaç adı veya etken madde ile ara…"
+              className="w-full pl-10 pr-10 py-3 rounded-2xl border border-slate-200 bg-white focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] outline-none text-[14px] shadow-[0_1px_0_rgba(15,23,42,0.04)]"
             />
+            {searchTerm && (
+              <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 text-slate-400">
+                <Icon.X size={14}/>
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2 justify-between">
+            <SortMenu value={sortBy} onChange={setSortBy}/>
+            <div className="inline-flex bg-white border border-slate-200 rounded-xl p-1 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+              <button onClick={() => setView('grid')} className={`p-1.5 rounded-lg ${view === 'grid' ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-700'}`} aria-label="Kart görünümü">
+                <Icon.Grid size={15}/>
+              </button>
+              <button onClick={() => setView('list')} className={`p-1.5 rounded-lg ${view === 'list' ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-700'}`} aria-label="Liste görünümü">
+                <Icon.List size={15}/>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Medicines Grid */}
+        {/* Result count + filter chips */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-[12.5px] text-slate-500">
+            <span className="font-semibold text-slate-700 tabular-nums">{filteredMedicines.length}</span> sonuç
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5">
+            {[
+              { k: 'all',     l: 'Tümü',          c: medicines.length,                                                     color: null },
+              { k: 'expired', l: 'Süresi geçmiş', c: medicines.filter(m => statusOf(m).key === 'expired').length,          color: 'rose' },
+              { k: 'warning', l: 'Yakında biter',  c: medicines.filter(m => statusOf(m).key === 'warning').length,          color: 'amber' },
+              { k: 'good',    l: 'Güvenli',        c: medicines.filter(m => ['good','soon'].includes(statusOf(m).key)).length, color: 'emerald' },
+            ].map(chip => (
+              <span key={chip.k} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-slate-200 text-[11.5px] text-slate-600">
+                <span className={`w-1.5 h-1.5 rounded-full ${chip.color === 'rose' ? 'bg-rose-500' : chip.color === 'amber' ? 'bg-amber-500' : chip.color === 'emerald' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+                {chip.l} <span className="font-semibold text-slate-900 tabular-nums">{chip.c}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Medicine list or grid */}
         {filteredMedicines.length === 0 ? (
-          <div className="text-center py-16">
-            <Package size={64} className="mx-auto text-gray-300 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">
-              {searchTerm ? 'İlaç bulunamadı' : 'Henüz ilaç eklenmemiş'}
-            </h3>
-            <p className="text-gray-500 mb-6">
-              {searchTerm ? 'Farklı bir arama terimi deneyin' : 'İlaç eklemek için yukarıdaki butonları kullanın'}
-            </p>
+          <EmptyState
+            searching={!!searchTerm}
+            onAdd={() => { setEditingId(null); setModalInitialData(null); setIsAddModalOpen(true); }}
+            onBulk={() => setIsBulkModalOpen(true)}
+          />
+        ) : view === 'list' ? (
+          <div className="rounded-2xl bg-white border border-slate-200 divide-y divide-slate-100 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+            {filteredMedicines.map(m => (
+              <MedicineRow key={m.id} medicine={m} onEdit={handleEdit} onDelete={handleDeleteRequest}/>
+            ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredMedicines.map(medicine => (
-              <MedicineCard
-                key={medicine.id}
-                medicine={medicine}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredMedicines.map(m => (
+              <MedicineCard key={m.id} medicine={m} onEdit={handleEdit} onDelete={handleDeleteRequest}/>
             ))}
           </div>
         )}
-      </div>
+
+        <div className="mt-10 text-center text-[11.5px] text-slate-400">
+          İlaç Takip · Verileriniz {useCloud ? 'bulutta şifreli' : 'cihazınızda yerel olarak'} saklanır
+        </div>
+      </main>
+
+      {/* Mobile FAB */}
+      <button
+        onClick={() => { setEditingId(null); setModalInitialData(null); setIsAddModalOpen(true); }}
+        className="sm:hidden fixed bottom-5 right-5 z-30 w-14 h-14 rounded-full bg-[var(--brand-600)] text-white grid place-items-center shadow-[0_16px_30px_-8px_var(--brand-shadow)] active:scale-95 transition-transform"
+        aria-label="Yeni ilaç">
+        <Icon.Plus size={22}/>
+      </button>
 
       {/* Modals */}
       <AddMedicineModal
         isOpen={isAddModalOpen}
-        onClose={() => {
-          setIsAddModalOpen(false);
-          setEditingId(null);
-          setModalInitialData(null);
-        }}
+        onClose={() => { setIsAddModalOpen(false); setEditingId(null); setModalInitialData(null); }}
         onSave={handleSave}
         initialData={modalInitialData}
         isEdit={!!editingId}
       />
-
       <BulkAddModal
         isOpen={isBulkModalOpen}
         onClose={() => setIsBulkModalOpen(false)}
         onSave={handleBulkAdd}
       />
+      <DeleteModal
+        medicine={deletingMedicine}
+        onClose={() => setDeletingMedicine(null)}
+        onConfirm={handleDeleteConfirm}
+      />
+
+      {/* Auth modal (cloud toggle when logged out) */}
+      {showAuthModal && (
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          onAuth={handleAuth}
+        />
+      )}
+
+      {/* Toast */}
+      {toast && <Toast kind={toast.kind} onClose={() => setToast(null)}>{toast.text}</Toast>}
     </div>
   );
 }

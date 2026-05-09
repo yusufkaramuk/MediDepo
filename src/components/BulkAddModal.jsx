@@ -1,139 +1,106 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Plus, Trash2 } from 'lucide-react';
-import { Button, Input } from './ui/BaseComponents';
+
+const Ic = ({ d, size = 18, stroke = 2, className = '', extra = null }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round"
+    className={className} aria-hidden="true">
+    {extra || <path d={d} />}
+  </svg>
+);
+const XIcon  = (p) => <Ic {...p} extra={<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>}/>;
+const PlusIc = (p) => <Ic {...p} extra={<><path d="M12 5v14"/><path d="M5 12h14"/></>}/>;
+const ListIc = (p) => <Ic {...p} extra={<><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></>}/>;
+const Spark  = (p) => <Ic {...p} extra={<><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></>}/>;
+
+const MODAL_INPUT = 'w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] outline-none text-[13px] font-mono leading-6 resize-none';
 
 export const BulkAddModal = ({ isOpen, onClose, onSave }) => {
-    const [medicines, setMedicines] = useState([
-        { name: '', quantity: '', expiryDate: '', activeIngredient1: '', activeIngredient2: '', activeIngredient3: '', notes: '' }
-    ]);
+  const [text, setText] = useState('');
 
-    const addRow = () => {
-        setMedicines([...medicines, { name: '', quantity: '', expiryDate: '', activeIngredient1: '', activeIngredient2: '', activeIngredient3: '', notes: '' }]);
-    };
+  useEffect(() => { if (!isOpen) setText(''); }, [isOpen]);
 
-    const removeRow = (index) => {
-        if (medicines.length === 1) return;
-        setMedicines(medicines.filter((_, i) => i !== index));
-    };
+  if (!isOpen) return null;
 
-    const updateRow = (index, field, value) => {
-        const updated = [...medicines];
-        updated[index][field] = value;
-        setMedicines(updated);
-    };
+  const lines = text.split('\n').filter(l => l.trim()).length;
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const validMedicines = medicines.filter(m => m.name.trim() !== '');
-        if (validMedicines.length === 0) {
-            alert("En az bir ilaç adı girmelisiniz!");
-            return;
-        }
-        onSave(validMedicines);
-        setMedicines([{ name: '', quantity: '', expiryDate: '', activeIngredient1: '', activeIngredient2: '', activeIngredient3: '', notes: '' }]);
-        onClose();
-    };
+  const submit = () => {
+    const items = text.split('\n')
+      .map(l => l.trim())
+      .filter(Boolean)
+      .map(l => {
+        const [name, qty, exp] = l.split('|').map(s => s && s.trim());
+        return { name: name || '', quantity: qty || '', expiryDate: exp || '' };
+      })
+      .filter(it => it.name);
 
-    useEffect(() => {
-        if (!isOpen) {
-            setMedicines([{ name: '', quantity: '', expiryDate: '', activeIngredient1: '', activeIngredient2: '', activeIngredient3: '', notes: '' }]);
-        }
-    }, [isOpen]);
+    if (items.length === 0) return;
+    onSave(items);
+    setText('');
+    onClose();
+  };
 
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl w-full max-w-6xl shadow-xl max-h-[90vh] flex flex-col">
-                <div className="flex justify-between items-center p-6 border-b">
-                    <h2 className="text-xl font-bold text-gray-800">Toplu İlaç Ekle</h2>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                        <X size={20} className="text-gray-500" />
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-                    <div className="p-6 overflow-y-auto flex-1">
-                        <div className="space-y-4">
-                            {medicines.map((med, index) => (
-                                <div key={index} className="flex gap-3 items-start bg-gray-50 p-4 rounded-lg">
-                                    <div className="flex-1 grid grid-cols-1 md:grid-cols-7 gap-3">
-                                        <Input
-                                            placeholder="İlaç Adı *"
-                                            value={med.name}
-                                            onChange={(e) => updateRow(index, 'name', e.target.value)}
-                                            className="md:col-span-1"
-                                        />
-                                        <Input
-                                            placeholder="Etken Madde 1"
-                                            value={med.activeIngredient1}
-                                            onChange={(e) => updateRow(index, 'activeIngredient1', e.target.value)}
-                                            className="md:col-span-1"
-                                        />
-                                        <Input
-                                            placeholder="Etken Madde 2"
-                                            value={med.activeIngredient2}
-                                            onChange={(e) => updateRow(index, 'activeIngredient2', e.target.value)}
-                                            className="md:col-span-1"
-                                        />
-                                        <Input
-                                            placeholder="Etken Madde 3"
-                                            value={med.activeIngredient3}
-                                            onChange={(e) => updateRow(index, 'activeIngredient3', e.target.value)}
-                                            className="md:col-span-1"
-                                        />
-                                        <Input
-                                            placeholder="Miktar"
-                                            value={med.quantity}
-                                            onChange={(e) => updateRow(index, 'quantity', e.target.value)}
-                                            className="md:col-span-1"
-                                        />
-                                        <Input
-                                            type="month"
-                                            placeholder="Ay/Yıl"
-                                            value={med.expiryDate}
-                                            onChange={(e) => updateRow(index, 'expiryDate', e.target.value)}
-                                            className="md:col-span-1"
-                                        />
-                                        <Input
-                                            placeholder="Not"
-                                            value={med.notes}
-                                            onChange={(e) => updateRow(index, 'notes', e.target.value)}
-                                            className="md:col-span-1"
-                                        />
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => removeRow(index)}
-                                        className="p-2 text-red-500 hover:bg-red-50 rounded transition-colors"
-                                        disabled={medicines.length === 1}
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={addRow}
-                            className="mt-4 w-full"
-                        >
-                            <Plus size={18} />
-                            Satır Ekle
-                        </Button>
-                    </div>
-
-                    <div className="p-6 border-t bg-white flex justify-end gap-3">
-                        <Button type="button" variant="secondary" onClick={onClose}>İptal</Button>
-                        <Button type="submit">
-                            <Save size={18} />
-                            Tümünü Kaydet ({medicines.filter(m => m.name.trim()).length} adet)
-                        </Button>
-                    </div>
-                </form>
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] animate-[fade_.18s_ease]"></div>
+      <div
+        className="relative bg-white w-full max-w-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto animate-[slideUp_.25s_cubic-bezier(.22,.61,.36,1)]"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[var(--brand-50)] text-[var(--brand-700)] grid place-items-center ring-1 ring-[var(--brand-100)]">
+              <ListIc size={18}/>
             </div>
+            <div>
+              <h2 className="text-[17px] font-semibold text-slate-900 tracking-tight">Toplu İlaç Ekle</h2>
+              <p className="text-[12px] text-slate-500">
+                Her satıra bir ilaç. Format: <code className="text-[11px] bg-slate-100 px-1 rounded">Ad | Miktar | YYYY-MM</code>
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 text-slate-500">
+            <XIcon size={18}/>
+          </button>
         </div>
-    );
+
+        {/* Body */}
+        <div className="p-6 space-y-4">
+          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/60 p-4 text-[12.5px] text-slate-600">
+            <div className="font-medium text-slate-700 mb-1.5">Örnek</div>
+            <div className="font-mono text-[12px] text-slate-600 leading-6 whitespace-pre">
+              {'Parol | 20 tablet | 2027-08\nAspirin Cardio | 30 tablet | 2025-11\nBepanthen | 30 g tüp | 2027-12'}
+            </div>
+          </div>
+          <textarea
+            value={text}
+            onChange={e => setText(e.target.value)}
+            rows={8}
+            className={MODAL_INPUT}
+            placeholder={'Parol | 20 tablet | 2027-08\nAugmentin BID | 14 tablet | 2026-06'}
+          />
+          <div className="flex items-center justify-between text-[12px] text-slate-500">
+            <span>
+              <span className="font-semibold text-slate-700 tabular-nums">{lines}</span> ilaç hazır
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Spark size={13} className="text-[var(--brand-500)]"/> Yapay zekâ otomatik etken madde ekler
+            </span>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 px-6 py-4 flex justify-end gap-2">
+          <button onClick={onClose}
+            className="px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 hover:bg-slate-100 transition-colors">
+            İptal
+          </button>
+          <button onClick={submit} disabled={!lines}
+            className="px-4 py-2.5 rounded-xl text-[14px] font-semibold text-white bg-[var(--brand-600)] hover:bg-[var(--brand-700)] disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5 shadow-[0_6px_16px_-6px_var(--brand-shadow)] transition-colors">
+            <PlusIc size={15}/> {lines || 0} ilacı ekle
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
