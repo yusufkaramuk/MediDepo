@@ -5,6 +5,7 @@ import { AuthService } from './services/AuthService';
 import { fuzzyMatch } from './services/FuzzySearch';
 import { normalizeAndValidateMedicine, normalizeMedicineList } from './services/MedicineValidation';
 import { exportMedicinesToCsv } from './services/CsvExport';
+import { MedicineDatabase } from './services/MedicineDatabase';
 import { useTheme } from './context/ThemeContext';
 import { MedicineCard } from './components/MedicineCard';
 import { AddMedicineModal } from './components/AddMedicineModal';
@@ -351,6 +352,9 @@ function App() {
     const t = setTimeout(() => setDebouncedSearch(searchTerm.trim().toLowerCase()), 300);
     return () => clearTimeout(t);
   }, [searchTerm]);
+
+  // TITCK veritabanını arka planda güncelle
+  useEffect(() => { MedicineDatabase.syncInBackground(); }, []);
 
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);

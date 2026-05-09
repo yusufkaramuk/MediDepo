@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { MedicineDatabase } from '../services/MedicineDatabase';
+
+const BarcodeScanner = lazy(() => import('./BarcodeScanner').then(m => ({ default: m.BarcodeScanner })));
 
 const Ic = ({ d, size = 18, stroke = 2, className = '', extra = null }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
@@ -87,9 +90,11 @@ const TagInput = ({ tags, onChange }) => {
 
 export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit }) => {
   const [data, setData] = useState(EMPTY);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanStatus, setScanStatus] = useState(null); // null | 'searching' | 'found' | 'not-found'
 
   useEffect(() => {
-    if (isOpen) setData(initialData ? { ...EMPTY, ...initialData } : EMPTY);
+    if (isOpen) { setData(initialData ? { ...EMPTY, ...initialData } : EMPTY); setScanStatus(null); }
   }, [isOpen, initialData]);
 
   if (!isOpen) return null;
@@ -101,6 +106,27 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit 
     if (!data.name.trim()) return;
     onSave(data);
     onClose();
+  };
+
+  const handleBarcodeResult = async (barcode) => {
+    setShowScanner(false);
+    setScanStatus('searching');
+    try {
+      const med = await MedicineDatabase.findByBarcode(barcode);
+      if (med) {
+        setData(prev => ({
+          ...prev,
+          name: med.name || prev.name,
+          activeIngredient1: med.activeIngredient || prev.activeIngredient1,
+        }));
+        setScanStatus('found');
+      } else {
+        setScanStatus('not-found');
+      }
+    } catch {
+      setScanStatus('not-found');
+    }
+    setTimeout(() => setScanStatus(null), 3000);
   };
 
   return (
@@ -199,9 +225,22 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit 
 
         {/* Footer */}
         <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 px-6 py-4 flex items-center justify-between gap-2">
-          <button type="button" className="text-[13px] font-medium text-slate-500 hover:text-slate-800 inline-flex items-center gap-1.5 transition-colors">
-            <CameraIc size={14}/> Kamera ile OCR
-          </button>
+          <div className="flex items-center gap-2">
+            <button type="button"
+              onClick={() => setShowScanner(true)}
+              className="text-[13px] font-medium text-slate-500 hover:text-slate-800 inline-flex items-center gap-1.5 transition-colors">
+              <CameraIc size={14}/> Barkod Tara
+            </button>
+            {scanStatus === 'searching' && (
+              <span className="text-[11.5px] text-[var(--brand-600)] animate-pulse">Aranıyor…</span>
+            )}
+            {scanStatus === 'found' && (
+              <span className="text-[11.5px] text-emerald-600 font-medium">✓ İlaç bulundu</span>
+            )}
+            {scanStatus === 'not-found' && (
+              <span className="text-[11.5px] text-slate-500">Veritabanında bulunamadı</span>
+            )}
+          </div>
           <div className="flex gap-2">
             <button type="button" onClick={onClose}
               className="px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 hover:bg-slate-100 transition-colors">
@@ -214,6 +253,16 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit 
           </div>
         </div>
       </form>
+
+      {/* Barcode Scanner Modal */}
+      {showScanner && (
+        <Suspense fallback={null}>
+          <BarcodeScanner
+            onResult={handleBarcodeResult}
+            onClose={() => setShowScanner(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };
