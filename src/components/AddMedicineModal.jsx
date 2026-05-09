@@ -10,7 +10,8 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit 
         activeIngredient1: '',
         activeIngredient2: '',
         activeIngredient3: '',
-        notes: ''
+        notes: '',
+        createdAt: ''
     });
 
     useEffect(() => {
@@ -23,10 +24,11 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit 
                     activeIngredient1: initialData.activeIngredient1 || '',
                     activeIngredient2: initialData.activeIngredient2 || '',
                     activeIngredient3: initialData.activeIngredient3 || '',
-                    notes: initialData.notes || ''
+                    notes: initialData.notes || '',
+                    createdAt: initialData.createdAt || ''
                 });
             } else {
-                setFormData({ name: '', quantity: '', expiryDate: '', activeIngredient1: '', activeIngredient2: '', activeIngredient3: '', notes: '' });
+                setFormData({ name: '', quantity: '', expiryDate: '', activeIngredient1: '', activeIngredient2: '', activeIngredient3: '', notes: '', createdAt: '' });
             }
         }
     }, [isOpen, initialData]);
@@ -38,7 +40,7 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit 
             return;
         }
         onSave(formData);
-        setFormData({ name: '', quantity: '', expiryDate: '', activeIngredient1: '', activeIngredient2: '', activeIngredient3: '', notes: '' });
+        setFormData({ name: '', quantity: '', expiryDate: '', activeIngredient1: '', activeIngredient2: '', activeIngredient3: '', notes: '', createdAt: '' });
         onClose();
     };
 

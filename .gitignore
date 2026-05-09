@@ -57,3 +57,10 @@ Thumbs.db
 *.tmp
 *.temp
 .cache/
+
+# Local agent/Firebase helper output
+.agents/
+skills-lock.json
+
+# User data exports/backups
+ilac-stok-yedek-*.json

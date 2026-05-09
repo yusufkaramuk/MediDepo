@@ -1,13 +1,70 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // User-specific medicine data
-    match /users/{userId}/medicines/{medicineId} {
-      // Only authenticated users can access their own data
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    function isSignedIn() {
+      return request.auth != null;
     }
-    
-    // Prevent access to other collections
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function validOptionalString(data, field, maxLength) {
+      return !data.keys().hasAny([field]) ||
+        (data[field] is string && data[field].size() <= maxLength);
+    }
+
+    function validExpiryDate(data) {
+      return !data.keys().hasAny(['expiryDate']) ||
+        (data.expiryDate is string &&
+          data.expiryDate.size() <= 7 &&
+          (data.expiryDate == '' || data.expiryDate.matches('^\\d{4}-(0[1-9]|1[0-2])$')));
+    }
+
+    function validCreatedAt(data) {
+      return data.createdAt is string &&
+        data.createdAt.size() >= 20 &&
+        data.createdAt.size() <= 40 &&
+        data.createdAt.matches('^\\d{4}-\\d{2}-\\d{2}T.*');
+    }
+
+    function validMedicine(data) {
+      return data.keys().hasOnly([
+          'name',
+          'quantity',
+          'expiryDate',
+          'activeIngredient1',
+          'activeIngredient2',
+          'activeIngredient3',
+          'notes',
+          'createdAt'
+        ]) &&
+        data.keys().hasAll(['name', 'createdAt']) &&
+        data.name is string &&
+        data.name.size() > 0 &&
+        data.name.size() <= 120 &&
+        validOptionalString(data, 'quantity', 80) &&
+        validOptionalString(data, 'activeIngredient1', 120) &&
+        validOptionalString(data, 'activeIngredient2', 120) &&
+        validOptionalString(data, 'activeIngredient3', 120) &&
+        validOptionalString(data, 'notes', 500) &&
+        validExpiryDate(data) &&
+        validCreatedAt(data);
+    }
+
+    match /users/{userId}/medicines/{medicineId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && validMedicine(request.resource.data);
+      allow update: if isOwner(userId) &&
+        validMedicine(request.resource.data) &&
+        (
+          (resource.data.keys().hasAny(['createdAt']) &&
+            request.resource.data.createdAt == resource.data.createdAt) ||
+          (!resource.data.keys().hasAny(['createdAt']) && validCreatedAt(request.resource.data))
+        );
+      allow delete: if isOwner(userId);
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

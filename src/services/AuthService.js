@@ -1,5 +1,4 @@
 import {
-    getAuth,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signOut,
@@ -7,20 +6,13 @@ import {
     sendPasswordResetEmail,
     updateProfile
 } from 'firebase/auth';
-import { initializeApp } from 'firebase/app';
-import { firebaseConfig } from '../config/firebase';
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+import { auth } from './FirebaseClient';
 
 export const AuthService = {
-    // Sign up new user
     signUp: async (email, password, displayName) => {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-            // Update profile with display name
             if (displayName) {
                 await updateProfile(userCredential.user, { displayName });
             }
@@ -33,7 +25,6 @@ export const AuthService = {
         }
     },
 
-    // Sign in existing user
     signIn: async (email, password) => {
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -41,65 +32,60 @@ export const AuthService = {
             return userCredential.user;
         } catch (error) {
             console.error('[Auth] Sign in error:', error);
-            throw new Error(getErrorMessage(error.code));
+            throw new Error(getErrorMessage(error.code, 'signin'));
         }
     },
 
-    // Sign out
     signOut: async () => {
         try {
             await signOut(auth);
             console.log('[Auth] User signed out');
         } catch (error) {
             console.error('[Auth] Sign out error:', error);
-            throw new Error('Çıkış yapılırken hata oluştu');
+            throw new Error('Cikis yapilirken hata olustu');
         }
     },
 
-    // Reset password
     resetPassword: async (email) => {
         try {
             await sendPasswordResetEmail(auth, email);
-            console.log('[Auth] Password reset email sent to:', email);
+            console.log('[Auth] Password reset request completed');
         } catch (error) {
             console.error('[Auth] Password reset error:', error);
-            throw new Error(getErrorMessage(error.code));
+            throw new Error(getErrorMessage(error.code, 'reset'));
         }
     },
 
-    // Listen to auth state changes
-    onAuthStateChanged: (callback) => {
-        return onAuthStateChanged(auth, callback);
-    },
+    onAuthStateChanged: (callback) => onAuthStateChanged(auth, callback),
 
-    // Get current user
-    getCurrentUser: () => {
-        return auth.currentUser;
-    }
+    getCurrentUser: () => auth.currentUser
 };
 
-// Helper function to get user-friendly error messages
-const getErrorMessage = (errorCode) => {
+const getErrorMessage = (errorCode, action = 'default') => {
+    if (errorCode === 'auth/too-many-requests') {
+        return 'Cok fazla deneme. Lutfen daha sonra tekrar deneyin';
+    }
+
+    if (action === 'signin') {
+        return 'E-posta veya sifre hatali';
+    }
+
+    if (action === 'reset') {
+        return 'Sifre sifirlama istegi islenemedi. Lutfen daha sonra tekrar deneyin';
+    }
+
     switch (errorCode) {
         case 'auth/email-already-in-use':
-            return 'Bu e-posta adresi zaten kullanımda';
+            return 'Bu e-posta adresi zaten kullaniliyor';
         case 'auth/invalid-email':
-            return 'Geçersiz e-posta adresi';
+            return 'Gecersiz e-posta adresi';
         case 'auth/operation-not-allowed':
-            return 'Bu işlem şu an kullanılamıyor';
+            return 'Bu islem su an kullanilamiyor';
         case 'auth/weak-password':
-            return 'Şifre çok zayıf (en az 6 karakter)';
+            return 'Sifre cok zayif (en az 6 karakter)';
         case 'auth/user-disabled':
-            return 'Bu hesap devre dışı bırakılmış';
-        case 'auth/user-not-found':
-            return 'Kullanıcı bulunamadı';
-        case 'auth/wrong-password':
-            return 'Hatalı şifre';
-        case 'auth/invalid-credential':
-            return 'Geçersiz kimlik bilgileri';
-        case 'auth/too-many-requests':
-            return 'Çok fazla deneme. Lütfen daha sonra tekrar deneyin';
+            return 'Bu hesap devre disi birakilmis';
         default:
-            return 'Bir hata oluştu: ' + errorCode;
+            return 'Bir hata olustu';
     }
 };

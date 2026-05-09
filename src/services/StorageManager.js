@@ -1,4 +1,11 @@
+import { MAX_IMPORT_FILE_BYTES, normalizeMedicine, normalizeMedicineList } from './MedicineValidation';
+
 const STORAGE_KEY = 'ilac_stok_data';
+
+const withLocalId = (medicine, index = 0) => ({
+    id: medicine.id || `${Date.now()}-${index}`,
+    ...normalizeMedicine(medicine, { preserveCreatedAt: Boolean(medicine.createdAt) })
+});
 
 export const StorageManager = {
     save: (data) => {
@@ -17,8 +24,12 @@ export const StorageManager = {
         try {
             const data = localStorage.getItem(STORAGE_KEY);
             const parsed = data ? JSON.parse(data) : [];
-            console.log(`[StorageManager] Loaded ${parsed.length} items from localStorage`);
-            return parsed;
+            if (!Array.isArray(parsed)) return [];
+            const normalized = parsed
+                .map(withLocalId)
+                .filter((medicine) => medicine.name.trim().length > 0);
+            console.log(`[StorageManager] Loaded ${normalized.length} items from localStorage`);
+            return normalized;
         } catch (e) {
             console.error("[StorageManager] Load failed:", e);
             return [];
@@ -40,13 +51,18 @@ export const StorageManager = {
 
     importFromJSON: (file) => {
         return new Promise((resolve, reject) => {
+            if (file.size > MAX_IMPORT_FILE_BYTES) {
+                reject(new Error("Import file is too large"));
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    resolve(data);
+                    resolve(normalizeMedicineList(data).map(withLocalId));
                 } catch (error) {
-                    reject(new Error("Invalid JSON file"));
+                    reject(new Error(error.message || "Invalid JSON file"));
                 }
             };
             reader.onerror = () => reject(new Error("File read error"));

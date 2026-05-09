@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { Button, Input } from './ui/BaseComponents';
+
+const AUTH_COOLDOWN_MS = 5000;
 
 export const AuthModal = ({ isOpen, onClose, onAuth }) => {
     const [isSignUp, setIsSignUp] = useState(false);
@@ -13,45 +15,73 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [resetMode, setResetMode] = useState(false);
+    const [cooldownUntil, setCooldownUntil] = useState(0);
+    const [now, setNow] = useState(Date.now());
+
+    useEffect(() => {
+        if (now >= cooldownUntil) return undefined;
+
+        const timer = window.setInterval(() => setNow(Date.now()), 500);
+        return () => window.clearInterval(timer);
+    }, [cooldownUntil, now]);
+
+    const cooldownRemaining = Math.max(0, Math.ceil((cooldownUntil - now) / 1000));
+    const isCooldownActive = cooldownRemaining > 0;
+
+    // Client cooldown is a UX throttle; Firebase server-side limits remain the security boundary.
+    const startCooldown = () => {
+        const next = Date.now() + AUTH_COOLDOWN_MS;
+        setNow(Date.now());
+        setCooldownUntil(next);
+    };
+
+    const resetForm = () => {
+        setFormData({ email: '', password: '', displayName: '', confirmPassword: '' });
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
-        // Validation
+        if ((resetMode || !isSignUp) && isCooldownActive) {
+            setError(`Lutfen ${cooldownRemaining} saniye sonra tekrar deneyin`);
+            return;
+        }
+
         if (!formData.email || !formData.email.includes('@')) {
-            setError('Geçerli bir e-posta adresi girin');
+            setError('Gecerli bir e-posta adresi girin');
             return;
         }
 
         if (resetMode) {
-            // Password reset
             try {
                 setLoading(true);
                 await onAuth('reset', { email: formData.email });
-                alert('Şifre sıfırlama bağlantısı e-postanıza gönderildi!');
+                alert('Eger bu e-posta kayitliysa sifre sifirlama baglantisi gonderilecektir.');
                 setResetMode(false);
-                setFormData({ email: '', password: '', displayName: '', confirmPassword: '' });
+                resetForm();
             } catch (err) {
                 setError(err.message);
             } finally {
+                startCooldown();
                 setLoading(false);
             }
             return;
         }
 
         if (!formData.password || formData.password.length < 6) {
-            setError('Şifre en az 6 karakter olmalıdır');
+            setError('Sifre en az 6 karakter olmalidir');
             return;
         }
 
         if (isSignUp) {
-            if (!formData.displayName) {
-                setError('İsim soyisim gereklidir');
+            if (!formData.displayName.trim()) {
+                setError('Isim soyisim gereklidir');
                 return;
             }
+
             if (formData.password !== formData.confirmPassword) {
-                setError('Şifreler eşleşmiyor');
+                setError('Sifreler eslesmiyor');
                 return;
             }
         }
@@ -63,6 +93,9 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
         } catch (err) {
             setError(err.message);
         } finally {
+            if (!isSignUp) {
+                startCooldown();
+            }
             setLoading(false);
         }
     };
@@ -85,7 +118,7 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
             <div className="bg-white rounded-2xl w-full max-w-md shadow-xl animate-in fade-in zoom-in duration-200">
                 <div className="flex justify-between items-center p-6 border-b">
                     <h2 className="text-xl font-bold text-gray-800">
-                        {resetMode ? 'Şifremi Unuttum' : isSignUp ? 'Kayıt Ol' : 'Giriş Yap'}
+                        {resetMode ? 'Sifremi Unuttum' : isSignUp ? 'Kayit Ol' : 'Giris Yap'}
                     </h2>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
                         <X size={20} className="text-gray-500" />
@@ -103,11 +136,11 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
                     {!resetMode && isSignUp && (
                         <div className="flex flex-col gap-1">
                             <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                <User size={16} /> İsim Soyisim
+                                <User size={16} /> Isim Soyisim
                             </label>
                             <Input
                                 type="text"
-                                placeholder="Örn: Yusuf Karamuk"
+                                placeholder="Orn: Yusuf Karamuk"
                                 value={formData.displayName}
                                 onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
                                 required
@@ -132,7 +165,7 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
                         <>
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                    <Lock size={16} /> Şifre
+                                    <Lock size={16} /> Sifre
                                 </label>
                                 <Input
                                     type="password"
@@ -146,11 +179,11 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
                             {isSignUp && (
                                 <div className="flex flex-col gap-1">
                                     <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                        <Lock size={16} /> Şifre Tekrar
+                                        <Lock size={16} /> Sifre Tekrar
                                     </label>
                                     <Input
                                         type="password"
-                                        placeholder="Şifrenizi tekrar girin"
+                                        placeholder="Sifrenizi tekrar girin"
                                         value={formData.confirmPassword}
                                         onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                                         required
@@ -160,8 +193,12 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
                         </>
                     )}
 
-                    <Button type="submit" disabled={loading} className="w-full mt-2">
-                        {loading ? 'Lütfen bekleyin...' : resetMode ? 'Sıfırlama Bağlantısı Gönder' : isSignUp ? 'Kayıt Ol' : 'Giriş Yap'}
+                    <Button type="submit" disabled={loading || isCooldownActive} className="w-full mt-2">
+                        {loading
+                            ? 'Lutfen bekleyin...'
+                            : isCooldownActive
+                                ? `Tekrar dene (${cooldownRemaining})`
+                                : resetMode ? 'Sifirlama Baglantisi Gonder' : isSignUp ? 'Kayit Ol' : 'Giris Yap'}
                     </Button>
 
                     <div className="flex flex-col gap-2 text-sm text-center">
@@ -171,7 +208,7 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
                                 onClick={toggleMode}
                                 className="text-purple-600 hover:underline"
                             >
-                                {isSignUp ? 'Zaten hesabım var, giriş yap' : 'Hesabın yok mu? Kayıt ol'}
+                                {isSignUp ? 'Zaten hesabim var, giris yap' : 'Hesabin yok mu? Kayit ol'}
                             </button>
                         )}
 
@@ -181,7 +218,7 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
                                 onClick={toggleResetMode}
                                 className="text-gray-600 hover:underline"
                             >
-                                {resetMode ? 'Giriş ekranına dön' : 'Şifremi unuttum'}
+                                {resetMode ? 'Giris ekranina don' : 'Sifremi unuttum'}
                             </button>
                         )}
                     </div>

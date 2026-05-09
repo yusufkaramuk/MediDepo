@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Search, Upload, Download, Package, PlusCircle, Cloud, HardDrive, LogOut, User } from 'lucide-react';
-import { Medicine } from './models/Medicine';
 import { StorageManager } from './services/StorageManager';
 import { FirebaseService } from './services/FirebaseService';
 import { AuthService } from './services/AuthService';
 import { fuzzyMatch } from './services/FuzzySearch';
+import { normalizeAndValidateMedicine, normalizeMedicineList } from './services/MedicineValidation';
 import { MedicineCard } from './components/MedicineCard';
 import { AddMedicineModal } from './components/AddMedicineModal';
 import { BulkAddModal } from './components/BulkAddModal';
 import { AuthModal } from './components/AuthModal';
 import { Button, Input, Badge } from './components/ui/BaseComponents';
+
+const createLocalMedicine = (medicine) => ({
+  id: medicine.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  ...medicine
+});
 
 function App() {
   const [medicines, setMedicines] = useState([]);
@@ -116,29 +121,24 @@ function App() {
   const handleSave = async (data) => {
     try {
       setSyncing(true);
+      const cleanData = normalizeAndValidateMedicine(data, {
+        preserveCreatedAt: Boolean(data.createdAt)
+      });
+
       if (editingId) {
         // Update existing
-        const updated = { ...data, id: editingId };
+        const updated = { ...cleanData, id: editingId };
         if (useCloud && user) {
-          await FirebaseService.updateMedicine(user.uid, editingId, data);
+          await FirebaseService.updateMedicine(user.uid, editingId, cleanData);
         }
         setMedicines(prev => prev.map(m => m.id === editingId ? updated : m));
       } else {
         // Add new
         if (useCloud && user) {
-          const newMed = await FirebaseService.addMedicine(user.uid, data);
+          const newMed = await FirebaseService.addMedicine(user.uid, cleanData);
           setMedicines(prev => [newMed, ...prev]);
         } else {
-          const newMedicine = new Medicine(
-            null,
-            data.name,
-            data.quantity,
-            data.expiryDate,
-            data.notes,
-            data.activeIngredient1,
-            data.activeIngredient2,
-            data.activeIngredient3
-          );
+          const newMedicine = createLocalMedicine(cleanData);
           setMedicines(prev => [newMedicine, ...prev]);
         }
       }
@@ -153,26 +153,17 @@ function App() {
   const handleBulkAdd = async (medicinesData) => {
     try {
       setSyncing(true);
+      const cleanMedicines = normalizeMedicineList(medicinesData);
+
       if (useCloud && user) {
         const addedMedicines = [];
-        for (const data of medicinesData) {
+        for (const data of cleanMedicines) {
           const newMed = await FirebaseService.addMedicine(user.uid, data);
           addedMedicines.push(newMed);
         }
         setMedicines(prev => [...addedMedicines, ...prev]);
       } else {
-        const newMedicines = medicinesData.map(data =>
-          new Medicine(
-            null,
-            data.name,
-            data.quantity,
-            data.expiryDate,
-            data.notes,
-            data.activeIngredient1,
-            data.activeIngredient2,
-            data.activeIngredient3
-          )
-        );
+        const newMedicines = cleanMedicines.map(createLocalMedicine);
         setMedicines(prev => [...newMedicines, ...prev]);
       }
     } catch (error) {
@@ -230,7 +221,7 @@ function App() {
           alert(`${uploadedMedicines.length} ilaç başarıyla Firebase'e yüklendi!`);
         } else {
           // Just set to localStorage
-          setMedicines(data);
+          setMedicines(data.map(createLocalMedicine));
           alert("Veriler başarıyla yüklendi!");
         }
       }
