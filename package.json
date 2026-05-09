@@ -17,7 +17,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-webcam": "^7.2.0",
-    "tesseract.js": "^5.0.4"
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.1",
