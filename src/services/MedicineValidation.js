@@ -124,6 +124,9 @@ export const normalizeAndValidateMedicine = (medicine, options = {}) => {
     return normalized;
 };
 
+// Gate for AI/OCR output — always run before populating form fields
+export const sanitizeAIOutput = (raw = {}) => normalizeMedicine(raw, { preserveCreatedAt: false });
+
 export const normalizeMedicineList = (items) => {
     if (!Array.isArray(items)) {
         throw new Error('Ice aktarilan dosya bir ilac listesi olmali');
