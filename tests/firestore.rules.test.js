@@ -15,7 +15,7 @@ import {
 
 const PROJECT_ID = 'ilac-stok-takip';
 const RULES = fs.readFileSync('firestore.rules', 'utf8');
-const FIRESTORE_EMULATOR_PORT = Number(process.env.FIRESTORE_EMULATOR_PORT || 8085);
+const FIRESTORE_EMULATOR_PORT = Number(process.env.FIRESTORE_EMULATOR_PORT || 8080);
 
 let testEnv;
 
@@ -27,6 +27,7 @@ const validMedicine = (overrides = {}) => ({
     activeIngredient2: '',
     activeIngredient3: '',
     notes: 'Tok karnina',
+    tags: [],
     createdAt: '2026-05-09T10:00:00.000Z',
     ...overrides
 });
