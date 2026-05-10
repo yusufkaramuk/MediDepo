@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilac-stok-v5';
+const CACHE_NAME = 'ilac-stok-v6';
 
 // App shell — cache edilecek statik dosyalar
 const APP_SHELL = ['/'];

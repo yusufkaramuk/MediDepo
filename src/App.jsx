@@ -22,6 +22,7 @@ import { ShareView } from './components/ShareView';
 import { FamilyModal } from './components/FamilyModal';
 import { FamilyService } from './services/FamilyService';
 import { clearKeyCache } from './services/EncryptionService';
+import appLogo from './assets/logo.png';
 
 // ── Icons (inline SVG, matches design handoff) ──────────────────────────────
 const Ic = ({ d, size = 18, stroke = 2, className = '', extra = null }) => (
@@ -302,11 +303,9 @@ const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut,
   <header className="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-700/80">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
       <div className="flex items-center gap-2.5">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] grid place-items-center shadow-[0_6px_16px_-6px_var(--brand-shadow)]">
-          <Icon.Pill size={17} className="text-white"/>
-        </div>
+        <img src={appLogo} alt="İlaç Takip" className="w-10 h-10 object-contain rounded-xl bg-[var(--brand-50)] p-0.5"/>
         <div className="leading-tight">
-          <div className="text-[14.5px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">İlaç Takip</div>
+          <div className="text-[14.5px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">İlaç Takip Sistemi</div>
           <div className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">{totalCount} kayıtlı ilaç · {user.displayName || user.email?.split('@')[0]}</div>
         </div>
       </div>
@@ -442,6 +441,8 @@ function App() {
   const [historyMedicine, setHistoryMedicine] = useState(null);
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [showFamilyModal, setShowFamilyModal] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef(null);
   const [family, setFamily] = useState(null);
   const [familyMedicines, setFamilyMedicines] = useState([]);
   const [pendingInviteCount, setPendingInviteCount] = useState(0);
@@ -453,6 +454,13 @@ function App() {
   useEffect(() => {
     if (toast) { const t = setTimeout(() => setToast(null), 3000); return () => clearTimeout(t); }
   }, [toast]);
+
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handler = (e) => { if (exportMenuRef.current && !exportMenuRef.current.contains(e.target)) setShowExportMenu(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showExportMenu]);
 
   const showToast = (kind, text) => setToast({ kind, text });
 
@@ -796,9 +804,7 @@ function App() {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] grid place-items-center mx-auto mb-4 shadow-[0_8px_20px_-8px_var(--brand-shadow)]">
-            <Icon.Pill size={22} className="text-white"/>
-          </div>
+          <img src={appLogo} alt="İlaç Takip" className="w-20 h-20 object-contain mx-auto mb-4 rounded-2xl bg-[var(--brand-50)] p-1"/>
           <div className="w-6 h-6 border-2 border-[var(--brand-200)] border-t-[var(--brand-600)] rounded-full animate-spin mx-auto"/>
         </div>
       </div>
@@ -891,22 +897,52 @@ function App() {
               className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors">
               <Icon.List size={15}/> <span className="hidden sm:inline">Toplu ekle</span>
             </button>
+
+            {/* Masaüstü: CSV / JSON / İçe aktar düz göster */}
             <button onClick={handleExportCsv}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors"
+              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors"
               title="CSV olarak indir">
-              <Icon.Download size={15}/> <span className="hidden sm:inline">CSV</span>
+              <Icon.Download size={15}/> CSV
             </button>
             <button onClick={handleExportJson}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors"
+              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors"
               title="JSON yedeği al">
-              <Icon.Download size={15}/> <span className="hidden sm:inline">JSON</span>
+              <Icon.Download size={15}/> JSON
             </button>
-            <label className="cursor-pointer">
+            <label className="hidden sm:block cursor-pointer">
               <span className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors">
-                <Icon.Upload size={15}/> <span className="hidden sm:inline">İçe aktar</span>
+                <Icon.Upload size={15}/> İçe aktar
               </span>
               <input type="file" accept=".json" onChange={handleImport} className="hidden"/>
             </label>
+
+            {/* Mobil: ⋯ açılır menü */}
+            <div className="relative sm:hidden" ref={exportMenuRef}>
+              <button
+                onClick={() => setShowExportMenu(v => !v)}
+                className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors"
+                aria-label="Daha fazla">
+                <Icon.Download size={15}/> Dışa aktar
+              </button>
+              {showExportMenu && (
+                <div className="absolute right-0 top-full mt-1.5 z-40 w-44 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden">
+                  <button onClick={() => { handleExportCsv(); setShowExportMenu(false); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-[13.5px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    <Icon.Download size={14}/> CSV olarak indir
+                  </button>
+                  <button onClick={() => { handleExportJson(); setShowExportMenu(false); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-[13.5px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-t border-slate-100 dark:border-slate-800">
+                    <Icon.Download size={14}/> JSON yedeği al
+                  </button>
+                  <label className="block border-t border-slate-100 dark:border-slate-800 cursor-pointer">
+                    <span className="w-full flex items-center gap-2.5 px-4 py-3 text-[13.5px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                      <Icon.Upload size={14}/> JSON içe aktar
+                    </span>
+                    <input type="file" accept=".json" onChange={(e) => { handleImport(e); setShowExportMenu(false); }} className="hidden"/>
+                  </label>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Lock, User, AlertCircle, CheckCircle, Shield, Bell, Cloud, Camera, Pill } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle, CheckCircle, Shield, Bell, Cloud, Camera } from 'lucide-react';
+import appLogo from '../assets/logo.png';
 
 const AUTH_COOLDOWN_MS = 5000;
 
@@ -119,11 +120,9 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
         {/* Left: brand */}
         <div className="space-y-7 hidden lg:block">
           <div className="inline-flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-white shadow-[0_8px_24px_-8px_rgba(15,23,42,0.2)] grid place-items-center ring-1 ring-slate-200">
-              <Pill size={20} className="text-[var(--brand-600)]" />
-            </div>
+            <img src={appLogo} alt="İlaç Takip" className="w-16 h-16 object-contain rounded-2xl bg-[var(--brand-50)] p-1"/>
             <div>
-              <div className="text-[15px] font-semibold text-slate-900 tracking-tight">İlaç Takip</div>
+              <div className="text-[15px] font-semibold text-slate-900 tracking-tight">İlaç Takip Sistemi</div>
               <div className="text-[11px] text-slate-500 -mt-0.5">v2 · 2026</div>
             </div>
           </div>
@@ -162,10 +161,8 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
 
             {/* Mobile logo */}
             <div className="flex items-center gap-2 mb-5 lg:hidden">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] grid place-items-center">
-                <Pill size={16} className="text-white" />
-              </div>
-              <span className="text-[15px] font-semibold text-slate-900">İlaç Takip</span>
+              <img src={appLogo} alt="İlaç Takip" className="w-12 h-12 object-contain rounded-xl bg-[var(--brand-50)] p-1"/>
+              <span className="text-[15px] font-semibold text-slate-900">İlaç Takip Sistemi</span>
             </div>
 
             {/* Mode toggle */}

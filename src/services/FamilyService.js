@@ -37,7 +37,10 @@ export const FamilyService = {
       const snap = await getDoc(doc(db, 'families', familyId));
       console.log('[Family] familyDoc exists:', snap.exists());
       if (!snap.exists()) { await setUserFamilyId(userId, null); return null; }
-      return { id: snap.id, ...snap.data() };
+      const data = snap.data();
+      // Admin tarafından çıkarıldıysa members'ta artık yok — kendi doc'unu temizle
+      if (!data.members || !data.members[userId]) { await setUserFamilyId(userId, null); return null; }
+      return { id: snap.id, ...data };
     } catch (e) {
       console.error('[Family] getDoc families ERROR:', e.code, e.message);
       throw e;
@@ -142,8 +145,10 @@ export const FamilyService = {
   },
 
   async removeMember(familyId, targetUserId) {
+    // Sadece family doc'undan çıkar; hedef kullanıcının kendi doc'unu
+    // değiştiremeyiz (permission-denied). Üye sonraki girişte family'den
+    // çıkarıldığını fark edip kendi user doc'unu temizler.
     await updateDoc(doc(db, 'families', familyId), { [`members.${targetUserId}`]: deleteField() });
-    await setUserFamilyId(targetUserId, null);
   },
 
   async leaveFamily(familyId, userId) {
