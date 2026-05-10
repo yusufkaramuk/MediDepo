@@ -30,20 +30,12 @@ service cloud.firestore {
 
     function validMedicine(data) {
       return data.keys().hasOnly([
-          'name',
-          'quantity',
-          'expiryDate',
-          'activeIngredient1',
-          'activeIngredient2',
-          'activeIngredient3',
-          'notes',
-          'createdAt',
-          'tags'
+          'name', 'quantity', 'expiryDate',
+          'activeIngredient1', 'activeIngredient2', 'activeIngredient3',
+          'notes', 'createdAt', 'tags', 'familyId', 'isPrivate'
         ]) &&
         data.keys().hasAll(['name', 'createdAt']) &&
-        data.name is string &&
-        data.name.size() > 0 &&
-        data.name.size() <= 120 &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 120 &&
         validOptionalString(data, 'quantity', 80) &&
         validOptionalString(data, 'activeIngredient1', 120) &&
         validOptionalString(data, 'activeIngredient2', 120) &&
@@ -54,7 +46,12 @@ service cloud.firestore {
     }
 
     match /users/{userId}/medicines/{medicineId} {
-      allow read: if isOwner(userId);
+      allow read: if isOwner(userId) ||
+        (isSignedIn() &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.familyId != null &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.familyId ==
+          get(/databases/$(database)/documents/users/$(userId)).data.familyId &&
+          resource.data.get('isPrivate', false) != true);
       allow create: if isOwner(userId) && validMedicine(request.resource.data);
       allow update: if isOwner(userId) &&
         validMedicine(request.resource.data) &&
@@ -75,17 +72,49 @@ service cloud.firestore {
       }
     }
 
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
     match /users/{userId}/pushSubscriptions/{subId} {
       allow read, write, delete: if isOwner(userId);
     }
 
+    match /families/{familyId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() &&
+        request.resource.data.createdBy == request.auth.uid &&
+        request.resource.data.members.keys().hasOnly([request.auth.uid]);
+      // Mevcut üyeler her şeyi güncelleyebilir.
+      // Davet kabul eden kullanıcı: sadece kendi UID'sini members'a ekleyebilir.
+      allow update: if isSignedIn() && (
+        resource.data.members.keys().hasAny([request.auth.uid]) ||
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
+          request.resource.data.members.diff(resource.data.members).addedKeys().hasOnly([request.auth.uid])
+        )
+      );
+      allow delete: if isSignedIn() &&
+        resource.data.createdBy == request.auth.uid;
+    }
+
+    // Davetler: giriş yapmış herkes kendi e-postasına gelen davetleri okuyabilir
+    match /invites/{inviteId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasOnly(['familyId', 'familyName', 'invitedEmail', 'invitedBy', 'status', 'createdAt', 'expiresAt']) &&
+        request.resource.data.status == 'pending';
+      allow update: if isSignedIn() &&
+        resource.data.invitedEmail == request.auth.token.email &&
+        request.resource.data.status in ['accepted', 'rejected'];
+      allow delete: if isSignedIn();
+    }
+
     match /sharedLinks/{token} {
-      // Herkes okuyabilir (salt okunur paylaşım)
       allow read: if true;
-      // Sadece sahibi oluşturabilir ve silebilir
       allow create: if isSignedIn() &&
         request.resource.data.userId == request.auth.uid &&
-        request.resource.data.keys().hasOnly(['userId', 'medicineId', 'expiresAt', 'createdAt']);
+        request.resource.data.keys().hasOnly(['userId', 'medicineId', 'expiresAt', 'createdAt', 'medicine']);
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 

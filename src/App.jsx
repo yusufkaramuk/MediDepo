@@ -17,7 +17,10 @@ import { BulkAddModal } from './components/BulkAddModal';
 import { DeleteModal } from './components/DeleteModal';
 import { AuthModal } from './components/AuthModal';
 import { UsageHistoryModal } from './components/UsageHistoryModal';
+import { AllHistoryModal } from './components/AllHistoryModal';
 import { ShareView } from './components/ShareView';
+import { FamilyModal } from './components/FamilyModal';
+import { FamilyService } from './services/FamilyService';
 
 // ── Icons (inline SVG, matches design handoff) ──────────────────────────────
 const Ic = ({ d, size = 18, stroke = 2, className = '', extra = null }) => (
@@ -56,8 +59,10 @@ const Icon = {
   Drop:     (p) => <Ic {...p} d="M12 2.7s5 5.3 5 9.3a5 5 0 0 1-10 0c0-4 5-9.3 5-9.3Z"/>,
   Moon:     (p) => <Ic {...p} d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>,
   Sun:      (p) => <Ic {...p} extra={<><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></>}/>,
+  History:  (p) => <Ic {...p} extra={<><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></>}/>,
   Bell:     (p) => <Ic {...p} extra={<><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></>}/>,
   BellOff:  (p) => <Ic {...p} extra={<><path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 1 .6 5"/><path d="M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><line x1="2" x2="22" y1="2" y2="22"/></>}/>,
+  Users:    (p) => <Ic {...p} extra={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>}/>,
 };
 
 // ── Status helpers ────────────────────────────────────────────────────────────
@@ -151,8 +156,11 @@ const MedicineRow = ({ medicine, onEdit, onDelete }) => {
         <Icon.Calendar size={13} className="text-slate-400"/> {fmtExpiry(medicine.expiryDate)}
       </div>
       <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-        <button onClick={() => onEdit(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100" aria-label="Düzenle"><Icon.Edit size={14}/></button>
-        <button onClick={() => onDelete(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-600" aria-label="Sil"><Icon.Trash size={14}/></button>
+        {medicine.isOwn !== false && <>
+          <button onClick={() => onEdit(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100" aria-label="Düzenle"><Icon.Edit size={14}/></button>
+          <button onClick={() => onDelete(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-600" aria-label="Sil"><Icon.Trash size={14}/></button>
+        </>}
+        {medicine.isOwn === false && <span className="text-[11px] text-slate-400 px-1">{medicine.ownerName}</span>}
       </div>
     </div>
   );
@@ -289,7 +297,7 @@ const EmptyState = ({ searching, onAdd, onBulk }) => (
 );
 
 // ── Header ────────────────────────────────────────────────────────────────────
-const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut, theme, onToggleTheme, isOnline, notifPermission, onToggleNotifications }) => (
+const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut, theme, onToggleTheme, isOnline, notifPermission, onToggleNotifications, onShowAllHistory, onShowFamily, pendingInviteCount }) => (
   <header className="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-700/80">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
       <div className="flex items-center gap-2.5">
@@ -324,6 +332,21 @@ const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut,
       <div className="hidden sm:block w-px h-6 bg-slate-200 dark:bg-slate-700"/>
 
       <div className="flex items-center gap-1.5">
+        {onShowAllHistory && (
+          <button onClick={onShowAllHistory}
+            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+            aria-label="Tüm kullanım geçmişi">
+            <Icon.History size={17}/>
+          </button>
+        )}
+        <button onClick={onShowFamily}
+          className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+          aria-label="Aile modu">
+          <Icon.Users size={17}/>
+          {pendingInviteCount > 0 && (
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500"/>
+          )}
+        </button>
         {notifPermission !== 'unsupported' && notifPermission !== 'denied' && (
           <button onClick={onToggleNotifications}
             className={`p-2 rounded-xl transition-colors ${
@@ -415,6 +438,11 @@ function App() {
   const [modalInitialData, setModalInitialData] = useState(null);
   const [deletingMedicine, setDeletingMedicine] = useState(null);
   const [historyMedicine, setHistoryMedicine] = useState(null);
+  const [showAllHistory, setShowAllHistory] = useState(false);
+  const [showFamilyModal, setShowFamilyModal] = useState(false);
+  const [family, setFamily] = useState(null);
+  const [familyMedicines, setFamilyMedicines] = useState([]);
+  const [pendingInviteCount, setPendingInviteCount] = useState(0);
   const [notifPermission, setNotifPermission] = useState(
     NotificationService.isSupported() ? NotificationService.getPermission() : 'unsupported'
   );
@@ -440,6 +468,7 @@ function App() {
   useEffect(() => {
     if (!user || !useCloud) return;
     loadMedicines();
+    loadFamily();
   }, [user, useCloud]);
 
   useEffect(() => {
@@ -462,6 +491,24 @@ function App() {
     } finally {
       setSyncing(false);
     }
+  };
+
+  const loadFamily = async () => {
+    if (!user) return;
+    try {
+      const [fam, invites] = await Promise.all([
+        FamilyService.getMyFamily(user.uid),
+        FamilyService.getPendingInvites(user.email),
+      ]);
+      setFamily(fam);
+      setPendingInviteCount(invites.length);
+      if (fam) {
+        const fMeds = await FamilyService.getFamilyMedicines(fam, user.uid);
+        setFamilyMedicines(fMeds);
+      } else {
+        setFamilyMedicines([]);
+      }
+    } catch (e) { console.error('[App] loadFamily ERROR:', e.code, e.message); }
   };
 
   const handleAuth = async (action, data) => {
@@ -560,16 +607,26 @@ function App() {
   const handleShare = async (medicine) => {
     if (!user) return;
     try {
-      // Rastgele token üret
       const token = Array.from(crypto.getRandomValues(new Uint8Array(16)))
         .map(b => b.toString(16).padStart(2, '0')).join('');
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 gün
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
+      // İlaç verisini sharedLinks dökümanına gömüyoruz — başka kullanıcı medicines okuyamaz
       await setDoc(doc(db, `sharedLinks/${token}`), {
         userId: user.uid,
         medicineId: medicine.id,
         expiresAt,
         createdAt: new Date().toISOString(),
+        medicine: {
+          name: medicine.name || '',
+          quantity: medicine.quantity || '',
+          expiryDate: medicine.expiryDate || '',
+          activeIngredient1: medicine.activeIngredient1 || '',
+          activeIngredient2: medicine.activeIngredient2 || '',
+          activeIngredient3: medicine.activeIngredient3 || '',
+          notes: medicine.notes || '',
+          tags: medicine.tags || [],
+        },
       });
 
       const url = `${window.location.origin}/share/${token}`;
@@ -643,31 +700,16 @@ function App() {
   };
 
   // Computed list: filter + group duplicates + sort
-  const filteredMedicines = useMemo(() => {
-    const q = debouncedSearch;
-    const filtered = medicines.filter(m => {
-      // Status filter
-      if (statusFilter !== 'all') {
-        const k = statusOf(m).key;
-        if (statusFilter === 'good' && k !== 'good' && k !== 'soon') return false;
-        if (statusFilter !== 'good' && k !== statusFilter) return false;
-      }
-      // Tag filter
-      if (tagFilter && !(m.tags || []).includes(tagFilter)) return false;
-      // Search filter
-      if (!q) return true;
-      if (fuzzyMatch(q, m.name)) return true;
-      if (m.activeIngredient1 && fuzzyMatch(q, m.activeIngredient1)) return true;
-      if (m.activeIngredient2 && fuzzyMatch(q, m.activeIngredient2)) return true;
-      if (m.activeIngredient3 && fuzzyMatch(q, m.activeIngredient3)) return true;
-      return false;
-    });
-
+  // Tüm ilaçlar (kendi + aile), duplicate gruplandırılmış
+  const groupedAll = useMemo(() => {
+    const ownIds = new Set(medicines.map(m => m.id));
+    const others = familyMedicines.filter(m => !ownIds.has(m.id)).map(m => ({ ...m, isOwn: false }));
+    const flat = [...medicines.map(m => ({ ...m, isOwn: true })), ...others];
     const grouped = [];
     const seen = new Set();
-    filtered.forEach(med => {
+    flat.forEach(med => {
       if (seen.has(med.id)) return;
-      const dupes = filtered.filter(m => {
+      const dupes = flat.filter(m => {
         if (seen.has(m.id)) return false;
         return (
           m.name.toLowerCase() === med.name.toLowerCase() &&
@@ -682,8 +724,26 @@ function App() {
       dupes.forEach(d => seen.add(d.id));
       grouped.push({ ...med, count: dupes.length, allIds: dupes.map(d => d.id) });
     });
+    return grouped;
+  }, [medicines, familyMedicines]);
 
-    return [...grouped].sort((a, b) => {
+  const filteredMedicines = useMemo(() => {
+    const q = debouncedSearch;
+    const filtered = groupedAll.filter(m => {
+      if (statusFilter !== 'all') {
+        const k = statusOf(m).key;
+        if (statusFilter === 'good' && k !== 'good' && k !== 'soon') return false;
+        if (statusFilter !== 'good' && k !== statusFilter) return false;
+      }
+      if (tagFilter && !(m.tags || []).includes(tagFilter)) return false;
+      if (!q) return true;
+      if (fuzzyMatch(q, m.name)) return true;
+      if (m.activeIngredient1 && fuzzyMatch(q, m.activeIngredient1)) return true;
+      if (m.activeIngredient2 && fuzzyMatch(q, m.activeIngredient2)) return true;
+      if (m.activeIngredient3 && fuzzyMatch(q, m.activeIngredient3)) return true;
+      return false;
+    });
+    return [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'name-asc':    return a.name.localeCompare(b.name, 'tr');
         case 'name-desc':   return b.name.localeCompare(a.name, 'tr');
@@ -696,25 +756,27 @@ function App() {
         default:            return (b.createdAt || '').localeCompare(a.createdAt || '');
       }
     });
-  }, [medicines, debouncedSearch, statusFilter, tagFilter, sortBy]);
+  }, [groupedAll, debouncedSearch, statusFilter, tagFilter, sortBy]);
+
+  const allMedicines = groupedAll;
 
   const allTags = useMemo(() => {
     const set = new Set();
-    medicines.forEach(m => (m.tags || []).forEach(t => set.add(t)));
+    allMedicines.forEach(m => (m.tags || []).forEach(t => set.add(t)));
     return [...set].sort((a, b) => a.localeCompare(b, 'tr'));
-  }, [medicines]);
+  }, [allMedicines]);
 
   const stats = useMemo(() => {
     let total = 0, expired = 0, warning = 0, good = 0;
-    medicines.forEach(m => {
-      const c = 1; total += c;
+    allMedicines.forEach(m => {
+      total += 1;
       const k = statusOf(m).key;
-      if (k === 'expired') expired += c;
-      else if (k === 'warning') warning += c;
-      else good += c;
+      if (k === 'expired') expired += 1;
+      else if (k === 'warning') warning += 1;
+      else good += 1;
     });
     return { total, expired, warning, good };
-  }, [medicines]);
+  }, [allMedicines]);
 
   // ── Loading screen ────────────────────────────────────────────────────────
   if (authLoading) {
@@ -760,6 +822,9 @@ function App() {
         isOnline={isOnline}
         notifPermission={notifPermission}
         onToggleNotifications={handleToggleNotifications}
+        onShowAllHistory={useCloud && user ? () => setShowAllHistory(true) : null}
+        onShowFamily={() => setShowFamilyModal(true)}
+        pendingInviteCount={pendingInviteCount}
       />
 
       {/* SW güncelleme bildirimi */}
@@ -834,7 +899,7 @@ function App() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <StatCard label="Toplam İlaç"     value={stats.total}   sublabel={`${medicines.length} farklı kayıt`}         accent="indigo"  icon={<Icon.Box size={16}/>}/>
+          <StatCard label="Toplam İlaç"     value={stats.total}   sublabel={`${allMedicines.length} farklı kayıt`}         accent="indigo"  icon={<Icon.Box size={16}/>}/>
           <StatCard label="Süresi Geçmiş"   value={stats.expired} sublabel={stats.expired > 0 ? 'Kontrol önerilir' : 'Şu an temiz'} accent="rose"    icon={<Icon.AlertTri size={16}/>}/>
           <StatCard label="Yakında Bitiyor" value={stats.warning} sublabel="30 gün eşiği"                               accent="amber"   icon={<Icon.Clock size={16}/>}/>
           <StatCard label="Güvenli Stokta"  value={stats.good}    sublabel="3 ay üstü süre"                             accent="emerald" icon={<Icon.Shield size={16}/>}/>
@@ -889,10 +954,10 @@ function App() {
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             {[
-              { k: 'all',     l: 'Tümü',          c: medicines.length,                                                          color: null },
-              { k: 'expired', l: 'Süresi geçmiş', c: medicines.filter(m => statusOf(m).key === 'expired').length,               color: 'rose' },
-              { k: 'warning', l: 'Yakında biter',  c: medicines.filter(m => statusOf(m).key === 'warning').length,               color: 'amber' },
-              { k: 'good',    l: 'Güvenli',        c: medicines.filter(m => ['good','soon'].includes(statusOf(m).key)).length,   color: 'emerald' },
+              { k: 'all',     l: 'Tümü',          c: allMedicines.length,                                                          color: null },
+              { k: 'expired', l: 'Süresi geçmiş', c: allMedicines.filter(m => statusOf(m).key === 'expired').length,               color: 'rose' },
+              { k: 'warning', l: 'Yakında biter',  c: allMedicines.filter(m => statusOf(m).key === 'warning').length,               color: 'amber' },
+              { k: 'good',    l: 'Güvenli',        c: allMedicines.filter(m => ['good','soon'].includes(statusOf(m).key)).length,   color: 'emerald' },
             ].map(chip => {
               const active = statusFilter === chip.k;
               const dotCls = chip.color === 'rose' ? 'bg-rose-500' : chip.color === 'amber' ? 'bg-amber-500' : chip.color === 'emerald' ? 'bg-emerald-500' : 'bg-slate-400';
@@ -955,6 +1020,7 @@ function App() {
         onSave={handleSave}
         initialData={modalInitialData}
         isEdit={!!editingId}
+        familyId={family?.id || null}
       />
       <BulkAddModal
         isOpen={isBulkModalOpen}
@@ -976,12 +1042,30 @@ function App() {
         />
       )}
 
-      {/* Usage History Modal */}
+      {/* Usage History Modal — tek ilaç */}
       {historyMedicine && (
         <UsageHistoryModal
           medicine={historyMedicine}
           userId={user?.uid}
           onClose={() => setHistoryMedicine(null)}
+        />
+      )}
+
+      {/* All History Modal — tüm ilaçlar */}
+      {showAllHistory && (
+        <AllHistoryModal
+          userId={user?.uid}
+          medicines={medicines}
+          onClose={() => setShowAllHistory(false)}
+        />
+      )}
+
+      {/* Family Modal */}
+      {showFamilyModal && user && (
+        <FamilyModal
+          user={user}
+          onClose={() => setShowFamilyModal(false)}
+          onFamilyChange={loadFamily}
         />
       )}
 

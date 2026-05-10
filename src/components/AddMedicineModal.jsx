@@ -29,7 +29,7 @@ const Field = ({ label, hint, required, children }) => (
   </label>
 );
 
-const EMPTY = { name: '', quantity: '', expiryDate: '', activeIngredient1: '', activeIngredient2: '', activeIngredient3: '', notes: '', tags: [], createdAt: '' };
+const EMPTY = { name: '', quantity: '', expiryDate: '', activeIngredient1: '', activeIngredient2: '', activeIngredient3: '', notes: '', tags: [], createdAt: '', isPrivate: false };
 
 const SUGGESTED_TAGS = ['Ağrı Kesici', 'Antibiyotik', 'Vitamin', 'Antidepresan', 'Tansiyon', 'Şeker', 'Soğuk Algınlığı', 'Cilt', 'Göz', 'Sindirim'];
 
@@ -88,10 +88,11 @@ const TagInput = ({ tags, onChange }) => {
   );
 };
 
-export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit }) => {
+export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit, familyId }) => {
   const [data, setData] = useState(EMPTY);
   const [showScanner, setShowScanner] = useState(false);
-  const [scanStatus, setScanStatus] = useState(null); // null | 'searching' | 'found' | 'not-found'
+  const [scanStatus, setScanStatus] = useState(null); // null | 'searching' | 'found' | 'not-found' | 'error'
+  const [scanError, setScanError] = useState('');
 
   useEffect(() => {
     if (isOpen) { setData(initialData ? { ...EMPTY, ...initialData } : EMPTY); setScanStatus(null); }
@@ -104,29 +105,54 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit 
   const submit = (e) => {
     e.preventDefault();
     if (!data.name.trim()) return;
-    onSave(data);
+    const saveData = { ...data };
+    if (familyId) {
+      saveData.familyId = familyId;
+    }
+    onSave(saveData);
     onClose();
   };
 
   const handleBarcodeResult = async (barcode) => {
     setShowScanner(false);
     setScanStatus('searching');
+    setScanError('');
     try {
       const med = await MedicineDatabase.findByBarcode(barcode);
       if (med) {
+        const fullName = med.name || '';
+        // Ticari ad: doz rakamına kadar olan kısım (ör: "DEKSİT 25 MG..." → "DEKSİT")
+        const doseMatch = fullName.match(/^(.+?)\s+\d/);
+        const tradeName = doseMatch ? doseMatch[1].trim() : fullName.split(',')[0].trim();
+
+        // Miktar/Form: doz + form tipi + adet
+        // "DEKSİT 25 MG/4 MG FILM KAPLI TABLET, 20 ADET" → "25 MG/4 MG · FILM KAPLI TABLET · 20 adet"
+        const dosePartMatch = fullName.slice(tradeName.length).match(/^\s+([\d.,/]+\s*(?:MG|ML|MCG|IU|G|%)(?:\/[\d.,]+\s*(?:MG|ML|MCG|IU|G|%))*(?:\/\d+\s*ML)?)/i);
+        const dose       = dosePartMatch ? dosePartMatch[1].trim() : '';
+        const formMatch  = fullName.match(/((?:FILM KAPLI |ENTERIK KAPLI |UZUN ETKILI |KONTROLLÜ SALIMLI )?(?:TABLET|KAPSÜL|ŞURUP|AMPUL|FLAKON|SAŞE|DRAJE|DAMLA|JEL|KREM|MERHEM|SPREY|INHALER|SOLÜSYON|SÜSPANSIYON|EMÜLSIYON|PATCH|POMAD))/i);
+        const countMatch = fullName.match(/,\s*(\d+)\s*(?:ADET|TABLET|KAPSÜL|ML|G\b)/i);
+        const formQty    = [dose, formMatch?.[1].trim(), countMatch ? countMatch[1] + ' adet' : ''].filter(Boolean).join(' · ');
+
+        // Etkin maddeleri virgül veya / ile böl, max 3
+        const ingredients = (med.activeIngredient || '').split(/[,/]/).map(s => s.trim()).filter(Boolean);
+
         setData(prev => ({
           ...prev,
-          name: med.name || prev.name,
-          activeIngredient1: med.activeIngredient || prev.activeIngredient1,
+          name: tradeName || prev.name,
+          quantity: formQty || prev.quantity,
+          activeIngredient1: ingredients[0] || prev.activeIngredient1,
+          activeIngredient2: ingredients[1] || prev.activeIngredient2,
+          activeIngredient3: ingredients[2] || prev.activeIngredient3,
         }));
         setScanStatus('found');
       } else {
         setScanStatus('not-found');
       }
-    } catch {
-      setScanStatus('not-found');
+    } catch (err) {
+      setScanStatus('error');
+      setScanError(err?.message || String(err));
     }
-    setTimeout(() => setScanStatus(null), 3000);
+    setTimeout(() => { setScanStatus(null); setScanDebug(null); }, 10000);
   };
 
   return (
@@ -221,6 +247,28 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit 
               />
             </Field>
           </div>
+
+          {familyId && (
+            <div className="sm:col-span-2">
+              <label className="flex items-start gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-colors select-none
+                border-rose-200 bg-rose-50 dark:border-rose-800 dark:bg-rose-950/20">
+                <input
+                  type="checkbox"
+                  checked={!!data.isPrivate}
+                  onChange={e => set('isPrivate', e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-rose-500 shrink-0"
+                />
+                <div>
+                  <div className="text-[13px] font-semibold text-rose-700 dark:text-rose-400">
+                    Özel İlaç (Bu İlaç Sadece Size Gözükür)
+                  </div>
+                  <div className="text-[11.5px] text-rose-500 dark:text-rose-500 mt-0.5">
+                    İşaretlenirse bu ilaç aile üyelerinize gözükmez.
+                  </div>
+                </div>
+              </label>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -239,6 +287,9 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit 
             )}
             {scanStatus === 'not-found' && (
               <span className="text-[11.5px] text-slate-500">Veritabanında bulunamadı</span>
+            )}
+            {scanStatus === 'error' && (
+              <span className="text-[11px] text-rose-600 break-all">{scanError}</span>
             )}
           </div>
           <div className="flex gap-2">

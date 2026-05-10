@@ -7,7 +7,9 @@ export const MEDICINE_FIELDS = [
     'activeIngredient3',
     'notes',
     'createdAt',
-    'tags'
+    'tags',
+    'familyId',
+    'isPrivate',
 ];
 
 export const MEDICINE_LIMITS = {
@@ -77,7 +79,9 @@ export const normalizeMedicine = (medicine = {}, options = {}) => {
         activeIngredient3: textValue(medicine.activeIngredient3, MEDICINE_LIMITS.activeIngredient3),
         notes: textValue(medicine.notes, MEDICINE_LIMITS.notes),
         tags: normalizeTags(medicine.tags),
-        createdAt
+        createdAt,
+        ...(medicine.familyId != null ? { familyId: textValue(String(medicine.familyId), 64) } : {}),
+        ...(medicine.isPrivate != null ? { isPrivate: Boolean(medicine.isPrivate) } : {}),
     };
 };
 
@@ -102,6 +106,16 @@ export const validateMedicine = (medicine, options = {}) => {
         if (field === 'createdAt') return;
         if (field === 'tags') {
             if (!Array.isArray(medicine.tags)) errors.push('Etiketler dizi olmali');
+            return;
+        }
+        if (field === 'isPrivate') {
+            if (medicine.isPrivate != null && typeof medicine.isPrivate !== 'boolean')
+                errors.push('isPrivate boolean olmali');
+            return;
+        }
+        if (field === 'familyId') {
+            if (medicine.familyId != null && typeof medicine.familyId !== 'string')
+                errors.push('familyId metin olmali');
             return;
         }
 

@@ -35,14 +35,17 @@ export function ShareView({ token }) {
       try {
         const linkDoc = await getDoc(doc(db, `sharedLinks/${token}`));
         if (!linkDoc.exists()) { setState('invalid'); return; }
-        const { userId, medicineId, expiresAt } = linkDoc.data();
+        const { expiresAt, medicine, medicineId } = linkDoc.data();
 
         if (expiresAt && new Date(expiresAt) < new Date()) { setState('expired'); return; }
 
-        const medDoc = await getDoc(doc(db, `users/${userId}/medicines/${medicineId}`));
-        if (!medDoc.exists()) { setState('invalid'); return; }
-
-        setMedicine({ id: medDoc.id, ...medDoc.data() });
+        // medicine verisi sharedLinks içinde gömülü (yeni format)
+        if (medicine) {
+          setMedicine({ id: medicineId, ...medicine });
+        } else {
+          setState('invalid');
+          return;
+        }
         setState('found');
       } catch { setState('invalid'); }
     };
