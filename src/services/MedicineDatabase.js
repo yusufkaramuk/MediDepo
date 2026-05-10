@@ -8,6 +8,7 @@ const DATA_URL = '/medicines.json';
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 gün
 
 let dbPromise = null;
+let fetchPromise = null; // devam eden fetch varsa bekle
 
 function openDB() {
   if (dbPromise) return dbPromise;
@@ -47,13 +48,18 @@ async function setMeta(db, key, value) {
 }
 
 async function bulkPut(db, records) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    records.forEach(r => store.put(r));
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
+  // 2000'lik parçalar halinde yaz — mobil IndexedDB transaction timeout'unu önler
+  const CHUNK = 2000;
+  for (let i = 0; i < records.length; i += CHUNK) {
+    const chunk = records.slice(i, i + CHUNK);
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      chunk.forEach(r => store.put(r));
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  }
 }
 
 async function lookupByBarcode(db, barcode) {
@@ -75,17 +81,20 @@ async function getCount(db) {
 }
 
 async function fetchAndStore(db) {
+  console.log('[MedicineDB] Fetching', DATA_URL);
   const res = await fetch(DATA_URL);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status} — medicines.json yüklenemedi`);
   const data = await res.json();
 
   // data: { medicines: [...], updatedAt: "..." } veya düz array
   const records = Array.isArray(data) ? data : (data.medicines || []);
   if (records.length === 0) throw new Error('Boş veri');
 
+  console.log('[MedicineDB] Storing', records.length, 'records');
   await bulkPut(db, records);
   await setMeta(db, 'lastFetch', Date.now());
   await setMeta(db, 'count', records.length);
+  console.log('[MedicineDB] Store complete');
   return records.length;
 }
 
@@ -99,7 +108,8 @@ export const MedicineDatabase = {
       const count = await getCount(db);
 
       if (stale || count === 0) {
-        fetchAndStore(db).catch(() => {}); // fire-and-forget
+        // Promise'i sakla — findByBarcode bekleyebilsin
+        fetchPromise = fetchAndStore(db).catch(() => {});
       }
     } catch {
       // IndexedDB veya fetch başarısız, sessizce geç
@@ -108,19 +118,21 @@ export const MedicineDatabase = {
 
   // Barkod numarasına göre ilaç ara
   async findByBarcode(barcode) {
-    try {
-      const db = await openDB();
-      const count = await getCount(db);
+    const db = await openDB();
+    const count = await getCount(db);
 
-      // Veri yoksa önce fetch et
-      if (count === 0) {
-        await fetchAndStore(db);
+    if (count === 0) {
+      if (!fetchPromise) {
+        fetchPromise = fetchAndStore(db);
       }
-
-      return await lookupByBarcode(db, barcode);
-    } catch {
-      return null;
+      // 30 saniye timeout — takılırsa hata fırlat
+      await Promise.race([
+        fetchPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Veritabanı yüklemesi zaman aşımına uğradı (30s)')), 30000)),
+      ]);
     }
+
+    return await lookupByBarcode(db, barcode);
   },
 
   // Veritabanı durumunu döndür

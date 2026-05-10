@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilac-stok-v3';
+const CACHE_NAME = 'ilac-stok-v5';
 
 // App shell — cache edilecek statik dosyalar
 const APP_SHELL = ['/'];
@@ -25,19 +25,8 @@ self.addEventListener('fetch', (event) => {
   // Sadece same-origin GET isteklerini cache'le
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
 
-  // /medicines.json: network-first, offline'da cache
-  if (url.pathname === '/medicines.json') {
-    event.respondWith(
-      fetch(request)
-        .then(res => {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-          return res;
-        })
-        .catch(() => caches.match(request))
-    );
-    return;
-  }
+  // /medicines.json: SW cache'ini bypass et — IndexedDB'de tutulur
+  if (url.pathname === '/medicines.json') return;
 
   // Hashed assets (JS/CSS): cache-first (değişmez)
   if (url.pathname.startsWith('/assets/')) {
