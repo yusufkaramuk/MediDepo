@@ -21,6 +21,7 @@ import { AllHistoryModal } from './components/AllHistoryModal';
 import { ShareView } from './components/ShareView';
 import { FamilyModal } from './components/FamilyModal';
 import { FamilyService } from './services/FamilyService';
+import { clearKeyCache } from './services/EncryptionService';
 
 // ── Icons (inline SVG, matches design handoff) ──────────────────────────────
 const Ic = ({ d, size = 18, stroke = 2, className = '', extra = null }) => (
@@ -523,6 +524,7 @@ function App() {
     if (!window.confirm('Çıkış yapmak istediğinize emin misiniz?')) return;
     try {
       await AuthService.signOut();
+      clearKeyCache();
       setMedicines([]); setLoaded(false);
     } catch (err) {
       showToast('error', 'Çıkış yapılamadı: ' + err.message);

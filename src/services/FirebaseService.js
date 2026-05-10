@@ -1,6 +1,7 @@
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
 import { db } from './FirebaseClient';
 import { normalizeMedicine, normalizeAndValidateMedicine } from './MedicineValidation';
+import { EncryptionService } from './EncryptionService';
 
 const COLLECTION_NAME = 'medicines';
 
@@ -14,15 +15,16 @@ export const FirebaseService = {
         try {
             const userCollection = getUserCollection(userId);
             const querySnapshot = await getDocs(userCollection);
-            const medicines = [];
+            const raw = [];
 
             querySnapshot.forEach((snapshotDoc) => {
-                medicines.push({
+                raw.push({
                     id: snapshotDoc.id,
                     ...normalizeMedicine(snapshotDoc.data(), { preserveCreatedAt: true })
                 });
             });
 
+            const medicines = await EncryptionService.decryptAll(raw, userId);
             console.log(`[Firebase] Loaded ${medicines.length} medicines for user ${userId}`);
             return medicines;
         } catch (error) {
@@ -34,14 +36,14 @@ export const FirebaseService = {
     addMedicine: async (userId, medicine) => {
         try {
             const userCollection = getUserCollection(userId);
-            const medicineData = normalizeAndValidateMedicine(medicine, {
+            const validated = normalizeAndValidateMedicine(medicine, {
                 preserveCreatedAt: Boolean(medicine?.createdAt)
             });
+            const encrypted = await EncryptionService.encrypt(validated, userId);
 
-            console.log('[Firebase] Adding medicine for user:', userId);
-            const docRef = await addDoc(userCollection, medicineData);
-            console.log('[Firebase] Medicine added with ID:', docRef.id);
-            return { id: docRef.id, ...medicineData };
+            const docRef = await addDoc(userCollection, encrypted);
+            console.log('[Firebase] Medicine added:', docRef.id);
+            return { id: docRef.id, ...validated };
         } catch (error) {
             console.error('[Firebase] Error adding medicine:', error);
             throw error;
@@ -50,12 +52,13 @@ export const FirebaseService = {
 
     updateMedicine: async (userId, id, updatedData) => {
         try {
-            const cleanData = normalizeAndValidateMedicine(updatedData, {
+            const validated = normalizeAndValidateMedicine(updatedData, {
                 preserveCreatedAt: Boolean(updatedData?.createdAt)
             });
+            const encrypted = await EncryptionService.encrypt(validated, userId);
 
             const medicineRef = doc(db, `users/${userId}/${COLLECTION_NAME}`, id);
-            await updateDoc(medicineRef, cleanData);
+            await updateDoc(medicineRef, encrypted);
             console.log('[Firebase] Medicine updated:', id);
         } catch (error) {
             console.error('[Firebase] Error updating medicine:', error);
@@ -75,16 +78,16 @@ export const FirebaseService = {
 
     subscribeMedicines: (userId, callback) => {
         const userCollection = getUserCollection(userId);
-        const unsubscribe = onSnapshot(userCollection, (snapshot) => {
-            const medicines = [];
-
+        const unsubscribe = onSnapshot(userCollection, async (snapshot) => {
+            const raw = [];
             snapshot.forEach((snapshotDoc) => {
-                medicines.push({
+                raw.push({
                     id: snapshotDoc.id,
                     ...normalizeMedicine(snapshotDoc.data(), { preserveCreatedAt: true })
                 });
             });
 
+            const medicines = await EncryptionService.decryptAll(raw, userId);
             console.log('[Firebase] Real-time update:', medicines.length, 'medicines');
             callback(medicines);
         });

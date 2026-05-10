@@ -73,6 +73,7 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
+      // encKey dahil tüm kullanıcı verisi — sadece sahibi okuyup yazabilir
       allow read, write: if isOwner(userId);
     }
 

@@ -3,6 +3,7 @@ import {
   query, where, deleteField
 } from 'firebase/firestore';
 import { db } from './FirebaseClient';
+import { EncryptionService } from './EncryptionService';
 
 async function getUserFamilyId(userId) {
   console.log('[Family] getUserFamilyId', userId);
@@ -150,14 +151,16 @@ export const FamilyService = {
         try {
           const snap = await getDocs(collection(db, `users/${uid}/medicines`));
           console.log(`[Family] medicines uid=${uid} count=${snap.size}`);
-          return snap.docs
+          const raw = snap.docs
             .filter(d => d.data().isPrivate !== true)
-            .map(d => ({
-              id: d.id, ownerId: uid,
-              ownerName: family.members[uid]?.displayName || family.members[uid]?.email || uid,
-              isOwn: uid === currentUserId,
-              ...d.data()
-            }));
+            .map(d => ({ id: d.id, ...d.data() }));
+          const decrypted = await EncryptionService.decryptAll(raw, currentUserId);
+          return decrypted.map(m => ({
+            ...m,
+            ownerId: uid,
+            ownerName: family.members[uid]?.displayName || family.members[uid]?.email || uid,
+            isOwn: uid === currentUserId,
+          }));
         } catch (e) {
           console.error(`[Family] medicines uid=${uid} ERROR:`, e.code, e.message);
           return [];
