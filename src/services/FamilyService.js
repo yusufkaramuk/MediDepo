@@ -134,6 +134,13 @@ export const FamilyService = {
     await updateDoc(doc(db, 'invites', inviteId), { status: 'rejected' });
   },
 
+  async changeRole(familyId, targetUserId, newRole) {
+    if (!['member', 'editor'].includes(newRole)) throw new Error('Geçersiz rol.');
+    await updateDoc(doc(db, 'families', familyId), {
+      [`members.${targetUserId}.role`]: newRole
+    });
+  },
+
   async removeMember(familyId, targetUserId) {
     await updateDoc(doc(db, 'families', familyId), { [`members.${targetUserId}`]: deleteField() });
     await setUserFamilyId(targetUserId, null);

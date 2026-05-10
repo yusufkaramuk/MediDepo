@@ -157,7 +157,7 @@ const MedicineRow = ({ medicine, onEdit, onDelete }) => {
         <Icon.Calendar size={13} className="text-slate-400"/> {fmtExpiry(medicine.expiryDate)}
       </div>
       <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-        {medicine.isOwn !== false && <>
+        {medicine.canEdit !== false && <>
           <button onClick={() => onEdit(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100" aria-label="Düzenle"><Icon.Edit size={14}/></button>
           <button onClick={() => onDelete(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-600" aria-label="Sil"><Icon.Trash size={14}/></button>
         </>}
@@ -436,6 +436,7 @@ function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [editingOwner, setEditingOwner] = useState(null); // başkasının ilacını düzenlerken ownerId
   const [modalInitialData, setModalInitialData] = useState(null);
   const [deletingMedicine, setDeletingMedicine] = useState(null);
   const [historyMedicine, setHistoryMedicine] = useState(null);
@@ -536,9 +537,14 @@ function App() {
       setSyncing(true);
       const clean = normalizeAndValidateMedicine(data, { preserveCreatedAt: Boolean(data.createdAt) });
       if (editingId) {
+        const targetUid = editingOwner || user.uid;
         const updated = { ...clean, id: editingId };
-        if (useCloud && user) await FirebaseService.updateMedicine(user.uid, editingId, clean);
-        setMedicines(prev => prev.map(m => m.id === editingId ? updated : m));
+        if (useCloud && user) await FirebaseService.updateMedicine(targetUid, editingId, clean);
+        if (targetUid === user.uid) {
+          setMedicines(prev => prev.map(m => m.id === editingId ? updated : m));
+        } else {
+          await loadFamily(); // aile ilacı güncellendi, familyMedicines'i yenile
+        }
         showToast('success', `"${clean.name}" güncellendi`);
       } else {
         if (useCloud && user) {
@@ -577,6 +583,7 @@ function App() {
 
   const handleEdit = (medicine) => {
     setEditingId(medicine.id);
+    setEditingOwner(medicine.ownerId && medicine.ownerId !== user?.uid ? medicine.ownerId : null);
     setModalInitialData(medicine);
     setIsAddModalOpen(true);
   };
@@ -703,10 +710,14 @@ function App() {
 
   // Computed list: filter + group duplicates + sort
   // Tüm ilaçlar (kendi + aile), duplicate gruplandırılmış
+  // Giriş yapan kullanıcının aile rolü — editor ise başkasının ilacını da düzenleyebilir
+  const myFamilyRole = user && family ? (family.members?.[user.uid]?.role ?? 'member') : null;
+  const canEditFamilyMeds = myFamilyRole === 'admin' || myFamilyRole === 'editor';
+
   const groupedAll = useMemo(() => {
     const ownIds = new Set(medicines.map(m => m.id));
-    const others = familyMedicines.filter(m => !ownIds.has(m.id)).map(m => ({ ...m, isOwn: false }));
-    const flat = [...medicines.map(m => ({ ...m, isOwn: true })), ...others];
+    const others = familyMedicines.filter(m => !ownIds.has(m.id)).map(m => ({ ...m, isOwn: false, canEdit: canEditFamilyMeds }));
+    const flat = [...medicines.map(m => ({ ...m, isOwn: true, canEdit: true })), ...others];
     const grouped = [];
     const seen = new Set();
     flat.forEach(med => {
@@ -1018,7 +1029,7 @@ function App() {
       {/* Modals */}
       <AddMedicineModal
         isOpen={isAddModalOpen}
-        onClose={() => { setIsAddModalOpen(false); setEditingId(null); setModalInitialData(null); }}
+        onClose={() => { setIsAddModalOpen(false); setEditingId(null); setEditingOwner(null); setModalInitialData(null); }}
         onSave={handleSave}
         initialData={modalInitialData}
         isEdit={!!editingId}

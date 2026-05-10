@@ -15,6 +15,7 @@ const MailIc   = (p) => <Ic {...p} extra={<><rect width="20" height="16" x="2" y
 const TrashIc  = (p) => <Ic {...p} extra={<><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>}/>;
 const CheckIc  = (p) => <Ic {...p} d="M20 6 9 17l-5-5"/>;
 const LogOutIc = (p) => <Ic {...p} extra={<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></>}/>;
+const ShieldIc = (p) => <Ic {...p} extra={<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></>}/>;
 
 const FIELD = 'w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[14px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] transition-all';
 const BTN_PRIMARY = 'px-4 py-2 rounded-xl bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white text-[13px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
@@ -97,6 +98,17 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
     try {
       await FamilyService.rejectInvite(invite.id);
       setInvites(prev => prev.filter(i => i.id !== invite.id));
+    } catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  };
+
+  const handleChangeRole = async (uid, currentRole) => {
+    const newRole = currentRole === 'editor' ? 'member' : 'editor';
+    setBusy(true); setError('');
+    try {
+      await FamilyService.changeRole(family.id, uid, newRole);
+      await load();
+      setSuccess(newRole === 'editor' ? 'Düzenleme yetkisi verildi.' : 'Yetki geri alındı.');
     } catch (e) { setError(e.message); }
     finally { setBusy(false); }
   };
@@ -255,14 +267,31 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <span className={`text-[10.5px] font-medium px-2 py-0.5 rounded-full ${m.role === 'admin' ? 'bg-[var(--brand-50)] text-[var(--brand-700)]' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
-                          {m.role === 'admin' ? 'Admin' : 'Üye'}
+                        <span className={`text-[10.5px] font-medium px-2 py-0.5 rounded-full ${
+                          m.role === 'admin'  ? 'bg-[var(--brand-50)] text-[var(--brand-700)]' :
+                          m.role === 'editor' ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400' :
+                                                'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                        }`}>
+                          {m.role === 'admin' ? 'Admin' : m.role === 'editor' ? 'Editör' : 'Üye'}
                         </span>
                         {isAdmin && uid !== user.uid && (
-                          <button onClick={() => handleRemoveMember(uid)} disabled={busy}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors">
-                            <TrashIc size={13}/>
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleChangeRole(uid, m.role)}
+                              disabled={busy}
+                              title={m.role === 'editor' ? 'Düzenleme yetkisini geri al' : 'Düzenleme yetkisi ver'}
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                m.role === 'editor'
+                                  ? 'text-violet-500 bg-violet-50 dark:bg-violet-950/20 hover:bg-violet-100'
+                                  : 'text-slate-400 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-950/20'
+                              }`}>
+                              <ShieldIc size={13}/>
+                            </button>
+                            <button onClick={() => handleRemoveMember(uid)} disabled={busy}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors">
+                              <TrashIc size={13}/>
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>

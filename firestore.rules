@@ -45,6 +45,16 @@ service cloud.firestore {
         validCreatedAt(data);
     }
 
+    function isFamilyEditor(userId) {
+      let myDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      let theirDoc = get(/databases/$(database)/documents/users/$(userId));
+      let fid = myDoc.data.familyId;
+      return fid != null &&
+             fid == theirDoc.data.familyId &&
+             get(/databases/$(database)/documents/families/$(fid))
+               .data.members[request.auth.uid].role in ['admin', 'editor'];
+    }
+
     match /users/{userId}/medicines/{medicineId} {
       allow read: if isOwner(userId) ||
         (isSignedIn() &&
@@ -53,7 +63,7 @@ service cloud.firestore {
           get(/databases/$(database)/documents/users/$(userId)).data.familyId &&
           resource.data.get('isPrivate', false) != true);
       allow create: if isOwner(userId) && validMedicine(request.resource.data);
-      allow update: if isOwner(userId) &&
+      allow update: if (isOwner(userId) || (isSignedIn() && !isOwner(userId) && isFamilyEditor(userId) && resource.data.get('isPrivate', false) != true)) &&
         validMedicine(request.resource.data) &&
         (
           (resource.data.keys().hasAny(['createdAt']) &&

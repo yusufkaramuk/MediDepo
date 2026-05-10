@@ -67,7 +67,7 @@ export const MedicineCard = ({ medicine, onEdit, onDelete, onHistory, onShare })
           )}
         </div>
         <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-          {medicine.isOwn !== false ? (
+          {medicine.canEdit !== false ? (
             <>
               {onHistory && (
                 <button onClick={() => onHistory(medicine)}
