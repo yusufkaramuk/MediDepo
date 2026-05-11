@@ -32,7 +32,7 @@ service cloud.firestore {
       return data.keys().hasOnly([
           'name', 'quantity', 'expiryDate',
           'activeIngredient1', 'activeIngredient2', 'activeIngredient3',
-          'notes', 'createdAt', 'tags', 'familyId', 'isPrivate'
+          'notes', 'createdAt', 'tags', 'familyId', 'isPrivate', 'stockCount'
         ]) &&
         data.keys().hasAll(['name', 'createdAt']) &&
         data.name is string && data.name.size() > 0 && data.name.size() <= 120 &&
@@ -42,7 +42,11 @@ service cloud.firestore {
         validOptionalString(data, 'activeIngredient3', 120) &&
         validOptionalString(data, 'notes', 500) &&
         validExpiryDate(data) &&
-        validCreatedAt(data);
+        validCreatedAt(data) &&
+        (!data.keys().hasAny(['tags']) || data.tags is list) &&
+        (!data.keys().hasAny(['isPrivate']) || data.isPrivate is bool) &&
+        (!data.keys().hasAny(['familyId']) || data.familyId is string) &&
+        (!data.keys().hasAny(['stockCount']) || (data.stockCount is int && data.stockCount >= 1 && data.stockCount <= 999));
     }
 
     function isFamilyEditor(userId) {
