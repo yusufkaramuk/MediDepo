@@ -62,13 +62,29 @@ async function bulkPut(db, records) {
   }
 }
 
-async function lookupByBarcode(db, barcode) {
+async function lookupOne(db, key) {
   return new Promise((resolve) => {
     const tx = db.transaction(STORE_NAME, 'readonly');
-    const req = tx.objectStore(STORE_NAME).get(Number(barcode));
+    const req = tx.objectStore(STORE_NAME).get(key);
     req.onsuccess = () => resolve(req.result || null);
     req.onerror = () => resolve(null);
   });
+}
+
+async function lookupByBarcode(db, barcode) {
+  const raw = String(barcode || '').trim();
+  if (!raw) return null;
+  const candidates = [...new Set([
+    raw,
+    raw.replace(/\D/g, ''),
+    Number(raw.replace(/\D/g, '')),
+  ].filter(v => v !== '' && !Number.isNaN(v)))];
+
+  for (const candidate of candidates) {
+    const found = await lookupOne(db, candidate);
+    if (found) return found;
+  }
+  return null;
 }
 
 async function getCount(db) {

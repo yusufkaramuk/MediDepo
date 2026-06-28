@@ -6,11 +6,16 @@ import {
     initializeTestEnvironment
 } from '@firebase/rules-unit-testing';
 import {
+    collection,
     deleteDoc,
     doc,
     getDoc,
+    getDocs,
+    query,
     setDoc,
-    updateDoc
+    updateDoc,
+    where,
+    writeBatch
 } from 'firebase/firestore';
 
 const PROJECT_ID = 'ilac-stok-takip';
@@ -104,5 +109,139 @@ describe('Firestore medicine rules', () => {
         await assertSucceeds(setDoc(ref, validMedicine()));
         await assertSucceeds(deleteDoc(ref));
         await assertFails(setDoc(medicineRef(anonDb), validMedicine()));
+    });
+});
+
+describe('Firestore family and invite rules', () => {
+    const familyRef = (db, familyId = 'family-a') => doc(db, `families/${familyId}`);
+    const inviteRef = (db, inviteId = 'invite-a') => doc(db, `invites/${inviteId}`);
+
+    const familyData = (overrides = {}) => ({
+        name: 'Karamuk Ailesi',
+        createdBy: 'user-a',
+        createdAt: '2026-05-09T10:00:00.000Z',
+        members: {
+            'user-a': {
+                email: 'a@example.com',
+                displayName: 'User A',
+                role: 'admin',
+                joinedAt: '2026-05-09T10:00:00.000Z'
+            }
+        },
+        ...overrides
+    });
+
+    it('allows only family members to read family PII', async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(familyRef(context.firestore()), familyData());
+        });
+
+        const adminDb = testEnv.authenticatedContext('user-a').firestore();
+        const strangerDb = testEnv.authenticatedContext('user-b').firestore();
+
+        await assertSucceeds(getDoc(familyRef(adminDb)));
+        await assertFails(getDoc(familyRef(strangerDb)));
+    });
+
+    it('blocks arbitrary invite reads and deletes', async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(familyRef(context.firestore()), familyData());
+            await setDoc(inviteRef(context.firestore()), {
+                type: 'email',
+                familyId: 'family-a',
+                familyName: 'Karamuk Ailesi',
+                invitedEmail: 'b@example.com',
+                invitedBy: 'a@example.com',
+                createdBy: 'user-a',
+                status: 'pending',
+                createdAt: '2026-05-09T10:00:00.000Z',
+                expiresAt: '2026-06-09T10:00:00.000Z'
+            });
+        });
+
+        const invitedDb = testEnv.authenticatedContext('user-b', { email: 'b@example.com' }).firestore();
+        const strangerDb = testEnv.authenticatedContext('user-c', { email: 'c@example.com' }).firestore();
+
+        await assertSucceeds(getDoc(inviteRef(invitedDb)));
+        await assertFails(getDoc(inviteRef(strangerDb)));
+        await assertFails(deleteDoc(inviteRef(strangerDb)));
+    });
+
+    it('allows only the invited email to list pending email invites', async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(inviteRef(context.firestore()), {
+                type: 'email',
+                familyId: 'family-a',
+                familyName: 'Karamuk Ailesi',
+                invitedEmail: 'b@example.com',
+                invitedBy: 'a@example.com',
+                createdBy: 'user-a',
+                status: 'pending',
+                createdAt: '2026-05-09T10:00:00.000Z',
+                expiresAt: '2026-06-09T10:00:00.000Z'
+            });
+        });
+
+        const invitedDb = testEnv.authenticatedContext('user-b', { email: 'b@example.com' }).firestore();
+        const strangerDb = testEnv.authenticatedContext('user-c', { email: 'c@example.com' }).firestore();
+        const invitesForB = query(collection(invitedDb, 'invites'), where('invitedEmail', '==', 'b@example.com'), where('status', '==', 'pending'));
+        const strangerQuery = query(collection(strangerDb, 'invites'), where('invitedEmail', '==', 'b@example.com'), where('status', '==', 'pending'));
+
+        await assertSucceeds(getDocs(invitesForB));
+        await assertFails(getDocs(strangerQuery));
+    });
+
+    it('allows QR invite acceptance once and blocks replay', async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(familyRef(context.firestore()), familyData());
+            await setDoc(inviteRef(context.firestore(), 'qr-a'), {
+                type: 'qr',
+                familyId: 'family-a',
+                familyName: 'Karamuk Ailesi',
+                createdBy: 'user-a',
+                status: 'pending',
+                encryptedFamilyKey: { alg: 'AES-GCM', iv: 'iv', ciphertext: 'cipher' },
+                createdAt: '2026-05-09T10:00:00.000Z',
+                expiresAt: '2026-06-09T10:00:00.000Z',
+                usedBy: null,
+                usedAt: null
+            });
+        });
+
+        const joinerDb = testEnv.authenticatedContext('user-b', { email: 'b@example.com' }).firestore();
+        const batch = writeBatch(joinerDb);
+        batch.update(familyRef(joinerDb), {
+            'members.user-b': {
+                email: 'b@example.com',
+                displayName: 'User B',
+                role: 'member',
+                joinedAt: '2026-05-09T10:01:00.000Z',
+                inviteId: 'qr-a'
+            }
+        });
+        batch.update(inviteRef(joinerDb, 'qr-a'), {
+            status: 'accepted',
+            usedBy: 'user-b',
+            usedAt: '2026-05-09T10:01:00.000Z'
+        });
+        await assertSucceeds(batch.commit());
+
+        const replayDb = testEnv.authenticatedContext('user-c', { email: 'c@example.com' }).firestore();
+        const replay = writeBatch(replayDb);
+        replay.update(familyRef(replayDb), {
+            'members.user-c': {
+                email: 'c@example.com',
+                displayName: 'User C',
+                role: 'member',
+                joinedAt: '2026-05-09T10:02:00.000Z',
+                inviteId: 'qr-a'
+            }
+        });
+        replay.update(inviteRef(replayDb, 'qr-a'), {
+            status: 'accepted',
+            usedBy: 'user-c',
+            usedAt: '2026-05-09T10:02:00.000Z'
+        });
+        await assertFails(replay.commit());
     });
 });

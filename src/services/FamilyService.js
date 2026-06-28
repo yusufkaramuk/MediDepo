@@ -1,6 +1,6 @@
 import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc,
-  query, where, deleteField
+  query, where, deleteField, runTransaction
 } from 'firebase/firestore';
 import { db } from './FirebaseClient';
 import { EncryptionService } from './EncryptionService';
@@ -25,6 +25,14 @@ async function setUserFamilyId(userId, familyId) {
     console.error('[Family] setUserFamilyId ERROR:', e.code, e.message);
     throw e;
   }
+}
+
+function randomB64Url(byteLength = 32) {
+  const bytes = crypto.getRandomValues(new Uint8Array(byteLength));
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
 }
 
 export const FamilyService = {
@@ -68,7 +76,7 @@ export const FamilyService = {
     }
   },
 
-  async inviteMember(familyId, familyName, inviterEmail, invitedEmail) {
+  async inviteMember(familyId, familyName, inviterUserId, inviterEmail, invitedEmail) {
     invitedEmail = invitedEmail.trim().toLowerCase();
     console.log('[Family] inviteMember', familyId, invitedEmail);
     try {
@@ -81,7 +89,9 @@ export const FamilyService = {
       if (!existing.empty) throw new Error('Bu e-postaya zaten bekleyen bir davet var.');
       const ref = doc(collection(db, 'invites'));
       await setDoc(ref, {
+        type: 'email',
         familyId, familyName, invitedEmail,
+        createdBy: inviterUserId,
         invitedBy: inviterEmail,
         status: 'pending',
         createdAt: new Date().toISOString(),
@@ -93,6 +103,26 @@ export const FamilyService = {
       console.error('[Family] inviteMember ERROR:', e.code, e.message);
       throw e;
     }
+  },
+
+  async createQrInvite(familyId, familyName, inviterUserId) {
+    const familyKey = await EncryptionService.getOrCreateFamilyKeyMaterial(familyId, inviterUserId);
+    const secret = randomB64Url(32);
+    const encryptedFamilyKey = await EncryptionService.createInviteEnvelope(familyKey, secret);
+    const ref = doc(collection(db, 'invites'));
+    await setDoc(ref, {
+      type: 'qr',
+      familyId,
+      familyName,
+      createdBy: inviterUserId,
+      status: 'pending',
+      encryptedFamilyKey,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      usedBy: null,
+      usedAt: null,
+    });
+    return { inviteId: ref.id, secret };
   },
 
   async getPendingInvites(userEmail) {
@@ -115,15 +145,31 @@ export const FamilyService = {
     console.log('[Family] acceptInvite', inviteId, userId);
     try {
       const inviteRef = doc(db, 'invites', inviteId);
+      const familyId = await runTransaction(db, async (transaction) => {
+        const inviteSnap = await transaction.get(inviteRef);
+        if (!inviteSnap.exists()) throw new Error('Davet bulunamadı.');
+        const invite = inviteSnap.data();
+        if (invite.status !== 'pending') throw new Error('Bu davet artık geçerli değil.');
+        if (invite.invitedEmail !== userEmail.toLowerCase()) throw new Error('Bu davet bu hesaba ait değil.');
+        if (new Date(invite.expiresAt) < new Date()) throw new Error('Davet süresi dolmuş.');
+        transaction.update(doc(db, 'families', invite.familyId), {
+          [`members.${userId}`]: { email: userEmail, displayName: displayName || userEmail, role: 'member', joinedAt: new Date().toISOString(), inviteId }
+        });
+        transaction.update(inviteRef, { status: 'accepted', usedBy: userId, usedAt: new Date().toISOString() });
+        return invite.familyId;
+      });
+      await setUserFamilyId(userId, familyId);
+      console.log('[Family] invite accepted, familyId:', familyId);
+      return familyId;
       const inviteSnap = await getDoc(inviteRef);
       if (!inviteSnap.exists()) throw new Error('Davet bulunamadı.');
       const invite = inviteSnap.data();
       if (invite.status !== 'pending') throw new Error('Bu davet artık geçerli değil.');
       if (new Date(invite.expiresAt) < new Date()) throw new Error('Davet süresi dolmuş.');
       await updateDoc(doc(db, 'families', invite.familyId), {
-        [`members.${userId}`]: { email: userEmail, displayName: displayName || userEmail, role: 'member', joinedAt: new Date().toISOString() }
+        [`members.${userId}`]: { email: userEmail, displayName: displayName || userEmail, role: 'member', joinedAt: new Date().toISOString(), inviteId }
       });
-      await updateDoc(inviteRef, { status: 'accepted' });
+      await updateDoc(inviteRef, { status: 'accepted', usedBy: userId, usedAt: new Date().toISOString() });
       await setUserFamilyId(userId, invite.familyId);
       console.log('[Family] invite accepted, familyId:', invite.familyId);
       return invite.familyId;
@@ -131,6 +177,42 @@ export const FamilyService = {
       console.error('[Family] acceptInvite ERROR:', e.code, e.message);
       throw e;
     }
+  },
+
+  async acceptQrInvite(inviteId, secret, userId, userEmail, displayName) {
+    const inviteRef = doc(db, 'invites', inviteId);
+    let encryptedFamilyKey = null;
+    const familyId = await runTransaction(db, async (transaction) => {
+      const inviteSnap = await transaction.get(inviteRef);
+      if (!inviteSnap.exists()) throw new Error('Davet bulunamadı.');
+      const invite = inviteSnap.data();
+      if (invite.type !== 'qr') throw new Error('QR daveti geçersiz.');
+      if (invite.status !== 'pending') throw new Error('Bu davet artık geçerli değil.');
+      if (new Date(invite.expiresAt) < new Date()) throw new Error('Davet süresi dolmuş.');
+      encryptedFamilyKey = invite.encryptedFamilyKey;
+
+      const familyRef = doc(db, 'families', invite.familyId);
+      transaction.update(familyRef, {
+        [`members.${userId}`]: {
+          email: userEmail,
+          displayName: displayName || userEmail,
+          role: 'member',
+          joinedAt: new Date().toISOString(),
+          inviteId
+        }
+      });
+      transaction.update(inviteRef, {
+        status: 'accepted',
+        usedBy: userId,
+        usedAt: new Date().toISOString(),
+      });
+      return invite.familyId;
+    });
+
+    const familyKey = await EncryptionService.openInviteEnvelope(encryptedFamilyKey, secret);
+    await EncryptionService.storeFamilyKeyForUser(familyId, userId, familyKey);
+    await setUserFamilyId(userId, familyId);
+    return familyId;
   },
 
   async rejectInvite(inviteId) {
