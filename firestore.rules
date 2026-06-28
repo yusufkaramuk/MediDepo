@@ -88,6 +88,24 @@ service cloud.firestore {
         invite.data.usedBy == request.auth.uid;
     }
 
+    // QR daveti için özel kural: transaction içinde invite ve family aynı anda yazılır.
+    // getAfter() transaction sonrası durumu okur → invite 'accepted' + usedBy = user olur.
+    function validQrSelfJoin(familyId) {
+      let diff = request.resource.data.diff(resource.data);
+      let memberDiff = request.resource.data.members.diff(resource.data.members);
+      let newMember = request.resource.data.members[request.auth.uid];
+      let invite = getAfter(/databases/$(database)/documents/invites/$(newMember.inviteId));
+      return diff.affectedKeys().hasOnly(['members']) &&
+        memberDiff.addedKeys().hasOnly([request.auth.uid]) &&
+        memberDiff.changedKeys().size() == 0 &&
+        memberDiff.removedKeys().size() == 0 &&
+        newMember.role == 'member' &&
+        newMember.inviteId is string &&
+        invite.data.type == 'qr' &&
+        invite.data.familyId == familyId &&
+        invite.data.usedBy == request.auth.uid;
+    }
+
     function validSelfLeave() {
       let diff = request.resource.data.diff(resource.data);
       let memberDiff = request.resource.data.members.diff(resource.data.members);
@@ -187,7 +205,7 @@ service cloud.firestore {
       allow create: if isSignedIn() &&
         request.resource.data.createdBy == request.auth.uid &&
         request.resource.data.members.keys().hasOnly([request.auth.uid]);
-      allow update: if isFamilyAdmin(familyId) || validSelfJoin(familyId) || validSelfLeave() || (isFamilyMember(familyId) && validOwnKeyringUpdate());
+      allow update: if isFamilyAdmin(familyId) || validSelfJoin(familyId) || validQrSelfJoin(familyId) || validSelfLeave() || (isFamilyMember(familyId) && validOwnKeyringUpdate());
       allow delete: if isSignedIn() && resource.data.createdBy == request.auth.uid;
     }
 

@@ -452,6 +452,7 @@ function App() {
   const [family, setFamily] = useState(null);
   const [familyMedicines, setFamilyMedicines] = useState([]);
   const [pendingInviteCount, setPendingInviteCount] = useState(0);
+  const [stockMode, setStockMode] = useState('personal');
   const [notifPermission, setNotifPermission] = useState(
     NotificationService.isSupported() ? NotificationService.getPermission() : 'unsupported'
   );
@@ -523,6 +524,7 @@ function App() {
         setFamilyMedicines(fMeds);
       } else {
         setFamilyMedicines([]);
+        setStockMode('personal');
       }
     } catch (e) { console.error('[App] loadFamily ERROR:', e.code, e.message); }
   };
@@ -758,10 +760,8 @@ function App() {
   const myFamilyRole = user && family ? (family.members?.[user.uid]?.role ?? 'member') : null;
   const canEditFamilyMeds = myFamilyRole === 'admin' || myFamilyRole === 'editor';
 
-  const groupedAll = useMemo(() => {
-    const ownIds = new Set(medicines.map(m => m.id));
-    const others = familyMedicines.filter(m => !ownIds.has(m.id)).map(m => ({ ...m, isOwn: false, canEdit: canEditFamilyMeds }));
-    const flat = [...medicines.map(m => ({ ...m, isOwn: true, canEdit: true })), ...others];
+  // ── Duplicate-group helper ────────────────────────────────────────────────
+  function groupDupes(flat) {
     const grouped = [];
     const seen = new Set();
     flat.forEach(med => {
@@ -782,11 +782,30 @@ function App() {
       grouped.push({ ...med, count: dupes.length, allIds: dupes.map(d => d.id) });
     });
     return grouped;
+  }
+
+  // Kişisel ilaçlar (yalnızca bu kullanıcıya ait)
+  const groupedPersonal = useMemo(() => {
+    return groupDupes(medicines.map(m => ({ ...m, isOwn: true, canEdit: true })));
+  }, [medicines]);
+
+  // Aile deposu (tüm üyelerin ilaçları — kişisel dahil)
+  const groupedFamily = useMemo(() => {
+    const ownIds = new Set(medicines.map(m => m.id));
+    const others = familyMedicines.filter(m => !ownIds.has(m.id)).map(m => ({ ...m, isOwn: false, canEdit: canEditFamilyMeds }));
+    const flat = [...medicines.map(m => ({ ...m, isOwn: true, canEdit: true })), ...others];
+    return groupDupes(flat);
   }, [medicines, familyMedicines]);
+
+  // groupedAll: barkod araması için hâlâ tüm listeye erişim gerekiyor
+  const groupedAll = groupedFamily;
+
+  // Aktif mod: aile yoksa her zaman kişisel
+  const activeGrouped = (family && stockMode === 'family') ? groupedFamily : groupedPersonal;
 
   const filteredMedicines = useMemo(() => {
     const q = debouncedSearch;
-    const filtered = groupedAll.filter(m => {
+    const filtered = activeGrouped.filter(m => {
       if (statusFilter !== 'all') {
         const k = statusOf(m).key;
         if (statusFilter === 'good' && k !== 'good' && k !== 'soon') return false;
@@ -814,9 +833,9 @@ function App() {
         default:            return (b.createdAt || '').localeCompare(a.createdAt || '');
       }
     });
-  }, [groupedAll, debouncedSearch, statusFilter, tagFilter, sortBy]);
+  }, [activeGrouped, debouncedSearch, statusFilter, tagFilter, sortBy]);
 
-  const allMedicines = groupedAll;
+  const allMedicines = activeGrouped;
 
   const allTags = useMemo(() => {
     const set = new Set();
@@ -902,6 +921,38 @@ function App() {
       )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8">
+        {/* Depo Geçiş Toggle (Segmented Control) */}
+        {family && (
+          <div className="flex justify-center w-full mb-8">
+            <div className="flex w-full max-w-[500px] bg-slate-200/50 dark:bg-slate-800/50 backdrop-blur-md p-1.5 rounded-2xl shadow-inner border border-slate-200/60 dark:border-slate-700/60 relative">
+              <button
+                id="stock-toggle-family"
+                onClick={() => setStockMode('family')}
+                className={`flex-1 flex items-center justify-center gap-2.5 py-3 px-3 rounded-xl text-[14px] sm:text-[15px] font-semibold transition-all duration-300 ease-out ${
+                  stockMode === 'family'
+                    ? 'bg-white dark:bg-slate-700 text-[var(--brand-700)] dark:text-[var(--brand-300)] shadow-[0_2px_8px_-2px_rgba(0,0,0,0.12)]'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700/60'
+                }`}
+              >
+                <Icon.Users size={18} className={`transition-opacity ${stockMode === 'family' ? 'text-[var(--brand-500)] opacity-100' : 'opacity-60'}`}/>
+                <span className="truncate">{family.name}</span>
+              </button>
+              <button
+                id="stock-toggle-personal"
+                onClick={() => setStockMode('personal')}
+                className={`flex-1 flex items-center justify-center gap-2.5 py-3 px-3 rounded-xl text-[14px] sm:text-[15px] font-semibold transition-all duration-300 ease-out ${
+                  stockMode === 'personal'
+                    ? 'bg-white dark:bg-slate-700 text-[var(--brand-700)] dark:text-[var(--brand-300)] shadow-[0_2px_8px_-2px_rgba(0,0,0,0.12)]'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700/60'
+                }`}
+              >
+                <Icon.Shield size={18} className={`transition-opacity ${stockMode === 'personal' ? 'text-[var(--brand-500)] opacity-100' : 'opacity-60'}`}/>
+                <span className="truncate">Kişisel Depom</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Hero / greeting */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
           <div>

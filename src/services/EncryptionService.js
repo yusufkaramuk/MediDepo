@@ -86,17 +86,76 @@ async function decryptKeyMaterialForUser(envelope, userKey) {
 // In-memory cache — anahtarı her Firestore okumada çekmemek için
 const keyCache = new Map();
 
-function getPassphrase(userId) {
-  const cacheKey = `recovery-passphrase:${userId}`;
-  const cached = sessionStorage.getItem(cacheKey);
-  if (cached) return cached;
+// ── IndexedDB güvenli anahtar deposu ─────────────────────────────────────────
+// Şifreyi hiçbir yere kaydetmiyoruz. Bunun yerine şifreden türetilen CryptoKey
+// nesnesini extractable:false olarak IndexedDB'ye yazıyoruz.
+// extractable:false → raw key bytes JS tarafından bile okunamaz.
+const IDB_NAME = 'enc-key-store';
+const IDB_STORE = 'keys';
+
+function openKeyDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = e => reject(e.target.error);
+  });
+}
+
+async function saveEncKey(storeId, b64Key) {
+  // extractable: false — raw bytes hiçbir zaman dışa aktarılamaz
+  const raw = Uint8Array.from(atob(b64Key), c => c.charCodeAt(0));
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw', raw, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']
+  );
+  const idb = await openKeyDB();
+  await new Promise((resolve, reject) => {
+    const tx = idb.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(cryptoKey, storeId);
+    tx.oncomplete = () => resolve();
+    tx.onerror = e => reject(e.target.error);
+  });
+  idb.close();
+  return cryptoKey;
+}
+
+async function loadEncKey(storeId) {
+  try {
+    const idb = await openKeyDB();
+    const key = await new Promise((resolve, reject) => {
+      const tx = idb.transaction(IDB_STORE, 'readonly');
+      const req = tx.objectStore(IDB_STORE).get(storeId);
+      req.onsuccess = e => resolve(e.target.result ?? null);
+      req.onerror = e => reject(e.target.error);
+    });
+    idb.close();
+    return key;
+  } catch {
+    return null;
+  }
+}
+
+async function deleteEncKey(storeId) {
+  try {
+    const idb = await openKeyDB();
+    await new Promise((resolve, reject) => {
+      const tx = idb.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).delete(storeId);
+      tx.oncomplete = () => resolve();
+      tx.onerror = e => reject(e.target.error);
+    });
+    idb.close();
+  } catch { /* sessizce geç */ }
+}
+
+// Parolayı prompt ile al — hiçbir yere kaydetme
+function getPassphrase() {
   const passphrase = window.prompt(
     'Verileriniz uçtan uca şifrelenir. Lütfen kurtarma parolanızı girin veya yeni hesap için güçlü bir kurtarma parolası belirleyin. Bu parola unutulursa şifreli veriler kurtarılamaz.'
   );
   if (!passphrase || passphrase.length < 8) {
     throw new Error('Kurtarma parolası en az 8 karakter olmalıdır.');
   }
-  sessionStorage.setItem(cacheKey, passphrase);
   return passphrase;
 }
 
@@ -148,32 +207,57 @@ async function openKeyVault(vault, passphrase) {
   return new TextDecoder().decode(plain);
 }
 
+// Aynı anda birden fazla çağrının birden fazla prompt açmasını engeller
+const pendingKeys = new Map();
+
 async function getOrCreateUserKey(userId) {
   if (keyCache.has(userId)) return keyCache.get(userId);
 
-  const userRef = doc(db, 'users', userId);
-  const snap = await getDoc(userRef);
-  const userData = snap.exists() ? snap.data() : {};
-  let b64Key = null;
+  // Eş zamanlı çağrılarda tek bir promise'i paylaş
+  if (pendingKeys.has(userId)) return pendingKeys.get(userId);
 
-  if (userData.keyVault) {
-    b64Key = await openKeyVault(userData.keyVault, getPassphrase(userId));
-  } else if (userData.encKey) {
-    b64Key = userData.encKey;
-    const keyVault = await createKeyVault(b64Key, getPassphrase(userId));
-    await setDoc(userRef, { keyVault, encKey: deleteField() }, { merge: true });
+  const promise = (async () => {
+    // 1) IndexedDB'de daha önce kaydedilmiş (extractable:false) anahtar var mı?
+    const idbKey = await loadEncKey(`user:${userId}`);
+    if (idbKey) {
+      keyCache.set(userId, idbKey);
+      return idbKey;
+    }
+
+    // 2) Yok → Firestore'dan vault'u al, parolayla aç
+    const userRef = doc(db, 'users', userId);
+    const snap = await getDoc(userRef);
+    const userData = snap.exists() ? snap.data() : {};
+    let b64Key = null;
+
+    if (userData.keyVault) {
+      b64Key = await openKeyVault(userData.keyVault, getPassphrase());
+    } else if (userData.encKey) {
+      b64Key = userData.encKey;
+      const keyVault = await createKeyVault(b64Key, getPassphrase());
+      await setDoc(userRef, { keyVault, encKey: deleteField() }, { merge: true });
+    }
+
+    if (!b64Key) {
+      const newKey = await generateKey();
+      b64Key = await exportKey(newKey);
+      const keyVault = await createKeyVault(b64Key, getPassphrase());
+      await setDoc(userRef, { keyVault }, { merge: true });
+    }
+
+    // 3) Türetilen CryptoKey'i extractable:false ile IndexedDB'ye kaydet
+    //    → Şifre hiçbir yerde saklanmaz; raw bytes JS'ten erişilemez
+    const cryptoKey = await saveEncKey(`user:${userId}`, b64Key);
+    keyCache.set(userId, cryptoKey);
+    return cryptoKey;
+  })();
+
+  pendingKeys.set(userId, promise);
+  try {
+    return await promise;
+  } finally {
+    pendingKeys.delete(userId);
   }
-
-  if (!b64Key) {
-    const newKey = await generateKey();
-    b64Key = await exportKey(newKey);
-    const keyVault = await createKeyVault(b64Key, getPassphrase(userId));
-    await setDoc(userRef, { keyVault }, { merge: true });
-  }
-
-  const cryptoKey = await importKey(b64Key);
-  keyCache.set(userId, cryptoKey);
-  return cryptoKey;
 }
 
 // Aile paylaşımı için: familyId'ye ait şifreleme anahtarını al/oluştur
@@ -212,8 +296,12 @@ async function getOrCreateFamilyKey(familyId, adminUserId) {
   return cryptoKey;
 }
 
+// Logout — sadece bellek içi cache'i temizle.
+// IndexedDB anahtarı kastalı bırakılır: aynı kullanıcı tekrar
+// giriş yaptiğında şifre sorulmadan anahtar kullanılır.
 export function clearKeyCache() {
   keyCache.clear();
+  pendingKeys.clear();
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────

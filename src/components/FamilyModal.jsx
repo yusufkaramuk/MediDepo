@@ -381,6 +381,7 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
           <BarcodeScanner
             onResult={handleQrJoin}
             onClose={() => setShowJoinScanner(false)}
+            mode="qr"
           />
         </Suspense>
       )}
