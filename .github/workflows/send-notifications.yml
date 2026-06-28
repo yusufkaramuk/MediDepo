@@ -17,10 +17,10 @@ jobs:
       - name: Node.js kur
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Bağımlılıkları kur
-        run: npm install web-push node-fetch --no-save
+        run: npm install web-push --no-save
 
       - name: Bildirimleri gönder
         env:

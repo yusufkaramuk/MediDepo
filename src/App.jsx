@@ -6,6 +6,7 @@ import { fuzzyMatch } from './services/FuzzySearch';
 import { normalizeAndValidateMedicine, normalizeMedicineList } from './services/MedicineValidation';
 import { exportMedicinesToCsv } from './services/CsvExport';
 import { MedicineDatabase } from './services/MedicineDatabase';
+import { BarcodeParser } from './services/BarcodeParser';
 import { useTheme } from './context/ThemeContext';
 import { useNetworkStatus } from './hooks/useNetworkStatus';
 import { doc, setDoc } from 'firebase/firestore';
@@ -13,6 +14,7 @@ import { db } from './services/FirebaseClient';
 import { NotificationService } from './services/NotificationService';
 import { MedicineCard } from './components/MedicineCard';
 import { AddMedicineModal } from './components/AddMedicineModal';
+import { BarcodeScanner } from './components/BarcodeScanner';
 import { BulkAddModal } from './components/BulkAddModal';
 import { DeleteModal } from './components/DeleteModal';
 import { AuthModal } from './components/AuthModal';
@@ -20,6 +22,7 @@ import { UsageHistoryModal } from './components/UsageHistoryModal';
 import { AllHistoryModal } from './components/AllHistoryModal';
 import { ShareView } from './components/ShareView';
 import { FamilyModal } from './components/FamilyModal';
+import { PrivacyModal, TermsModal } from './components/LegalModal';
 import { FamilyService } from './services/FamilyService';
 import { clearKeyCache } from './services/EncryptionService';
 import appLogo from './assets/logo.png';
@@ -434,6 +437,7 @@ function App() {
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [showSearchScanner, setShowSearchScanner] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editingOwner, setEditingOwner] = useState(null); // başkasının ilacını düzenlerken ownerId
   const [modalInitialData, setModalInitialData] = useState(null);
@@ -443,6 +447,8 @@ function App() {
   const [showFamilyModal, setShowFamilyModal] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef(null);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const [family, setFamily] = useState(null);
   const [familyMedicines, setFamilyMedicines] = useState([]);
   const [pendingInviteCount, setPendingInviteCount] = useState(0);
@@ -654,6 +660,36 @@ function App() {
     }
   };
 
+  const handleSearchBarcode = async (rawBarcode) => {
+    setShowSearchScanner(false);
+    const parsed = BarcodeParser.parse(rawBarcode);
+    const candidates = parsed.candidates.map(v => String(v).toLowerCase());
+    const exact = groupedAll.find(m => m.barcode && candidates.includes(String(m.barcode).toLowerCase()));
+    if (exact) {
+      setSearchTerm(exact.barcode);
+      showToast('success', `"${exact.name}" barkod ile bulundu`);
+      return;
+    }
+
+    try {
+      let med = null;
+      for (const candidate of parsed.candidates) {
+        med = await MedicineDatabase.findByBarcode(candidate);
+        if (med) break;
+      }
+      if (med) {
+        const name = (med.name || '').split(',')[0].trim();
+        setSearchTerm(name || parsed.barcode);
+        showToast('info', 'Barkod TİTCK verisiyle eşleştirildi');
+      } else {
+        setSearchTerm(parsed.barcode || rawBarcode);
+        showToast('error', 'Bu barkod mevcut stokta bulunamadı');
+      }
+    } catch (err) {
+      showToast('error', 'Barkod arama hatası: ' + err.message);
+    }
+  };
+
   const handleToggleNotifications = async () => {
     if (!user) return;
     if (notifPermission === 'granted') {
@@ -758,6 +794,7 @@ function App() {
       }
       if (tagFilter && !(m.tags || []).includes(tagFilter)) return false;
       if (!q) return true;
+      if (m.barcode && String(m.barcode).toLowerCase().includes(q)) return true;
       if (fuzzyMatch(q, m.name)) return true;
       if (m.activeIngredient1 && fuzzyMatch(q, m.activeIngredient1)) return true;
       if (m.activeIngredient2 && fuzzyMatch(q, m.activeIngredient2)) return true;
@@ -962,10 +999,13 @@ function App() {
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               placeholder="İlaç adı veya etken madde ile ara…"
-              className="w-full pl-10 pr-10 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] outline-none text-[14px] shadow-[0_1px_0_rgba(15,23,42,0.04)]"
+              className="w-full pl-10 pr-20 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] outline-none text-[14px] shadow-[0_1px_0_rgba(15,23,42,0.04)]"
             />
+            <button onClick={() => setShowSearchScanner(true)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400" aria-label="Barkod ile ara">
+              <Icon.Camera size={14}/>
+            </button>
             {searchTerm && (
-              <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
+              <button onClick={() => setSearchTerm('')} className="absolute right-10 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
                 <Icon.X size={14}/>
               </button>
             )}
@@ -1049,8 +1089,13 @@ function App() {
           </div>
         )}
 
-        <div className="mt-10 text-center text-[11.5px] text-slate-400 dark:text-slate-600">
-          İlaç Takip · Verileriniz {useCloud ? 'bulutta şifreli' : 'cihazınızda yerel olarak'} saklanır
+        <div className="mt-10 pb-4 text-center text-[11.5px] text-slate-400 dark:text-slate-600 flex flex-col items-center gap-1.5">
+          <span>İlaç Takip Sistemi · Verileriniz {useCloud ? 'bulutta şifreli' : 'cihazınızda yerel olarak'} saklanır</span>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setShowPrivacy(true)} className="hover:text-slate-600 dark:hover:text-slate-400 underline underline-offset-2 transition-colors">Gizlilik Politikası</button>
+            <span>·</span>
+            <button onClick={() => setShowTerms(true)} className="hover:text-slate-600 dark:hover:text-slate-400 underline underline-offset-2 transition-colors">Kullanım Koşulları</button>
+          </div>
         </div>
       </main>
 
@@ -1115,6 +1160,17 @@ function App() {
           user={user}
           onClose={() => setShowFamilyModal(false)}
           onFamilyChange={loadFamily}
+        />
+      )}
+
+      {/* Legal Modals */}
+      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)}/>}
+      {showTerms && <TermsModal onClose={() => setShowTerms(false)}/>}
+
+      {showSearchScanner && (
+        <BarcodeScanner
+          onResult={handleSearchBarcode}
+          onClose={() => setShowSearchScanner(false)}
         />
       )}
 

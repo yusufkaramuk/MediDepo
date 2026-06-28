@@ -2,7 +2,7 @@ import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './FirebaseClient';
 
 // VAPID public key (private key GitHub Actions Secret olarak saklanır)
-const VAPID_PUBLIC_KEY = 'BENHWDCdr_h1FoyID-sDetMioHnil_fDdDHEjlg-v6HXyk_6a6B5jv0PXl3nmqUlpICq3DbyrzfF3e2Hxp3t4EM';
+const VAPID_PUBLIC_KEY = 'BIVfxqFgFyZ6KNT6LAGNsLdeFjHO8SlrR_nvjwFSqJYzCzpSsLpL-Hk70YAX3cT2OrQgTtfML6DC4betQcJVyPE';
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);

@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
+import QRCode from 'qrcode';
 import { FamilyService } from '../services/FamilyService';
+
+const BarcodeScanner = lazy(() => import('./BarcodeScanner').then(m => ({ default: m.BarcodeScanner })));
 
 const Ic = ({ d, size = 18, stroke = 2, className = '', extra = null }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
@@ -16,6 +19,8 @@ const TrashIc  = (p) => <Ic {...p} extra={<><path d="M3 6h18"/><path d="M19 6v14
 const CheckIc  = (p) => <Ic {...p} d="M20 6 9 17l-5-5"/>;
 const LogOutIc = (p) => <Ic {...p} extra={<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></>}/>;
 const ShieldIc = (p) => <Ic {...p} extra={<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></>}/>;
+const QrIc     = (p) => <Ic {...p} extra={<><rect width="5" height="5" x="3" y="3"/><rect width="5" height="5" x="16" y="3"/><rect width="5" height="5" x="3" y="16"/><path d="M16 16h.01M21 16h.01M16 21h.01M21 21h.01M18.5 18.5h.01"/></>}/>;
+const CameraIc = (p) => <Ic {...p} extra={<><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></>}/>;
 
 const FIELD = 'w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[14px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] transition-all';
 const BTN_PRIMARY = 'px-4 py-2 rounded-xl bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white text-[13px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
@@ -31,6 +36,9 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [qrLink, setQrLink] = useState('');
+  const [qrDataUrl, setQrDataUrl] = useState('');
+  const [showJoinScanner, setShowJoinScanner] = useState(false);
 
   useEffect(() => {
     load();
@@ -74,10 +82,44 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
     if (!inviteEmail.trim() || !family) return;
     setBusy(true); setError('');
     try {
-      await FamilyService.inviteMember(family.id, family.name, user.email, inviteEmail);
+      await FamilyService.inviteMember(family.id, family.name, user.uid, user.email, inviteEmail);
       setInviteEmail('');
       setView('main');
       setSuccess('Davet gönderildi!');
+    } catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  };
+
+  const handleQrInvite = async () => {
+    if (!family) return;
+    setBusy(true); setError(''); setSuccess(''); setQrLink(''); setQrDataUrl('');
+    try {
+      const { inviteId, secret } = await FamilyService.createQrInvite(family.id, family.name, user.uid);
+      const link = `${window.location.origin}/#invite=${encodeURIComponent(inviteId)}&secret=${encodeURIComponent(secret)}`;
+      setQrLink(link);
+      setQrDataUrl(await QRCode.toDataURL(link, { margin: 1, width: 220 }));
+      setSuccess('Tek kullanımlık QR daveti oluşturuldu.');
+    } catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  };
+
+  const parseInviteLink = (raw) => {
+    const text = String(raw || '').trim();
+    const hash = text.includes('#') ? text.slice(text.indexOf('#')) : text;
+    const params = new URLSearchParams(hash.replace(/^#/, ''));
+    return { inviteId: params.get('invite'), secret: params.get('secret') };
+  };
+
+  const handleQrJoin = async (raw) => {
+    setShowJoinScanner(false);
+    setBusy(true); setError(''); setSuccess('');
+    try {
+      const { inviteId, secret } = parseInviteLink(raw);
+      if (!inviteId || !secret) throw new Error('QR daveti okunamadı.');
+      await FamilyService.acceptQrInvite(inviteId, secret, user.uid, user.email, user.displayName);
+      await load();
+      onFamilyChange?.();
+      setSuccess('QR daveti kabul edildi.');
     } catch (e) { setError(e.message); }
     finally { setBusy(false); }
   };
@@ -234,6 +276,9 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
                   <button onClick={() => { setView('create'); setError(''); setSuccess(''); }} className={BTN_PRIMARY}>
                     Aile Oluştur
                   </button>
+                  <button onClick={() => setShowJoinScanner(true)} className={`${BTN_GHOST} ml-2 inline-flex items-center gap-1.5`}>
+                    <CameraIc size={13}/> Aileye Katıl
+                  </button>
                 </div>
               )}
 
@@ -251,6 +296,26 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
                       </button>
                     )}
                   </div>
+
+                  <div className="flex gap-2 flex-wrap">
+                    <button onClick={() => setShowJoinScanner(true)} disabled={busy}
+                      className={`${BTN_GHOST} inline-flex items-center gap-1.5`}>
+                      <CameraIc size={13}/> Aileye Katıl
+                    </button>
+                    {isAdmin && (
+                      <button onClick={handleQrInvite} disabled={busy}
+                        className={`${BTN_GHOST} inline-flex items-center gap-1.5`}>
+                        <QrIc size={13}/> Aileye Davet Et
+                      </button>
+                    )}
+                  </div>
+
+                  {qrDataUrl && (
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/60 text-center">
+                      <img src={qrDataUrl} alt="Aile davet QR kodu" className="mx-auto w-[220px] h-[220px] rounded-lg bg-white p-2"/>
+                      <div className="mt-2 text-[11.5px] text-slate-500 break-all">{qrLink}</div>
+                    </div>
+                  )}
 
                   {members.map(([uid, m]) => (
                     <div key={uid} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/60">
@@ -310,6 +375,15 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
           )}
         </div>
       </div>
+
+      {showJoinScanner && (
+        <Suspense fallback={null}>
+          <BarcodeScanner
+            onResult={handleQrJoin}
+            onClose={() => setShowJoinScanner(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

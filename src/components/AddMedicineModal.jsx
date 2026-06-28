@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { MedicineDatabase } from '../services/MedicineDatabase';
+import { BarcodeParser } from '../services/BarcodeParser';
 
 const BarcodeScanner = lazy(() => import('./BarcodeScanner').then(m => ({ default: m.BarcodeScanner })));
 
@@ -29,7 +30,29 @@ const Field = ({ label, hint, required, children }) => (
   </label>
 );
 
-const EMPTY = { name: '', quantity: '', expiryDate: '', activeIngredient1: '', activeIngredient2: '', activeIngredient3: '', notes: '', tags: [], createdAt: '', isPrivate: false };
+const EMPTY = { name: '', quantity: '', expiryDate: '', activeIngredient1: '', activeIngredient2: '', activeIngredient3: '', notes: '', tags: [], createdAt: '', isPrivate: false, stockCount: 1, barcode: '' };
+
+const StockCounter = ({ value, onChange }) => (
+  <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white overflow-hidden focus-within:border-[var(--brand-500)] focus-within:ring-4 focus-within:ring-[var(--brand-100)] transition-all h-[42px]">
+    <button type="button"
+      onClick={() => onChange(Math.max(1, value - 1))}
+      className="px-2.5 h-full text-slate-400 hover:text-[var(--brand-700)] hover:bg-[var(--brand-50)] transition-colors text-[16px] font-light leading-none border-r border-slate-100 shrink-0 select-none">
+      −
+    </button>
+    <input
+      type="number"
+      min={1} max={999}
+      value={value}
+      onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v) && v >= 1 && v <= 999) onChange(v); }}
+      className="w-10 text-center text-[13px] font-semibold text-slate-900 outline-none bg-transparent tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+    />
+    <button type="button"
+      onClick={() => onChange(Math.min(999, value + 1))}
+      className="px-2.5 h-full text-slate-400 hover:text-[var(--brand-700)] hover:bg-[var(--brand-50)] transition-colors text-[16px] font-light leading-none border-l border-slate-100 shrink-0 select-none">
+      +
+    </button>
+  </div>
+);
 
 const SUGGESTED_TAGS = ['Ağrı Kesici', 'Antibiyotik', 'Vitamin', 'Antidepresan', 'Tansiyon', 'Şeker', 'Soğuk Algınlığı', 'Cilt', 'Göz', 'Sindirim'];
 
@@ -113,12 +136,18 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit,
     onClose();
   };
 
-  const handleBarcodeResult = async (barcode) => {
-    setShowScanner(false);
+  const fillFromBarcode = async (barcode, closeScanner = false) => {
+    if (closeScanner) setShowScanner(false);
+    const parsed = BarcodeParser.parse(barcode);
+    if (parsed.barcode) set('barcode', parsed.barcode);
     setScanStatus('searching');
     setScanError('');
     try {
-      const med = await MedicineDatabase.findByBarcode(barcode);
+      let med = null;
+      for (const candidate of parsed.candidates) {
+        med = await MedicineDatabase.findByBarcode(candidate);
+        if (med) break;
+      }
       if (med) {
         const fullName = med.name || '';
         // Ticari ad: doz rakamına kadar olan kısım (ör: "DEKSİT 25 MG..." → "DEKSİT")
@@ -143,6 +172,8 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit,
           activeIngredient1: ingredients[0] || prev.activeIngredient1,
           activeIngredient2: ingredients[1] || prev.activeIngredient2,
           activeIngredient3: ingredients[2] || prev.activeIngredient3,
+          expiryDate: prev.expiryDate || parsed.expiryDate || '',
+          barcode: parsed.barcode || prev.barcode,
         }));
         setScanStatus('found');
       } else {
@@ -152,7 +183,11 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit,
       setScanStatus('error');
       setScanError(err?.message || String(err));
     }
-    setTimeout(() => { setScanStatus(null); setScanDebug(null); }, 10000);
+    setTimeout(() => { setScanStatus(null); }, 10000);
+  };
+
+  const handleBarcodeResult = async (barcode) => {
+    await fillFromBarcode(barcode, true);
   };
 
   return (
@@ -194,14 +229,31 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit,
             </Field>
           </div>
 
-          <Field label="Miktar / Form" hint="Örn: 20 tablet, 100 ml şurup">
+          <Field label="Barkod" hint="EAN / GS1">
             <input
-              value={data.quantity}
-              onChange={e => set('quantity', e.target.value)}
-              placeholder="20 tablet"
+              value={data.barcode || ''}
+              onChange={e => set('barcode', BarcodeParser.primary(e.target.value))}
+              onBlur={e => { if (e.target.value.trim()) fillFromBarcode(e.target.value); }}
+              placeholder="869..."
               className={FIELD_INPUT}
             />
           </Field>
+
+          <div className="sm:col-span-2">
+            <div className="mb-1.5">
+              <span className="text-[12px] font-medium text-slate-700">Miktar / Form</span>
+              <span className="text-[11px] text-slate-400 ml-2">· Örn: 20 tablet, 100 ml şurup</span>
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={data.quantity}
+                onChange={e => set('quantity', e.target.value)}
+                placeholder="20 tablet"
+                className={`${FIELD_INPUT} flex-1`}
+              />
+              <StockCounter value={data.stockCount ?? 1} onChange={v => set('stockCount', v)}/>
+            </div>
+          </div>
 
           <Field label="Son Kullanma Tarihi" hint="Ay / Yıl">
             <input

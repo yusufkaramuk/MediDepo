@@ -10,6 +10,8 @@ export const MEDICINE_FIELDS = [
     'tags',
     'familyId',
     'isPrivate',
+    'stockCount',
+    'barcode',
 ];
 
 export const MEDICINE_LIMITS = {
@@ -20,7 +22,8 @@ export const MEDICINE_LIMITS = {
     activeIngredient2: 120,
     activeIngredient3: 120,
     notes: 500,
-    createdAt: 40
+    createdAt: 40,
+    barcode: 64
 };
 
 export const MAX_IMPORT_ITEMS = 1000;
@@ -34,7 +37,8 @@ const FIELD_LABELS = {
     activeIngredient2: 'Etken madde 2',
     activeIngredient3: 'Etken madde 3',
     notes: 'Notlar',
-    createdAt: 'Olusturma tarihi'
+    createdAt: 'Olusturma tarihi',
+    barcode: 'Barkod'
 };
 
 const textValue = (value, maxLength) => {
@@ -82,6 +86,8 @@ export const normalizeMedicine = (medicine = {}, options = {}) => {
         createdAt,
         ...(medicine.familyId != null ? { familyId: textValue(String(medicine.familyId), 64) } : {}),
         ...(medicine.isPrivate != null ? { isPrivate: Boolean(medicine.isPrivate) } : {}),
+        ...(medicine.stockCount != null ? { stockCount: Math.min(999, Math.max(1, parseInt(medicine.stockCount) || 1)) } : {}),
+        ...(medicine.barcode != null ? { barcode: textValue(String(medicine.barcode), MEDICINE_LIMITS.barcode).replace(/[^\dA-Za-z]/g, '') } : {}),
     };
 };
 
@@ -116,6 +122,11 @@ export const validateMedicine = (medicine, options = {}) => {
         if (field === 'familyId') {
             if (medicine.familyId != null && typeof medicine.familyId !== 'string')
                 errors.push('familyId metin olmali');
+            return;
+        }
+        if (field === 'stockCount') {
+            if (medicine.stockCount != null && (typeof medicine.stockCount !== 'number' || medicine.stockCount < 1 || medicine.stockCount > 999))
+                errors.push('Adet 1-999 arasında olmalı');
             return;
         }
 

@@ -32,7 +32,7 @@ service cloud.firestore {
       return data.keys().hasOnly([
           'name', 'quantity', 'expiryDate',
           'activeIngredient1', 'activeIngredient2', 'activeIngredient3',
-          'notes', 'createdAt', 'tags', 'familyId', 'isPrivate'
+          'notes', 'createdAt', 'tags', 'familyId', 'isPrivate', 'stockCount', 'barcode'
         ]) &&
         data.keys().hasAll(['name', 'createdAt']) &&
         data.name is string && data.name.size() > 0 && data.name.size() <= 120 &&
@@ -41,8 +41,25 @@ service cloud.firestore {
         validOptionalString(data, 'activeIngredient2', 120) &&
         validOptionalString(data, 'activeIngredient3', 120) &&
         validOptionalString(data, 'notes', 500) &&
+        validOptionalString(data, 'barcode', 64) &&
         validExpiryDate(data) &&
-        validCreatedAt(data);
+        validCreatedAt(data) &&
+        (!data.keys().hasAny(['tags']) || data.tags is list) &&
+        (!data.keys().hasAny(['isPrivate']) || data.isPrivate is bool) &&
+        (!data.keys().hasAny(['familyId']) || data.familyId is string) &&
+        (!data.keys().hasAny(['stockCount']) || (data.stockCount is int && data.stockCount >= 1 && data.stockCount <= 999));
+    }
+
+    function isFamilyMember(familyId) {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/families/$(familyId))
+          .data.members.keys().hasAny([request.auth.uid]);
+    }
+
+    function isFamilyAdmin(familyId) {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/families/$(familyId))
+          .data.members[request.auth.uid].role == 'admin';
     }
 
     function isFamilyEditor(userId) {
@@ -53,6 +70,81 @@ service cloud.firestore {
              fid == theirDoc.data.familyId &&
              get(/databases/$(database)/documents/families/$(fid))
                .data.members[request.auth.uid].role in ['admin', 'editor'];
+    }
+
+    function validSelfJoin(familyId) {
+      let diff = request.resource.data.diff(resource.data);
+      let memberDiff = request.resource.data.members.diff(resource.data.members);
+      let newMember = request.resource.data.members[request.auth.uid];
+      let invite = getAfter(/databases/$(database)/documents/invites/$(newMember.inviteId));
+      return diff.affectedKeys().hasOnly(['members']) &&
+        memberDiff.addedKeys().hasOnly([request.auth.uid]) &&
+        memberDiff.changedKeys().size() == 0 &&
+        memberDiff.removedKeys().size() == 0 &&
+        newMember.role == 'member' &&
+        newMember.inviteId is string &&
+        invite.data.familyId == familyId &&
+        invite.data.status == 'accepted' &&
+        invite.data.usedBy == request.auth.uid;
+    }
+
+    function validSelfLeave() {
+      let diff = request.resource.data.diff(resource.data);
+      let memberDiff = request.resource.data.members.diff(resource.data.members);
+      return diff.affectedKeys().hasOnly(['members']) &&
+        memberDiff.removedKeys().hasOnly([request.auth.uid]) &&
+        memberDiff.addedKeys().size() == 0 &&
+        memberDiff.changedKeys().size() == 0;
+    }
+
+    function validOwnKeyringUpdate() {
+      let diff = request.resource.data.diff(resource.data);
+      let keyDiff = request.resource.data.familyKeyring.diff(resource.data.get('familyKeyring', {}));
+      return diff.affectedKeys().hasOnly(['familyKeyring']) &&
+        keyDiff.affectedKeys().hasOnly([request.auth.uid]) &&
+        request.resource.data.familyKeyring[request.auth.uid] is map;
+    }
+
+    function isEmailInvite(data) {
+      return !data.keys().hasAny(['type']) || data.type == 'email';
+    }
+
+    function isQrInvite(data) {
+      return data.type == 'qr';
+    }
+
+    function validEmailInviteCreate(data) {
+      return data.keys().hasOnly(['type', 'familyId', 'familyName', 'invitedEmail', 'invitedBy', 'createdBy', 'status', 'createdAt', 'expiresAt']) &&
+        data.type == 'email' &&
+        data.familyId is string &&
+        data.familyName is string &&
+        data.invitedEmail is string &&
+        data.invitedBy is string &&
+        data.createdBy == request.auth.uid &&
+        data.status == 'pending' &&
+        data.createdAt is string &&
+        data.expiresAt is string &&
+        isFamilyAdmin(data.familyId);
+    }
+
+    function validQrInviteCreate(data) {
+      return data.keys().hasOnly(['type', 'familyId', 'familyName', 'createdBy', 'status', 'encryptedFamilyKey', 'createdAt', 'expiresAt', 'usedBy', 'usedAt']) &&
+        data.type == 'qr' &&
+        data.familyId is string &&
+        data.familyName is string &&
+        data.createdBy == request.auth.uid &&
+        data.status == 'pending' &&
+        data.encryptedFamilyKey is map &&
+        data.createdAt is string &&
+        data.expiresAt is string &&
+        data.usedBy == null &&
+        data.usedAt == null &&
+        isFamilyAdmin(data.familyId);
+    }
+
+    function validInviteStatusUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'usedBy', 'usedAt']) &&
+        request.resource.data.usedAt is string;
     }
 
     match /users/{userId}/medicines/{medicineId} {
@@ -83,7 +175,6 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // encKey dahil tüm kullanıcı verisi — sadece sahibi okuyup yazabilir
       allow read, write: if isOwner(userId);
     }
 
@@ -92,33 +183,43 @@ service cloud.firestore {
     }
 
     match /families/{familyId} {
-      allow read: if isSignedIn();
+      allow read: if isFamilyMember(familyId);
       allow create: if isSignedIn() &&
         request.resource.data.createdBy == request.auth.uid &&
         request.resource.data.members.keys().hasOnly([request.auth.uid]);
-      // Mevcut üyeler her şeyi güncelleyebilir.
-      // Davet kabul eden kullanıcı: sadece kendi UID'sini members'a ekleyebilir.
-      allow update: if isSignedIn() && (
-        resource.data.members.keys().hasAny([request.auth.uid]) ||
-        (
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
-          request.resource.data.members.diff(resource.data.members).addedKeys().hasOnly([request.auth.uid])
-        )
-      );
-      allow delete: if isSignedIn() &&
-        resource.data.createdBy == request.auth.uid;
+      allow update: if isFamilyAdmin(familyId) || validSelfJoin(familyId) || validSelfLeave() || (isFamilyMember(familyId) && validOwnKeyringUpdate());
+      allow delete: if isSignedIn() && resource.data.createdBy == request.auth.uid;
     }
 
-    // Davetler: giriş yapmış herkes kendi e-postasına gelen davetleri okuyabilir
     match /invites/{inviteId} {
-      allow read: if isSignedIn();
+      allow get: if isSignedIn() && (
+        (isEmailInvite(resource.data) && resource.data.invitedEmail == request.auth.token.email) ||
+        (isQrInvite(resource.data) && resource.data.status == 'pending') ||
+        resource.data.createdBy == request.auth.uid
+      );
+      allow list: if isSignedIn() &&
+        isEmailInvite(resource.data) &&
+        resource.data.invitedEmail == request.auth.token.email;
       allow create: if isSignedIn() &&
-        request.resource.data.keys().hasOnly(['familyId', 'familyName', 'invitedEmail', 'invitedBy', 'status', 'createdAt', 'expiresAt']) &&
-        request.resource.data.status == 'pending';
-      allow update: if isSignedIn() &&
-        resource.data.invitedEmail == request.auth.token.email &&
-        request.resource.data.status in ['accepted', 'rejected'];
-      allow delete: if isSignedIn();
+        (validEmailInviteCreate(request.resource.data) || validQrInviteCreate(request.resource.data));
+      allow update: if isSignedIn() && (
+        (
+          isEmailInvite(resource.data) &&
+          resource.data.status == 'pending' &&
+          resource.data.invitedEmail == request.auth.token.email &&
+          request.resource.data.status in ['accepted', 'rejected'] &&
+          (request.resource.data.status == 'rejected' || request.resource.data.usedBy == request.auth.uid) &&
+          validInviteStatusUpdate()
+        ) ||
+        (
+          isQrInvite(resource.data) &&
+          resource.data.status == 'pending' &&
+          request.resource.data.status == 'accepted' &&
+          request.resource.data.usedBy == request.auth.uid &&
+          validInviteStatusUpdate()
+        )
+      );
+      allow delete: if isSignedIn() && resource.data.createdBy == request.auth.uid;
     }
 
     match /sharedLinks/{token} {

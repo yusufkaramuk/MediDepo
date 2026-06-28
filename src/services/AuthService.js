@@ -87,10 +87,21 @@ export const AuthService = {
         }
     },
 
-    onAuthStateChanged: (callback) => onAuthStateChanged(auth, callback),
+    onAuthStateChanged: (callback) => onAuthStateChanged(auth, async (user) => {
+        if (user && !isFederatedUser(user) && !user.emailVerified) {
+            await signOut(auth);
+            callback(null);
+            return;
+        }
+        callback(user);
+    }),
 
     getCurrentUser: () => auth.currentUser
 };
+
+const isFederatedUser = (user) => (
+    user.providerData?.some(provider => provider.providerId !== 'password')
+);
 
 const getErrorMessage = (errorCode, action = 'default') => {
     if (errorCode === 'auth/too-many-requests') {
