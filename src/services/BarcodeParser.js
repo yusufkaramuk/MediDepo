@@ -117,4 +117,46 @@ export const BarcodeParser = {
   primary(raw) {
     return this.parse(raw).barcode;
   },
+
+  /**
+   * İlaç ITS Karekod ayrıştırma (Regex Tabanlı)
+   */
+  parseKarekod(raw) {
+    if (!raw) return { barcode: null, expiryDate: null };
+
+    // 1. Veri Temizliği: Boşlukları ve GS karakterlerini (\u001D, \u001C) temizle
+    const clean = raw.replace(/[\s\u001C\u001D]/g, '');
+
+    // 2. Barkod Çıkarımı: "010" dan sonra gelen 13 haneli sayı
+    const barcodeMatch = clean.match(/010(\d{13})/);
+    const barcode = barcodeMatch ? barcodeMatch[1] : null;
+
+    // 3. Son Tüketim Tarihi Çıkarımı: "17" den sonra gelen 4 hane (YYMM)
+    const expiryMatch = clean.match(/17(\d{2})(\d{2})/);
+    let expiryDate = null;
+    if (expiryMatch) {
+      const yy = expiryMatch[1];
+      const mm = expiryMatch[2];
+      expiryDate = `${mm}/20${yy}`;
+    }
+
+    // Beklenilen format YYYY-MM ise, UI ile uyumlu olması için YYYY-MM döndürelim,
+    // ama kullanıcı "AA/20YY" formatında string istediyse o formata çevrilmesini istedi.
+    // UI'daki date inputlar YYYY-MM formatını kullanıyor. Eğer direkt forma doldurulacaksa
+    // YYYY-MM formatında da tutmak mantıklı. Kullanıcının istediği çıktıyı özel bir alanda
+    // "formattedExpiry" olarak dönelim.
+    let formExpiryDate = '';
+    if (expiryMatch) {
+      const yy = expiryMatch[1];
+      const mm = expiryMatch[2];
+      formExpiryDate = `20${yy}-${mm}`;
+    }
+
+    return {
+      barcode,
+      expiryDate,          // İstenen format: MM/20YY
+      formExpiryDate,      // UI inputları için format: YYYY-MM
+      candidates: barcode ? [barcode] : [],
+    };
+  }
 };

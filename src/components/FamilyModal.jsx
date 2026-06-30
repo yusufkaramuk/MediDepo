@@ -22,9 +22,9 @@ const ShieldIc = (p) => <Ic {...p} extra={<><path d="M12 22s8-4 8-10V5l-8-3-8 3v
 const QrIc     = (p) => <Ic {...p} extra={<><rect width="5" height="5" x="3" y="3"/><rect width="5" height="5" x="16" y="3"/><rect width="5" height="5" x="3" y="16"/><path d="M16 16h.01M21 16h.01M16 21h.01M21 21h.01M18.5 18.5h.01"/></>}/>;
 const CameraIc = (p) => <Ic {...p} extra={<><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></>}/>;
 
-const FIELD = 'w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[14px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] transition-all';
+const FIELD = 'w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[14px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:text-slate-500 outline-none focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] dark:focus:ring-[var(--brand-900)]/30 transition-all';
 const BTN_PRIMARY = 'px-4 py-2 rounded-xl bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white text-[13px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
-const BTN_GHOST = 'px-3 py-1.5 rounded-lg text-[12px] font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors';
+const BTN_GHOST = 'px-3 py-1.5 rounded-lg text-[12px] font-medium text-slate-600 dark:text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors';
 
 export function FamilyModal({ user, onClose, onFamilyChange }) {
   const [family, setFamily] = useState(null);
@@ -198,12 +198,12 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
               <div className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">
                 {view === 'create' ? 'Aile Oluştur' : view === 'invite' ? 'Üye Davet Et' : 'Aile Modu'}
               </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 dark:text-slate-500">
                 {family ? family.name : 'İlaçlarınızı aile üyeleriyle paylaşın'}
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-500">
             <XIcon size={16}/>
           </button>
         </div>
@@ -213,7 +213,7 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
           {success && <div className="text-[12.5px] text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl px-3.5 py-2.5">{success}</div>}
 
           {loading ? (
-            <div className="text-center py-10 text-[13px] text-slate-400">Yükleniyor…</div>
+            <div className="text-center py-10 text-[13px] text-slate-400 dark:text-slate-500">Yükleniyor…</div>
           ) : view === 'create' ? (
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
@@ -249,15 +249,15 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
               {/* Bekleyen davetler */}
               {invites.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Bekleyen Davetler</div>
+                  <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500 uppercase tracking-wide">Bekleyen Davetler</div>
                   {invites.map(inv => (
                     <div key={inv.id} className="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
                       <div>
                         <div className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">{inv.familyName}</div>
-                        <div className="text-[11.5px] text-slate-500">{inv.invitedBy} tarafından davet edildiniz</div>
+                        <div className="text-[11.5px] text-slate-500 dark:text-slate-400 dark:text-slate-500">{inv.invitedBy} tarafından davet edildiniz</div>
                       </div>
                       <div className="flex gap-1.5 shrink-0">
-                        <button onClick={() => handleReject(inv)} disabled={busy} className="px-2.5 py-1.5 rounded-lg text-[11.5px] text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Reddet</button>
+                        <button onClick={() => handleReject(inv)} disabled={busy} className="px-2.5 py-1.5 rounded-lg text-[11.5px] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Reddet</button>
                         <button onClick={() => handleAccept(inv)} disabled={busy} className="px-2.5 py-1.5 rounded-lg text-[11.5px] bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] transition-colors font-medium">Kabul Et</button>
                       </div>
                     </div>
@@ -272,7 +272,7 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
                     <UsersIc size={28}/>
                   </div>
                   <div className="text-[14px] font-semibold text-slate-800 dark:text-slate-200 mb-1">Henüz bir aileniz yok</div>
-                  <div className="text-[12.5px] text-slate-500 dark:text-slate-400 mb-5">Yeni bir aile oluşturun veya davet bekliyorsanız daveti kabul edin.</div>
+                  <div className="text-[12.5px] text-slate-500 dark:text-slate-400 dark:text-slate-500 mb-5">Yeni bir aile oluşturun veya davet bekliyorsanız daveti kabul edin.</div>
                   <button onClick={() => { setView('create'); setError(''); setSuccess(''); }} className={BTN_PRIMARY}>
                     Aile Oluştur
                   </button>
@@ -286,7 +286,7 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
               {family && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                    <div className="text-[12px] font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500 uppercase tracking-wide">
                       Üyeler ({members.length})
                     </div>
                     {isAdmin && (
@@ -312,8 +312,8 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
 
                   {qrDataUrl && (
                     <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/60 text-center">
-                      <img src={qrDataUrl} alt="Aile davet QR kodu" className="mx-auto w-[220px] h-[220px] rounded-lg bg-white p-2"/>
-                      <div className="mt-2 text-[11.5px] text-slate-500 break-all">{qrLink}</div>
+                      <img src={qrDataUrl} alt="Aile davet QR kodu" className="mx-auto w-[220px] h-[220px] rounded-lg bg-white dark:bg-slate-900 p-2"/>
+                      <div className="mt-2 text-[11.5px] text-slate-500 dark:text-slate-400 dark:text-slate-500 break-all">{qrLink}</div>
                     </div>
                   )}
 
@@ -328,14 +328,14 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
                             {m.displayName || m.email}
                             {uid === user.uid && <span className="ml-1.5 text-[10px] text-[var(--brand-600)] font-semibold">(Siz)</span>}
                           </div>
-                          <div className="text-[11px] text-slate-400 truncate">{m.email}</div>
+                          <div className="text-[11px] text-slate-400 dark:text-slate-500 truncate">{m.email}</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <span className={`text-[10.5px] font-medium px-2 py-0.5 rounded-full ${
                           m.role === 'admin'  ? 'bg-[var(--brand-50)] text-[var(--brand-700)]' :
                           m.role === 'editor' ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400' :
-                                                'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                                                'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-500'
                         }`}>
                           {m.role === 'admin' ? 'Admin' : m.role === 'editor' ? 'Editör' : 'Üye'}
                         </span>
@@ -348,12 +348,12 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
                               className={`p-1.5 rounded-lg transition-colors ${
                                 m.role === 'editor'
                                   ? 'text-violet-500 bg-violet-50 dark:bg-violet-950/20 hover:bg-violet-100'
-                                  : 'text-slate-400 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-950/20'
+                                  : 'text-slate-400 dark:text-slate-500 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-950/20'
                               }`}>
                               <ShieldIc size={13}/>
                             </button>
                             <button onClick={() => handleRemoveMember(uid)} disabled={busy}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors">
+                              className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors">
                               <TrashIc size={13}/>
                             </button>
                           </>

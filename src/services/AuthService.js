@@ -7,7 +7,10 @@ import {
     sendEmailVerification,
     updateProfile,
     GoogleAuthProvider,
-    signInWithPopup
+    signInWithPopup,
+    updatePassword as firebaseUpdatePassword,
+    reauthenticateWithCredential,
+    EmailAuthProvider
 } from 'firebase/auth';
 import { auth } from './FirebaseClient';
 
@@ -87,6 +90,18 @@ export const AuthService = {
         }
     },
 
+    changePassword: async (currentPassword, newPassword) => {
+        const user = auth.currentUser;
+        if (!user) throw new Error('Oturum açık değil');
+        try {
+            const credential = EmailAuthProvider.credential(user.email, currentPassword);
+            await reauthenticateWithCredential(user, credential);
+            await firebaseUpdatePassword(user, newPassword);
+        } catch (error) {
+            throw new Error(getErrorMessage(error.code, 'updatePassword'));
+        }
+    },
+
     onAuthStateChanged: (callback) => onAuthStateChanged(auth, async (user) => {
         if (user && !isFederatedUser(user) && !user.emailVerified) {
             await signOut(auth);
@@ -114,6 +129,13 @@ const getErrorMessage = (errorCode, action = 'default') => {
 
     if (action === 'reset') {
         return 'Sifre sifirlama istegi islenemedi. Lutfen daha sonra tekrar deneyin';
+    }
+
+    if (action === 'updatePassword') {
+        if (errorCode === 'auth/wrong-password' || errorCode === 'auth/invalid-credential') {
+            return 'Mevcut şifreniz yanlış';
+        }
+        return 'Şifre güncellenemedi';
     }
 
     switch (errorCode) {

@@ -85,30 +85,30 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
   // E-posta doğrulama bekliyor ekranı
   if (verificationSent) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-50">
-        <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.25)] border border-slate-200 flex flex-col items-center gap-4 text-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-800">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md p-8 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.25)] border border-slate-200 dark:border-slate-700 flex flex-col items-center gap-4 text-center">
           <div className="w-14 h-14 rounded-2xl bg-emerald-50 ring-1 ring-emerald-100 grid place-items-center">
             <CheckCircle size={28} className="text-emerald-600" />
           </div>
           <div>
-            <h2 className="text-[20px] font-semibold text-slate-900 tracking-tight">E-postanızı Doğrulayın</h2>
-            <p className="mt-2 text-[13.5px] text-slate-600 leading-relaxed">
-              <span className="font-medium text-slate-900">{formData.email}</span> adresine doğrulama maili gönderdik. Linke tıklayıp giriş yapın.
+            <h2 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">E-postanızı Doğrulayın</h2>
+            <p className="mt-2 text-[13.5px] text-slate-600 dark:text-slate-300 leading-relaxed">
+              <span className="font-medium text-slate-900 dark:text-slate-100">{formData.email}</span> adresine doğrulama maili gönderdik. Linke tıklayıp giriş yapın.
             </p>
-            <p className="mt-1 text-[12px] text-slate-400">Mail gelmediyse spam klasörünü kontrol edin.</p>
+            <p className="mt-1 text-[12px] text-slate-400 dark:text-slate-500">Mail gelmediyse spam klasörünü kontrol edin.</p>
           </div>
           <button onClick={() => { setVerificationSent(false); setIsSignUp(false); resetForm(); }}
             className="w-full px-4 py-3 rounded-xl text-[14px] font-semibold text-white bg-[var(--brand-600)] hover:bg-[var(--brand-700)] shadow-[0_8px_20px_-8px_var(--brand-shadow)]">
             Giriş Ekranına Dön
           </button>
-          <button onClick={onClose} className="text-[12.5px] text-slate-400 hover:text-slate-700">Kapat</button>
+          <button onClick={onClose} className="text-[12.5px] text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:text-slate-300">Kapat</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-50">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-50 dark:bg-slate-800">
       {/* Background blobs */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="absolute -top-32 -left-32 w-[460px] h-[460px] rounded-full blur-3xl opacity-40" style={{background:'radial-gradient(closest-side, var(--brand-500), transparent)'}}></div>
@@ -122,19 +122,19 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
           <div className="inline-flex items-center gap-2.5">
             <img src={appLogo} alt="İlaç Takip" className="w-16 h-16 object-contain rounded-2xl bg-[var(--brand-50)] p-1"/>
             <div>
-              <div className="text-[15px] font-semibold text-slate-900 tracking-tight">İlaç Takip Sistemi</div>
-              <div className="text-[11px] text-slate-500 -mt-0.5">v2 · 2026</div>
+              <div className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">İlaç Takip Sistemi</div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 dark:text-slate-500 -mt-0.5">v2 · 2026</div>
             </div>
           </div>
 
           <div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-slate-200 px-3 py-1 text-[12px] font-medium text-slate-600 shadow-sm">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-1 text-[12px] font-medium text-slate-600 dark:text-slate-300 shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Sağlığınız için sade ve güvenli
             </span>
-            <h1 className="mt-4 text-[38px] leading-[1.05] font-semibold tracking-tight text-slate-900">
+            <h1 className="mt-4 text-[38px] leading-[1.05] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
               Evdeki ilaçlar için <span className="text-[var(--brand-600)]">temiz, sezgisel</span> bir kontrol paneli.
             </h1>
-            <p className="mt-4 text-[15px] text-slate-600 leading-relaxed max-w-lg">
+            <p className="mt-4 text-[15px] text-slate-600 dark:text-slate-300 leading-relaxed max-w-lg">
               Stoğunuzu görün, son kullanma tarihlerini takip edin, israfı azaltın. Yerel veya bulutta — siz seçin.
             </p>
           </div>
@@ -145,10 +145,10 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
               { ic: <Cloud size={16} />, t: 'Bulut & yerel', s: 'Otomatik yedekleme' },
               { ic: <Camera size={16} />, t: 'OCR ile ekle', s: 'Kutudan tarayın' },
             ].map((f, i) => (
-              <div key={i} className="rounded-2xl bg-white border border-slate-200 p-3.5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+              <div key={i} className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3.5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
                 <div className="w-7 h-7 rounded-lg bg-[var(--brand-50)] text-[var(--brand-700)] grid place-items-center mb-2">{f.ic}</div>
-                <div className="text-[13px] font-semibold text-slate-900">{f.t}</div>
-                <div className="text-[11.5px] text-slate-500 mt-0.5">{f.s}</div>
+                <div className="text-[13px] font-semibold text-slate-900 dark:text-slate-100">{f.t}</div>
+                <div className="text-[11.5px] text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5">{f.s}</div>
               </div>
             ))}
           </div>
@@ -157,32 +157,32 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
         {/* Right: auth card */}
         <div className="relative w-full max-w-md mx-auto lg:mx-0 lg:ml-auto">
           <div className="absolute inset-0 -m-3 rounded-[28px] bg-gradient-to-br from-[var(--brand-500)]/10 via-transparent to-emerald-500/10 blur-xl"></div>
-          <div className="relative bg-white/90 backdrop-blur rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.25)]">
+          <div className="relative bg-white/90 dark:bg-slate-900/90 backdrop-blur rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-700 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.25)]">
 
             {/* Mobile logo */}
             <div className="flex items-center gap-2 mb-5 lg:hidden">
               <img src={appLogo} alt="İlaç Takip" className="w-12 h-12 object-contain rounded-xl bg-[var(--brand-50)] p-1"/>
-              <span className="text-[15px] font-semibold text-slate-900">İlaç Takip Sistemi</span>
+              <span className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">İlaç Takip Sistemi</span>
             </div>
 
             {/* Mode toggle */}
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-[20px] font-semibold text-slate-900 tracking-tight">
+                <h2 className="text-[20px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
                   {resetMode ? 'Şifremi Unuttum' : isSignUp ? 'Hesap oluşturun' : 'Tekrar hoşgeldiniz'}
                 </h2>
-                <p className="text-[13px] text-slate-500 mt-0.5">
+                <p className="text-[13px] text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5">
                   {resetMode ? 'E-postanıza sıfırlama bağlantısı gönderelim'
                     : isSignUp ? 'Birkaç saniyede başlayın — ücretsiz'
                     : 'E-posta ile giriş yapın'}
                 </p>
               </div>
               {!resetMode && (
-                <div className="inline-flex bg-slate-100 rounded-xl p-1 text-[12.5px] font-medium shrink-0">
+                <div className="inline-flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 text-[12.5px] font-medium shrink-0">
                   <button type="button" onClick={() => { setIsSignUp(false); setError(''); }}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${!isSignUp ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}>Giriş</button>
+                    className={`px-3 py-1.5 rounded-lg transition-all ${!isSignUp ? 'bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-slate-100' : 'text-slate-500 dark:text-slate-400 dark:text-slate-500'}`}>Giriş</button>
                   <button type="button" onClick={() => { setIsSignUp(true); setError(''); }}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${isSignUp ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}>Kayıt</button>
+                    className={`px-3 py-1.5 rounded-lg transition-all ${isSignUp ? 'bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-slate-100' : 'text-slate-500 dark:text-slate-400 dark:text-slate-500'}`}>Kayıt</button>
                 </div>
               )}
             </div>
@@ -213,12 +213,12 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
             {!resetMode && (
               <>
                 <button type="button" onClick={handleGoogleSignIn} disabled={loading}
-                  className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-[14px] font-medium text-slate-800 transition-colors disabled:opacity-50">
+                  className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-800 text-[14px] font-medium text-slate-800 dark:text-slate-200 transition-colors disabled:opacity-50">
                   <GoogleIcon /> Google ile {isSignUp ? 'Kayıt Ol' : 'Giriş Yap'}
                 </button>
                 <div className="relative my-4">
-                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
-                  <div className="relative flex justify-center text-[11.5px]"><span className="bg-white px-2 text-slate-400 uppercase tracking-wider">veya e-posta ile</span></div>
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200 dark:border-slate-700"></div></div>
+                  <div className="relative flex justify-center text-[11.5px]"><span className="bg-white dark:bg-slate-900 px-2 text-slate-400 dark:text-slate-500 uppercase tracking-wider">veya e-posta ile</span></div>
                 </div>
               </>
             )}
@@ -229,14 +229,14 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
                 <FieldWrap label="İsim Soyisim" icon={<User size={15} />}>
                   <input type="text" placeholder="Örn: Yusuf Karamuk" value={formData.displayName}
                     onChange={e => setFormData({ ...formData, displayName: e.target.value })} required
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] outline-none text-[14px]" />
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] dark:focus:ring-[var(--brand-900)]/30 outline-none text-[14px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" />
                 </FieldWrap>
               )}
 
               <FieldWrap label="E-posta" icon={<Mail size={15} />}>
                 <input type="email" placeholder="ad@ornek.com" value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })} required
-                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] outline-none text-[14px]" />
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] dark:focus:ring-[var(--brand-900)]/30 outline-none text-[14px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" />
               </FieldWrap>
 
               {!resetMode && (
@@ -244,13 +244,13 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
                   <FieldWrap label="Şifre" icon={<Lock size={15} />}>
                     <input type="password" placeholder="••••••••" value={formData.password}
                       onChange={e => setFormData({ ...formData, password: e.target.value })} required
-                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] outline-none text-[14px]" />
+                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] dark:focus:ring-[var(--brand-900)]/30 outline-none text-[14px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" />
                   </FieldWrap>
                   {isSignUp && (
                     <FieldWrap label="Şifre Tekrar" icon={<Lock size={15} />}>
                       <input type="password" placeholder="••••••••" value={formData.confirmPassword}
                         onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })} required
-                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] outline-none text-[14px]" />
+                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] dark:focus:ring-[var(--brand-900)]/30 outline-none text-[14px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" />
                     </FieldWrap>
                   )}
                 </>
@@ -275,13 +275,13 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
               )}
               {!isSignUp && (
                 <button type="button" onClick={() => { setResetMode(!resetMode); setError(''); setInfo(''); }}
-                  className="text-slate-500 hover:text-slate-800">
+                  className="text-slate-500 dark:text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:text-slate-200">
                   {resetMode ? '← Giriş ekranına dön' : 'Şifremi unuttum'}
                 </button>
               )}
             </div>
 
-            <div className="mt-6 pt-5 border-t border-dashed border-slate-200 text-[11.5px] text-slate-500 text-center">
+            <div className="mt-6 pt-5 border-t border-dashed border-slate-200 dark:border-slate-700 text-[11.5px] text-slate-500 dark:text-slate-400 dark:text-slate-500 text-center">
               Verileriniz cihazınızda şifrelenir, yalnızca sizin hesabınızla senkronize olur.
             </div>
           </div>
@@ -293,7 +293,7 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
 
 const FieldWrap = ({ label, icon, children }) => (
   <div className="relative">
-    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">{icon}</div>
+    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none">{icon}</div>
     {children}
   </div>
 );

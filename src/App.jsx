@@ -18,13 +18,13 @@ import { BarcodeScanner } from './components/BarcodeScanner';
 import { BulkAddModal } from './components/BulkAddModal';
 import { DeleteModal } from './components/DeleteModal';
 import { AuthModal } from './components/AuthModal';
-import { UsageHistoryModal } from './components/UsageHistoryModal';
-import { AllHistoryModal } from './components/AllHistoryModal';
 import { ShareView } from './components/ShareView';
 import { FamilyModal } from './components/FamilyModal';
 import { PrivacyModal, TermsModal } from './components/LegalModal';
 import { FamilyService } from './services/FamilyService';
 import { clearKeyCache } from './services/EncryptionService';
+import { AddedMedicineSuccessModal } from './components/AddedMedicineSuccessModal';
+import { SettingsModal } from './components/SettingsModal';
 import appLogo from './assets/logo.png';
 
 // ── Icons (inline SVG, matches design handoff) ──────────────────────────────
@@ -302,7 +302,7 @@ const EmptyState = ({ searching, onAdd, onBulk }) => (
 );
 
 // ── Header ────────────────────────────────────────────────────────────────────
-const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut, theme, onToggleTheme, isOnline, notifPermission, onToggleNotifications, onShowAllHistory, onShowFamily, pendingInviteCount }) => (
+const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut, theme, onToggleTheme, isOnline, notifPermission, onToggleNotifications, onShowFamily, pendingInviteCount, onShowSettings }) => (
   <header className="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-700/80">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
       <div className="flex items-center gap-2.5">
@@ -325,7 +325,7 @@ const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut,
       <button onClick={onToggleCloud}
         className={`hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors border ${
           useCloud
-            ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+            ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:emerald-400 border-emerald-200 dark:border-emerald-800'
             : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
         }`}>
         <span className={`w-1.5 h-1.5 rounded-full ${syncing ? 'bg-amber-500 animate-pulse' : useCloud ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
@@ -335,13 +335,6 @@ const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut,
       <div className="hidden sm:block w-px h-6 bg-slate-200 dark:bg-slate-700"/>
 
       <div className="flex items-center gap-1.5">
-        {onShowAllHistory && (
-          <button onClick={onShowAllHistory}
-            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
-            aria-label="Tüm kullanım geçmişi">
-            <Icon.History size={17}/>
-          </button>
-        )}
         <button onClick={onShowFamily}
           className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
           aria-label="Aile modu">
@@ -366,9 +359,9 @@ const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut,
           aria-label={theme === 'dark' ? 'Açık mod' : 'Karanlık mod'}>
           {theme === 'dark' ? <Icon.Sun size={17}/> : <Icon.Moon size={17}/>}
         </button>
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--brand-100)] to-[var(--brand-50)] text-[var(--brand-700)] grid place-items-center text-[12px] font-semibold ring-1 ring-[var(--brand-100)]">
+        <button onClick={onShowSettings} className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--brand-100)] to-[var(--brand-50)] text-[var(--brand-700)] grid place-items-center text-[12px] font-semibold ring-1 ring-[var(--brand-100)] hover:opacity-80 transition-opacity" aria-label="Ayarlar">
           {(user.displayName || user.email || 'U').slice(0, 1).toUpperCase()}
-        </div>
+        </button>
         <button onClick={onSignOut} className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100" aria-label="Çıkış">
           <Icon.Logout size={17}/>
         </button>
@@ -438,12 +431,14 @@ function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [showSearchScanner, setShowSearchScanner] = useState(false);
+  const [showSearchTypeModal, setShowSearchTypeModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [fontSize, setFontSize] = useState(() => localStorage.getItem('app-font-size') || '16px');
   const [editingId, setEditingId] = useState(null);
   const [editingOwner, setEditingOwner] = useState(null); // başkasının ilacını düzenlerken ownerId
   const [modalInitialData, setModalInitialData] = useState(null);
+  const [addedSuccessData, setAddedSuccessData] = useState(null); // { addedMed }
   const [deletingMedicine, setDeletingMedicine] = useState(null);
-  const [historyMedicine, setHistoryMedicine] = useState(null);
-  const [showAllHistory, setShowAllHistory] = useState(false);
   const [showFamilyModal, setShowFamilyModal] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef(null);
@@ -468,6 +463,17 @@ function App() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [showExportMenu]);
+
+  useEffect(() => {
+    localStorage.setItem('app-theme', theme);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
+
+  // Yazı boyutu (font-size) değiştiğinde uygula
+  useEffect(() => {
+    localStorage.setItem('app-font-size', fontSize);
+    document.documentElement.style.fontSize = fontSize;
+  }, [fontSize]);
 
   const showToast = (kind, text) => setToast({ kind, text });
 
@@ -562,17 +568,39 @@ function App() {
           await loadFamily(); // aile ilacı güncellendi, familyMedicines'i yenile
         }
         showToast('success', `"${clean.name}" güncellendi`);
+        setIsAddModalOpen(false);
+        setEditingId(null);
       } else {
+        let addedMed;
         if (useCloud && user) {
-          const newMed = await FirebaseService.addMedicine(user.uid, clean);
-          setMedicines(prev => [newMed, ...prev]);
+          addedMed = await FirebaseService.addMedicine(user.uid, clean);
+          setMedicines(prev => [addedMed, ...prev]);
         } else {
-          setMedicines(prev => [createLocalMedicine(clean), ...prev]);
+          addedMed = createLocalMedicine(clean);
+          setMedicines(prev => [addedMed, ...prev]);
         }
-        showToast('success', `"${clean.name}" eklendi`);
+        setAddedSuccessData(addedMed);
+        setIsAddModalOpen(false);
       }
     } catch (err) {
       showToast('error', 'Kaydetme hatası: ' + err.message);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleCancelAdd = async () => {
+    if (!addedSuccessData) return;
+    try {
+      setSyncing(true);
+      if (useCloud && user) {
+        await FirebaseService.deleteMedicine(user.uid, addedSuccessData.id);
+      }
+      setMedicines(prev => prev.filter(m => m.id !== addedSuccessData.id));
+      showToast('info', 'İlaç ekleme işlemi geri alındı');
+      setAddedSuccessData(null);
+    } catch (err) {
+      showToast('error', 'Geri alma hatası: ' + err.message);
     } finally {
       setSyncing(false);
     }
@@ -662,11 +690,24 @@ function App() {
     }
   };
 
-  const handleSearchBarcode = async (rawBarcode) => {
+  const handleSearchBarcode = async (rawBarcode, mode = 'barcode') => {
     setShowSearchScanner(false);
-    const parsed = BarcodeParser.parse(rawBarcode);
-    const candidates = parsed.candidates.map(v => String(v).toLowerCase());
-    const exact = groupedAll.find(m => m.barcode && candidates.includes(String(m.barcode).toLowerCase()));
+    
+    let parsedBarcode = '';
+    let candidates = [];
+
+    if (mode === 'qr') {
+      const qrParsed = BarcodeParser.parseKarekod(rawBarcode);
+      parsedBarcode = qrParsed.barcode;
+      candidates = [qrParsed.barcode].filter(Boolean);
+    } else {
+      const parsed = BarcodeParser.parse(rawBarcode);
+      parsedBarcode = parsed.barcode;
+      candidates = parsed.candidates;
+    }
+
+    const candsLower = candidates.map(v => String(v).toLowerCase());
+    const exact = groupedAll.find(m => m.barcode && candsLower.includes(String(m.barcode).toLowerCase()));
     if (exact) {
       setSearchTerm(exact.barcode);
       showToast('success', `"${exact.name}" barkod ile bulundu`);
@@ -675,16 +716,16 @@ function App() {
 
     try {
       let med = null;
-      for (const candidate of parsed.candidates) {
+      for (const candidate of candidates) {
         med = await MedicineDatabase.findByBarcode(candidate);
         if (med) break;
       }
       if (med) {
         const name = (med.name || '').split(',')[0].trim();
-        setSearchTerm(name || parsed.barcode);
+        setSearchTerm(name || parsedBarcode);
         showToast('info', 'Barkod TİTCK verisiyle eşleştirildi');
       } else {
-        setSearchTerm(parsed.barcode || rawBarcode);
+        setSearchTerm(parsedBarcode || rawBarcode);
         showToast('error', 'Bu barkod mevcut stokta bulunamadı');
       }
     } catch (err) {
@@ -897,8 +938,8 @@ function App() {
         isOnline={isOnline}
         notifPermission={notifPermission}
         onToggleNotifications={handleToggleNotifications}
-        onShowAllHistory={useCloud && user ? () => setShowAllHistory(true) : null}
         onShowFamily={() => setShowFamilyModal(true)}
+        onShowSettings={() => setShowSettingsModal(true)}
         pendingInviteCount={pendingInviteCount}
       />
 
@@ -1052,7 +1093,7 @@ function App() {
               placeholder="İlaç adı veya etken madde ile ara…"
               className="w-full pl-10 pr-20 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] outline-none text-[14px] shadow-[0_1px_0_rgba(15,23,42,0.04)]"
             />
-            <button onClick={() => setShowSearchScanner(true)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400" aria-label="Barkod ile ara">
+            <button onClick={() => setShowSearchTypeModal(true)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400" aria-label="Barkod ile ara">
               <Icon.Camera size={14}/>
             </button>
             {searchTerm && (
@@ -1134,7 +1175,6 @@ function App() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredMedicines.map(m => (
               <MedicineCard key={m.id} medicine={m} onEdit={handleEdit} onDelete={handleDeleteRequest}
-                onHistory={useCloud && user ? setHistoryMedicine : null}
                 onShare={useCloud && user ? handleShare : null}/>
             ))}
           </div>
@@ -1187,23 +1227,7 @@ function App() {
         />
       )}
 
-      {/* Usage History Modal — tek ilaç */}
-      {historyMedicine && (
-        <UsageHistoryModal
-          medicine={historyMedicine}
-          userId={user?.uid}
-          onClose={() => setHistoryMedicine(null)}
-        />
-      )}
 
-      {/* All History Modal — tüm ilaçlar */}
-      {showAllHistory && (
-        <AllHistoryModal
-          userId={user?.uid}
-          medicines={medicines}
-          onClose={() => setShowAllHistory(false)}
-        />
-      )}
 
       {/* Family Modal */}
       {showFamilyModal && user && (
@@ -1214,14 +1238,66 @@ function App() {
         />
       )}
 
+      {/* Settings Modal */}
+      {showSettingsModal && user && (
+        <SettingsModal
+          user={user}
+          fontSize={fontSize}
+          onFontSizeChange={setFontSize}
+          onClose={() => setShowSettingsModal(false)}
+        />
+      )}
+
       {/* Legal Modals */}
       {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)}/>}
       {showTerms && <TermsModal onClose={() => setShowTerms(false)}/>}
 
+      {showSearchTypeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowSearchTypeModal(false)}>
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] animate-[fade_.18s_ease]"></div>
+          <div className="relative bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 animate-[slideUp_.25s_ease]" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Arama Yöntemi</h3>
+              <button onClick={() => setShowSearchTypeModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <Icon.X size={18}/>
+              </button>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button type="button" onClick={() => { setShowSearchTypeModal(false); setShowSearchScanner('qr'); }}
+                className="flex items-center gap-4 p-4 rounded-2xl border-2 border-[var(--brand-400)] bg-[var(--brand-50)] text-[var(--brand-700)] hover:bg-[var(--brand-100)] transition-colors text-left shadow-sm">
+                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm text-[var(--brand-600)] shrink-0"><Icon.Camera size={22} /></div>
+                <div>
+                  <span className="text-[14px] font-bold block">Karekod (QR)</span>
+                  <span className="text-[12px] opacity-80 block mt-0.5">Karekod okutarak hızlı ara</span>
+                  <span className="text-[10px] font-bold bg-[var(--brand-200)] text-[var(--brand-800)] px-2 py-0.5 rounded-full mt-1.5 inline-block">ÖNERİLEN</span>
+                </div>
+              </button>
+              <button type="button" onClick={() => { setShowSearchTypeModal(false); setShowSearchScanner('barcode'); }}
+                className="flex items-center gap-4 p-4 rounded-2xl border border-dashed border-slate-300 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-400 transition-colors text-left">
+                <div className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-700 flex items-center justify-center border border-slate-200 dark:border-slate-600 text-slate-500 shrink-0"><Icon.Camera size={22} /></div>
+                <div>
+                  <span className="text-[14px] font-semibold block">Çizgili Barkod</span>
+                  <span className="text-[12px] opacity-70 block mt-0.5">Klasik barkod okut</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showSearchScanner && (
         <BarcodeScanner
-          onResult={handleSearchBarcode}
+          mode={showSearchScanner}
+          onResult={(res) => handleSearchBarcode(res, showSearchScanner)}
           onClose={() => setShowSearchScanner(false)}
+        />
+      )}
+
+      {addedSuccessData && (
+        <AddedMedicineSuccessModal
+          medicineData={addedSuccessData}
+          onConfirm={() => setAddedSuccessData(null)}
+          onCancel={handleCancelAdd}
         />
       )}
 

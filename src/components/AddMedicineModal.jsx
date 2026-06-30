@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { MedicineDatabase } from '../services/MedicineDatabase';
 import { BarcodeParser } from '../services/BarcodeParser';
+import { MonthYearPicker } from './MonthYearPicker';
 
 const BarcodeScanner = lazy(() => import('./BarcodeScanner').then(m => ({ default: m.BarcodeScanner })));
 
@@ -16,7 +17,7 @@ const XIcon    = (p) => <Ic {...p} extra={<><path d="M18 6 6 18"/><path d="m6 6 
 const CheckIc  = (p) => <Ic {...p} d="M20 6 9 17l-5-5"/>;
 const CameraIc = (p) => <Ic {...p} extra={<><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></>}/>;
 
-const FIELD_INPUT = 'w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] outline-none text-[14px] transition-all';
+const FIELD_INPUT = 'w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:border-[var(--brand-500)] focus:ring-4 focus:ring-[var(--brand-100)] dark:focus:ring-[var(--brand-900)]/30 outline-none text-[14px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all';
 
 const Field = ({ label, hint, required, children }) => (
   <label className="block">
@@ -33,7 +34,7 @@ const Field = ({ label, hint, required, children }) => (
 const EMPTY = { name: '', quantity: '', expiryDate: '', activeIngredient1: '', activeIngredient2: '', activeIngredient3: '', notes: '', tags: [], createdAt: '', isPrivate: false, stockCount: 1, barcode: '' };
 
 const StockCounter = ({ value, onChange }) => (
-  <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white overflow-hidden focus-within:border-[var(--brand-500)] focus-within:ring-4 focus-within:ring-[var(--brand-100)] transition-all h-[42px]">
+  <div className="inline-flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden focus-within:border-[var(--brand-500)] focus-within:ring-4 focus-within:ring-[var(--brand-100)] transition-all h-[42px]">
     <button type="button"
       onClick={() => onChange(Math.max(1, value - 1))}
       className="px-2.5 h-full text-slate-400 hover:text-[var(--brand-700)] hover:bg-[var(--brand-50)] transition-colors text-[16px] font-light leading-none border-r border-slate-100 shrink-0 select-none">
@@ -44,7 +45,7 @@ const StockCounter = ({ value, onChange }) => (
       min={1} max={999}
       value={value}
       onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v) && v >= 1 && v <= 999) onChange(v); }}
-      className="w-10 text-center text-[13px] font-semibold text-slate-900 outline-none bg-transparent tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+      className="w-10 text-center text-[13px] font-semibold text-slate-900 dark:text-slate-100 outline-none bg-transparent tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
     />
     <button type="button"
       onClick={() => onChange(Math.min(999, value + 1))}
@@ -79,7 +80,7 @@ const TagInput = ({ tags, onChange }) => {
   return (
     <div>
       <div
-        className="min-h-[44px] w-full px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white focus-within:border-[var(--brand-500)] focus-within:ring-4 focus-within:ring-[var(--brand-100)] flex flex-wrap gap-1.5 cursor-text"
+        className="min-h-[44px] w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-within:border-[var(--brand-500)] focus-within:ring-4 focus-within:ring-[var(--brand-100)] flex flex-wrap gap-1.5 cursor-text"
         onClick={() => inputRef.current?.focus()}>
         {tags.map(tag => (
           <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--brand-50)] text-[var(--brand-700)] ring-1 ring-[var(--brand-100)] text-[12px] font-medium">
@@ -94,14 +95,14 @@ const TagInput = ({ tags, onChange }) => {
           onKeyDown={handleKeyDown}
           onBlur={() => { if (input.trim()) addTag(input); }}
           placeholder={tags.length === 0 ? 'Etiket ekle ve Enter\'a bas…' : ''}
-          className="flex-1 min-w-[120px] outline-none text-[13px] text-slate-700 bg-transparent py-0.5 px-1"
+          className="flex-1 min-w-[120px] outline-none text-[13px] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-700 bg-transparent py-0.5 px-1"
         />
       </div>
       {suggestions.length > 0 && (
         <div className="mt-1.5 flex flex-wrap gap-1">
           {suggestions.slice(0, 6).map(s => (
             <button key={s} type="button" onClick={() => addTag(s)}
-              className="text-[11px] px-2 py-0.5 rounded-full border border-dashed border-slate-300 text-slate-500 hover:border-[var(--brand-400)] hover:text-[var(--brand-700)] transition-colors">
+              className="text-[11px] px-2 py-0.5 rounded-full border border-dashed border-slate-300 text-slate-500 dark:text-slate-400 hover:border-[var(--brand-400)] hover:text-[var(--brand-700)] transition-colors">
               + {s}
             </button>
           ))}
@@ -113,7 +114,7 @@ const TagInput = ({ tags, onChange }) => {
 
 export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit, familyId }) => {
   const [data, setData] = useState(EMPTY);
-  const [showScanner, setShowScanner] = useState(false);
+  const [showScanner, setShowScanner] = useState(false); // false | 'barcode' | 'qr'
   const [scanStatus, setScanStatus] = useState(null); // null | 'searching' | 'found' | 'not-found' | 'error'
   const [scanError, setScanError] = useState('');
 
@@ -136,15 +137,31 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit,
     onClose();
   };
 
-  const fillFromBarcode = async (barcode, closeScanner = false) => {
+  const fillFromBarcode = async (rawCode, closeScanner = false, mode = 'barcode') => {
     if (closeScanner) setShowScanner(false);
-    const parsed = BarcodeParser.parse(barcode);
-    if (parsed.barcode) set('barcode', parsed.barcode);
+    
+    let parsedBarcode = '';
+    let parsedExpiry = '';
+    let candidates = [];
+
+    if (mode === 'qr') {
+      const qrParsed = BarcodeParser.parseKarekod(rawCode);
+      parsedBarcode = qrParsed.barcode;
+      parsedExpiry = qrParsed.formExpiryDate;
+      candidates = [qrParsed.barcode].filter(Boolean);
+    } else {
+      const parsed = BarcodeParser.parse(rawCode);
+      parsedBarcode = parsed.barcode;
+      parsedExpiry = parsed.expiryDate;
+      candidates = parsed.candidates;
+    }
+
+    if (parsedBarcode) set('barcode', parsedBarcode);
     setScanStatus('searching');
     setScanError('');
     try {
       let med = null;
-      for (const candidate of parsed.candidates) {
+      for (const candidate of candidates) {
         med = await MedicineDatabase.findByBarcode(candidate);
         if (med) break;
       }
@@ -172,8 +189,8 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit,
           activeIngredient1: ingredients[0] || prev.activeIngredient1,
           activeIngredient2: ingredients[1] || prev.activeIngredient2,
           activeIngredient3: ingredients[2] || prev.activeIngredient3,
-          expiryDate: prev.expiryDate || parsed.expiryDate || '',
-          barcode: parsed.barcode || prev.barcode,
+          expiryDate: prev.expiryDate || parsedExpiry || '',
+          barcode: parsedBarcode || prev.barcode,
         }));
         setScanStatus('found');
       } else {
@@ -187,7 +204,7 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit,
   };
 
   const handleBarcodeResult = async (barcode) => {
-    await fillFromBarcode(barcode, true);
+    await fillFromBarcode(barcode, true, showScanner);
   };
 
   return (
@@ -195,23 +212,23 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit,
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] animate-[fade_.18s_ease]"></div>
       <form
         onSubmit={submit}
-        className="relative bg-white w-full max-w-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto animate-[slideUp_.25s_cubic-bezier(.22,.61,.36,1)]"
+        className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[92vh] overflow-y-auto animate-[slideUp_.25s_cubic-bezier(.22,.61,.36,1)]"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-[var(--brand-50)] text-[var(--brand-700)] grid place-items-center ring-1 ring-[var(--brand-100)]">
               <PillIc size={18}/>
             </div>
             <div>
-              <h2 className="text-[17px] font-semibold text-slate-900 tracking-tight">
+              <h2 className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
                 {isEdit ? 'İlacı Düzenle' : 'Yeni İlaç Ekle'}
               </h2>
-              <p className="text-[12px] text-slate-500">İlaç bilgilerini eksiksiz girerek SKT takibini kolaylaştırın.</p>
+              <p className="text-[12px] text-slate-500 dark:text-slate-400">İlaç bilgilerini eksiksiz girerek SKT takibini kolaylaştırın.</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 text-slate-500">
+          <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400">
             <XIcon size={18}/>
           </button>
         </div>
@@ -256,16 +273,14 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit,
           </div>
 
           <Field label="Son Kullanma Tarihi" hint="Ay / Yıl">
-            <input
-              type="month"
+            <MonthYearPicker
               value={data.expiryDate}
-              onChange={e => set('expiryDate', e.target.value)}
-              className={FIELD_INPUT}
+              onChange={v => set('expiryDate', v)}
             />
           </Field>
 
           <div className="sm:col-span-2">
-            <div className="text-[12px] font-medium text-slate-600 mb-2">Etken Maddeler</div>
+            <div className="text-[12px] font-medium text-slate-600 dark:text-slate-300 mb-2">Etken Maddeler</div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {[1, 2, 3].map(n => (
                 <input
@@ -324,33 +339,38 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit,
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 px-6 py-4 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+        <div className="sticky bottom-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button type="button"
-              onClick={() => setShowScanner(true)}
-              className="text-[13px] font-medium text-slate-500 hover:text-slate-800 inline-flex items-center gap-1.5 transition-colors">
-              <CameraIc size={14}/> Barkod Tara
+              onClick={() => setShowScanner('qr')}
+              className="text-[13px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 transition-colors">
+              <CameraIc size={14}/> Karekod (QR)
+            </button>
+            <button type="button"
+              onClick={() => setShowScanner('barcode')}
+              className="text-[13px] font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 transition-colors">
+              <CameraIc size={14}/> Barkod
             </button>
             {scanStatus === 'searching' && (
-              <span className="text-[11.5px] text-[var(--brand-600)] animate-pulse">Aranıyor…</span>
+              <span className="text-[11.5px] text-[var(--brand-600)] animate-pulse ml-2">Aranıyor…</span>
             )}
             {scanStatus === 'found' && (
-              <span className="text-[11.5px] text-emerald-600 font-medium">✓ İlaç bulundu</span>
+              <span className="text-[11.5px] text-emerald-600 font-medium ml-2">✓ İlaç bulundu</span>
             )}
             {scanStatus === 'not-found' && (
-              <span className="text-[11.5px] text-slate-500">Veritabanında bulunamadı</span>
+              <span className="text-[11.5px] text-slate-500 dark:text-slate-400 ml-2">Bulunamadı</span>
             )}
             {scanStatus === 'error' && (
-              <span className="text-[11px] text-rose-600 break-all">{scanError}</span>
+              <span className="text-[11px] text-rose-600 break-all ml-2">{scanError}</span>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
             <button type="button" onClick={onClose}
-              className="px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 hover:bg-slate-100 transition-colors">
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
               İptal
             </button>
             <button type="submit"
-              className="px-4 py-2.5 rounded-xl text-[14px] font-semibold text-white bg-[var(--brand-600)] hover:bg-[var(--brand-700)] shadow-[0_6px_16px_-6px_var(--brand-shadow)] inline-flex items-center gap-1.5 transition-colors">
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-[14px] font-semibold text-white bg-[var(--brand-600)] hover:bg-[var(--brand-700)] shadow-[0_6px_16px_-6px_var(--brand-shadow)] inline-flex items-center gap-1.5 transition-colors">
               <CheckIc size={15}/> {isEdit ? 'Kaydet' : 'İlacı Ekle'}
             </button>
           </div>
@@ -361,6 +381,7 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit,
       {showScanner && (
         <Suspense fallback={null}>
           <BarcodeScanner
+            mode={showScanner}
             onResult={handleBarcodeResult}
             onClose={() => setShowScanner(false)}
           />

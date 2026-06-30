@@ -24,6 +24,7 @@ const FORMATS = [
   Html5QrcodeSupportedFormats.UPC_A,
   Html5QrcodeSupportedFormats.UPC_E,
   Html5QrcodeSupportedFormats.QR_CODE,
+  Html5QrcodeSupportedFormats.DATA_MATRIX,
 ];
 
 async function stopScanner(scanner) {
@@ -59,11 +60,17 @@ export function BarcodeScanner({ onResult, onClose, embedded = false, mode = 'ba
         const scanner = new Html5Qrcode(SCANNER_ID, { formatsToSupport: FORMATS, verbose: false });
         scannerRef.current = scanner;
 
-        // qrbox'u container genişliğine göre hesapla — taşma olmasın
+        // qrbox'u container genişliğine göre hesapla
         const containerW = el.clientWidth || 320;
-        const boxW = Math.min(280, containerW - 32);
-        // QR kod için kare, barkod için yatay dikdörtgen
-        const boxH = mode === 'qr' ? boxW : Math.round(boxW * 0.35);
+        let boxW = Math.min(280, containerW - 32);
+        let boxH = Math.round(boxW * 0.35); // Barkod için yatay dikdörtgen
+
+        if (mode === 'qr') {
+          // QR kodlar küçük olduğu için kutuyu ufaltıyoruz.
+          // Kullanıcı kutuyu doldurmak için telefonu uzak tutmak zorunda kalır, böylece kamera netler.
+          boxW = Math.min(180, containerW - 32);
+          boxH = boxW;
+        }
 
         await scanner.start(
           { facingMode: 'environment' },
@@ -80,6 +87,24 @@ export function BarcodeScanner({ onResult, onClose, embedded = false, mode = 'ba
           () => {}
         );
         setStatus('scanning');
+
+        // Otomatik dijital zoom (Destekleyen cihazlarda 2x zoom yaparak daha rahat okuma sağlar)
+        setTimeout(() => {
+          try {
+            const videoEl = document.querySelector(`#${SCANNER_ID} video`);
+            if (videoEl && videoEl.srcObject) {
+              const track = videoEl.srcObject.getVideoTracks()[0];
+              const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+              if (capabilities && capabilities.zoom) {
+                const zoomVal = Math.min(capabilities.zoom.max, 2.0); // 2x zoom
+                track.applyConstraints({ advanced: [{ zoom: zoomVal }] });
+              }
+            }
+          } catch (e) {
+            console.log('Zoom desteklenmiyor:', e);
+          }
+        }, 500);
+
       } catch (err) {
         console.error('[BarcodeScanner]', err?.name, err?.message);
         setStatus('error');
@@ -133,9 +158,16 @@ export function BarcodeScanner({ onResult, onClose, embedded = false, mode = 'ba
             </div>
           )}
           {status === 'scanning' && (
-            <div className="flex items-center gap-2 text-[12px] text-emerald-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"/>
-              {mode === 'qr' ? 'QR kodu kamera ile hizalayın' : 'Barkodu çizgiye hizalayın'}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 text-[12px] text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0"/>
+                {mode === 'qr' ? 'Kamerayı hafif uzaktan tutarak hizalayın' : 'Barkodu yatay çizgiye hizalayın'}
+              </div>
+              {mode === 'qr' && (
+                <div className="text-[11px] text-slate-300 pl-3.5 mt-0.5 leading-snug">
+                  💡 <b>Bilgi:</b> Karekod, ilaç kutusunun kapağında yer alan kare işarettir.
+                </div>
+              )}
             </div>
           )}
           {status === 'success' && (
@@ -156,18 +188,20 @@ export function BarcodeScanner({ onResult, onClose, embedded = false, mode = 'ba
     <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]"></div>
       <div
-        className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+        className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[96dvh]"
         onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[var(--brand-50)] text-[var(--brand-700)] grid place-items-center ring-1 ring-[var(--brand-100)]">
               <CameraIc size={16}/>
             </div>
             <div>
-              <div className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{mode === 'qr' ? 'QR Kod Tara' : 'Barkod Tara'}</div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400">{mode === 'qr' ? 'Davet QR kodunu kameraya gösterin' : 'EAN-13 barkodunu yatay çizgiye hizalayın'}</div>
+              <div className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{mode === 'qr' ? 'Karekod (QR) Tara' : 'Barkod Tara'}</div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                {mode === 'qr' ? 'İlaç kutusunun yan kapağındaki kare şeklindeki kodu gösterin' : 'Barkodu yatay çizgiye hizalayın'}
+              </div>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">
@@ -176,8 +210,8 @@ export function BarcodeScanner({ onResult, onClose, embedded = false, mode = 'ba
         </div>
 
         {/* Scanner viewport */}
-        <div className="relative bg-slate-950">
-          <div id={SCANNER_ID} className="w-full" style={{ minHeight: 220 }}></div>
+        <div className="relative bg-slate-950 flex-1 overflow-hidden flex flex-col justify-center" style={{ minHeight: 220 }}>
+          <div id={SCANNER_ID} className="w-full"></div>
 
           {/* Viewfinder */}
           {status === 'scanning' && (
@@ -196,7 +230,7 @@ export function BarcodeScanner({ onResult, onClose, embedded = false, mode = 'ba
         </div>
 
         {/* Status bar */}
-        <div className="px-5 py-4">
+        <div className="px-5 py-4 shrink-0 overflow-y-auto">
           {status === 'starting' && (
             <div className="flex items-center gap-2.5 text-[13px] text-slate-600 dark:text-slate-400">
               <LoaderIc size={16} className="animate-spin text-[var(--brand-600)]"/>
@@ -204,9 +238,16 @@ export function BarcodeScanner({ onResult, onClose, embedded = false, mode = 'ba
             </div>
           )}
           {status === 'scanning' && (
-            <div className="flex items-center gap-2.5 text-[13px] text-slate-600 dark:text-slate-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-              {mode === 'qr' ? 'QR kodu kameraya gösterin · 15–30 cm uzakta tutun' : 'Barkodu çizgiye hizalayın · 10–20 cm uzakta tutun'}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2.5 text-[13px] font-medium text-slate-700 dark:text-slate-300">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                {mode === 'qr' ? 'Kamerayı hafif uzaktan tutun (15–20 cm)' : 'Barkodu yatay çizgiye hizalayın (10–20 cm)'}
+              </div>
+              {mode === 'qr' && (
+                <div className="text-[12.5px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 leading-relaxed mt-1">
+                  💡 <b>Bilgi:</b> Karekod, ilaç kutusunun kapağında yer alan kare işarettir. Okutmak için telefonu 15-20 cm uzakta tutun.
+                </div>
+              )}
             </div>
           )}
           {status === 'success' && (
