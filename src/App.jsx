@@ -1319,7 +1319,7 @@ function App() {
       <footer className="mt-8 pb-6 text-center text-[11.5px] text-slate-400 dark:text-slate-500 space-y-1">
         <p>İlaç Takip · Ev kullanımı ve eğitim amaçlıdır · Tıbbi tavsiye değildir</p>
         <div className="flex justify-center gap-4">
-          <a href="/gizlilik" className="hover:underline hover:text-slate-600 dark:hover:text-slate-300 transition-colors">Gizlilik Politikası</a>
+          <a href="/gizlilik" className="hover:underline hover:text-slate-600 dark:hover:text-slate-300 transition-colors">Gizlilik Politikası ve Aydınlatma Metni</a>
           <span className="text-slate-300 dark:text-slate-600">·</span>
           <a href="/kosullar" className="hover:underline hover:text-slate-600 dark:hover:text-slate-300 transition-colors">Kullanım Koşulları</a>
           <span className="text-slate-300 dark:text-slate-600">·</span>

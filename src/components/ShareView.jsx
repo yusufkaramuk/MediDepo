@@ -162,7 +162,7 @@ export function ShareView({ token, encKey }) {
           İlaç Takip · Salt okunur paylaşım
         </div>
         <div className="mt-3 flex justify-center gap-4 text-[11px] text-slate-400 dark:text-slate-500">
-          <a href="/gizlilik" className="hover:underline hover:text-slate-600 dark:hover:text-slate-300">Gizlilik Politikası</a>
+          <a href="/gizlilik" className="hover:underline hover:text-slate-600 dark:hover:text-slate-300">Gizlilik Politikası ve Aydınlatma Metni</a>
           <a href="/kosullar" className="hover:underline hover:text-slate-600 dark:hover:text-slate-300">Kullanım Koşulları</a>
         </div>
       </div>

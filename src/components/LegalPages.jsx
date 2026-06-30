@@ -1,9 +1,9 @@
 import React from 'react';
 
-// ── Gizlilik Politikası ───────────────────────────────────────────────────────
+// ── Gizlilik Politikası & Aydınlatma Metni ─────────────────────────────────────
 export function PrivacyPolicy() {
   return (
-    <LegalPage title="Gizlilik Politikası" lastUpdated="Haziran 2026">
+    <LegalPage title="KVKK Aydınlatma Metni ve Gizlilik Politikası" lastUpdated="Haziran 2026">
       <Section title="1. Veri Sorumlusu">
         <p>Bu uygulama, Yusuf Karamuk tarafından ev kullanımı ve eğitim amacıyla geliştirilmiştir.
         KVKK kapsamında veri sorumlusu olarak kişisel verilerinizi aşağıda açıklanan şekilde işlemekteyiz.</p>
@@ -57,6 +57,10 @@ export function PrivacyPolicy() {
           <li>Zarara uğramanız halinde tazminat talep etme hakkı</li>
         </ul>
         <p>Bu haklarınızı kullanmak için GitHub üzerinden iletişime geçebilirsiniz.</p>
+      </Section>
+
+      <Section title="8. Veri İhlali Bildirimi">
+        <p>Olası bir siber saldırı, veri sızıntısı veya güvenlik ihlali durumunda, durumun tespit edilmesinden itibaren en geç 72 saat içerisinde kayıtlı e-posta adresiniz üzerinden tarafınıza ve (gerekiyorsa) Kişisel Verileri Koruma Kurumu'na (KVKK) bildirim yapılacaktır.</p>
       </Section>
     </LegalPage>
   );
