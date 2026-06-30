@@ -102,6 +102,17 @@ export const AuthService = {
         }
     },
 
+    reauthenticate: async (email, password) => {
+        const user = auth.currentUser;
+        if (!user) throw new Error('Oturum açık değil');
+        const credential = EmailAuthProvider.credential(email, password);
+        try {
+            await reauthenticateWithCredential(user, credential);
+        } catch (error) {
+            throw new Error(getErrorMessage(error.code, 'updatePassword'));
+        }
+    },
+
     sendChangeVerificationEmail: async (email) => {
         const user = auth.currentUser;
         if (!user) throw new Error('Oturum açık değil');
