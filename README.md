@@ -254,11 +254,27 @@ npm run test:security  # Tam güvenlik kontrolü
 
 ## Changelog
 
-### v2.4.0
-- **Karekod (QR) Tarama**: Toplu ilaç ekleme menüsüne ve ana menüye gelişmiş Karekod tarama eklendi.
-- **Kullanıcı Ayarları**: Şifre değiştirme ve dinamik yazı boyutu büyültme/küçültme özelliği eklendi.
-- **Arayüz İyileştirmeleri**: Tarih seçimi sayısal sisteme (MonthYearPicker) geçirildi. Karanlık tema (Dark Mode) eksikleri tamamen giderildi. 
+### v2.6.0
+- **Karekod (QR) Desteği**: İlaç ekleme ve Toplu Ekleme ekranlarına QR (Karekod) okuma desteği eklendi. Barkod ile kullanım akışı sadeleştirildi ve QR bilgilendirme ekranı oluşturuldu. QR üzerinden son kullanma tarihi otomatik ayıklanıyor.
+- **Kullanıcı Ayarları**: Şifre değiştirme alanı ayarlar içerisine taşındı (Google girişi yapanlar için gizlendi).
+- **Erişilebilirlik**: Dinamik REM tabanlı ölçeklendirme ile Yazı Boyutu ayarı eklendi, taşma ve hizalama sorunları giderildi.
+- **Karanlık Tema (Dark Mode)**: Tüm popup pencereleri, form elemanları ve butonlar karanlık tema ile tam uyumlu hale getirildi. Beyaz arkaplan patlamaları düzeltildi.
+- **Son Kullanma Tarihi**: Ay seçimi sayısal (01-12) formata (MonthYearPicker) geçirildi. Ana ekranda kullanıcı dostu ay adı gösterimi korundu.
 - **Sadeleştirme**: Kullanım geçmişi özellikleri sistemden çıkarılarak arayüz temizlendi.
+- **Düzeltmeler**: Toplu ilaç ekleme ekranındaki QR ayrıştırma ve barkod sorgulama hataları düzeltildi.
+
+### v2.5.0 — Kişisel/Aile Depo Ayrımı & QR Davet Düzeltmeleri
+- **Kişisel & Aile Deposu**: Modern geçiş butonu (Segmented Control) ile depolar tamamen ayrıldı. İlaç listesi, filtreler ve istatistikler dinamik olarak güncelleniyor.
+- **Aile Modu Düzeltmeleri**: QR kod ile aileye katıl ekranında kameranın yanlış açılması engellendi ve Firestore yetkilendirme (permission-denied) hataları düzeltildi.
+- **İyileştirmeler**: Kişisel ve aile ilaçlarının birbirine karışmasına neden olan sorunlar giderildi; depolar arası geçiş çok daha güvenli ve hızlı hale getirildi.
+
+### v2.4.0 — QR Davetleri, GS1 Barkod & E2EE Güvenlik Pre-release
+- **Barkod**: GS1 DataMatrix desteği eklendi. Barkod ile mevcut ilaç arama, manuel giriş alanı ve ayrıştırıcı (GTIN-14, EAN-13, Seri No vb.) eklendi. Leading zero (baştaki sıfır) kaybı sorunu çözüldü.
+- **Aile Modu**: QR Kod ile tek kullanımlık güvenli aile daveti ve QR okutarak aileye katılma eklendi.
+- **Kimlik Doğrulama**: Manuel kayıt için zorunlu e-posta doğrulama eklendi. Doğrulanmamış kullanıcı sorunları giderildi.
+- **Güvenlik (E2EE)**: Uçtan Uca Şifreleme (E2EE) altyapısına geçildi. Şifreleme anahtarları güvenli kasaya taşındı, Recovery Passphrase altyapısı eklendi.
+- **Firestore Güvenliği**: Aile bilgileri sadece üyelere okunabilir hale getirildi, QR davetleri transaction tabanlı tek kullanımlık yapıldı ve sızıntılar kapatıldı.
+
 
 ### v2.3.0
 - **Aile Modu**: e-posta daveti, aile üyesi ilaç görüntüleme, Özel İlaç gizleme
