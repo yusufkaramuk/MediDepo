@@ -348,6 +348,33 @@ export function clearKeyCache() {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export const EncryptionService = {
+  // Login sonrası (veritabanı boş olsa bile) şifre sorulmasını garantilemek için
+  async initUserKey(userId) {
+    await getOrCreateUserKey(userId);
+  },
+
+  // Vault şifresini değiştir: mevcut şifreyle kasayı aç, yeni şifreyle yeniden kapat
+  async changeUserPassphrase(userId, oldPassphrase, newPassphrase) {
+    const userRef = doc(db, 'users', userId);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) throw new Error('Kullanıcı bulunamadı.');
+    const userData = snap.data();
+
+    let b64Key = null;
+    if (userData.keyVault) {
+      // Eski şifreyle kasayı aç
+      b64Key = await openKeyVault(userData.keyVault, oldPassphrase);
+    } else {
+      throw new Error('Henüz bir kilit şifresi oluşturulmamış.');
+    }
+
+    // Yeni şifreyle yeniden kilitle
+    const newVault = await createKeyVault(b64Key, newPassphrase);
+    await setDoc(userRef, { keyVault: newVault }, { merge: true });
+
+    // IndexedDB'deki anahtarı (değişmedi, sadece vault şifresi değişti) güncellemeye gerek yok.
+  },
+
   async getOrCreateFamilyKeyMaterial(familyId, adminUserId) {
     const key = await getOrCreateFamilyKey(familyId, adminUserId);
     return exportKey(key);

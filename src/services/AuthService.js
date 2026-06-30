@@ -102,6 +102,19 @@ export const AuthService = {
         }
     },
 
+    sendChangeVerificationEmail: async (email) => {
+        const user = auth.currentUser;
+        if (!user) throw new Error('Oturum açık değil');
+        try {
+            await sendEmailVerification(user);
+        } catch (error) {
+            if (error.code === 'auth/too-many-requests') {
+                throw new Error('Çok fazla deneme. Lütfen daha sonra tekrar deneyin.');
+            }
+            throw new Error('Doğrulama e-postası gönderilemedi.');
+        }
+    },
+
     onAuthStateChanged: (callback) => onAuthStateChanged(auth, async (user) => {
         if (user && !isFederatedUser(user) && !user.emailVerified) {
             await signOut(auth);

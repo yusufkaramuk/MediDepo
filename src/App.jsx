@@ -24,7 +24,7 @@ import { FamilyModal } from './components/FamilyModal';
 import { PrivacyModal, TermsModal } from './components/LegalModal';
 import { PrivacyPolicy, TermsOfService } from './components/LegalPages';
 import { FamilyService } from './services/FamilyService';
-import { clearKeyCache, setPassphraseRequestHandler } from './services/EncryptionService';
+import { clearKeyCache, setPassphraseRequestHandler, EncryptionService } from './services/EncryptionService';
 import { AddedMedicineSuccessModal } from './components/AddedMedicineSuccessModal';
 import { SettingsModal } from './components/SettingsModal';
 import { PassphraseModal } from './components/PassphraseModal';
@@ -520,6 +520,8 @@ function App() {
     try {
       setSyncing(true);
       if (useCloud && user) {
+        // Garantili şifre sorma (veritabanı boşsa bile sorması için)
+        await EncryptionService.initUserKey(user.uid);
         const data = await FirebaseService.getAllMedicines(user.uid);
         setMedicines(data);
       } else {
