@@ -12,7 +12,7 @@ const FONT_SIZES = [
 
 // ── Kilit Şifresi Değiştirme ──────────────────────────────────────────────────
 // Akış: idle → reauth (giriş şifresi doğrula) → change-form → done
-function ChangePassphraseSection({ user, isPasswordUser }) {
+function ChangePassphraseSection({ user, canUseGoogleAuth }) {
   const [step, setStep] = useState('idle');
   const [loginPassword, setLoginPassword] = useState('');
   const [oldPhrase, setOldPhrase] = useState('');
@@ -39,11 +39,11 @@ function ChangePassphraseSection({ user, isPasswordUser }) {
     setError('');
     setLoading(true);
     try {
-      if (isPasswordUser) {
+      if (canUseGoogleAuth) {
+        await AuthService.reauthenticateWithGoogle();
+      } else {
         if (!loginPassword) { setError('Giriş şifrenizi girmelisiniz.'); setLoading(false); return; }
         await AuthService.reauthenticate(user.email, loginPassword);
-      } else {
-        await AuthService.reauthenticateWithGoogle();
       }
       setLoginPassword('');
       setStep('change-form');
@@ -122,7 +122,11 @@ function ChangePassphraseSection({ user, isPasswordUser }) {
               Güvenliğiniz için önce kimliğinizi doğrulamamız gerekiyor.
             </div>
 
-            {isPasswordUser ? (
+            {canUseGoogleAuth ? (
+              <div className="text-[13px] text-slate-600 dark:text-slate-400 text-center py-2">
+                Devam etmek için Google hesabınızla tekrar giriş yapmalısınız.
+              </div>
+            ) : (
               <div>
                 <label className="text-[12px] font-medium text-slate-600 dark:text-slate-400 block mb-1">Giriş Şifreniz</label>
                 <div className="relative">
@@ -134,10 +138,6 @@ function ChangePassphraseSection({ user, isPasswordUser }) {
                   </button>
                 </div>
               </div>
-            ) : (
-              <div className="text-[13px] text-slate-600 dark:text-slate-400 text-center py-2">
-                Devam etmek için Google hesabınızla tekrar giriş yapmalısınız.
-              </div>
             )}
 
             <div className="flex gap-2">
@@ -145,9 +145,9 @@ function ChangePassphraseSection({ user, isPasswordUser }) {
                 className="px-4 py-2.5 rounded-xl text-[13px] font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                 İptal
               </button>
-              <button type="submit" disabled={loading || (isPasswordUser && !loginPassword)}
+              <button type="submit" disabled={loading || (!canUseGoogleAuth && !loginPassword)}
                 className="flex-1 py-2.5 flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-[13.5px] font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                {loading ? 'Doğrulanıyor…' : (isPasswordUser ? 'Kimliği Doğrula →' : <><Icon.Fingerprint size={16} /> Google ile Doğrula</>)}
+                {loading ? 'Doğrulanıyor…' : (canUseGoogleAuth ? <><Icon.Fingerprint size={16} /> Google ile Doğrula</> : 'Kimliği Doğrula →')}
               </button>
             </div>
           </form>
@@ -237,7 +237,12 @@ export function SettingsModal({ user, fontSize, onFontSizeChange, onClose }) {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  const canUseGoogleAuth = user?.providerData?.some(p => p.providerId === 'google.com');
   const isPasswordUser = user?.providerData?.some(p => p.providerId === 'password');
+  
+  // Eğer kullanıcının Google kaydı varsa, şifre değiştirme bölümünü kafa karıştırmamak için gizleyelim
+  // (Çünkü Google kullanıcıları genelde şifre kullanmaz, hesapları birleşmiş olsa bile)
+  const showPasswordChange = isPasswordUser && !canUseGoogleAuth;
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -315,10 +320,10 @@ export function SettingsModal({ user, fontSize, onFontSizeChange, onClose }) {
           </section>
 
           {/* Kilit Şifresi — sadece giriş yapan kullanıcılar için */}
-          {user && <ChangePassphraseSection user={user} isPasswordUser={isPasswordUser} />}
+          {user && <ChangePassphraseSection user={user} canUseGoogleAuth={canUseGoogleAuth} />}
 
           {/* Giriş Şifresi Değiştirme — sadece e-posta+şifre ile kayıtlılar için */}
-          {isPasswordUser && (
+          {showPasswordChange && (
             <section>
               <h3 className="text-[12px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Giriş Şifresi</h3>
               <form onSubmit={handleChangePassword} className="space-y-3 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
