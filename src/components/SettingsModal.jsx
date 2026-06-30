@@ -12,7 +12,7 @@ const FONT_SIZES = [
 
 // ── Kilit Şifresi Değiştirme ──────────────────────────────────────────────────
 // Akış: idle → reauth (giriş şifresi doğrula) → change-form → done
-function ChangePassphraseSection({ user }) {
+function ChangePassphraseSection({ user, isPasswordUser }) {
   const [step, setStep] = useState('idle');
   const [loginPassword, setLoginPassword] = useState('');
   const [oldPhrase, setOldPhrase] = useState('');
@@ -35,15 +35,20 @@ function ChangePassphraseSection({ user }) {
 
   // Adım 2: Firebase re-authentication — sunucu tarafında doğrulanır, atlanamaz
   const handleReauth = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await AuthService.reauthenticate(user.email, loginPassword);
+      if (isPasswordUser) {
+        if (!loginPassword) { setError('Giriş şifrenizi girmelisiniz.'); setLoading(false); return; }
+        await AuthService.reauthenticate(user.email, loginPassword);
+      } else {
+        await AuthService.reauthenticateWithGoogle();
+      }
       setLoginPassword('');
       setStep('change-form');
-    } catch {
-      setError('Giriş şifreniz hatalı. Lütfen tekrar deneyin.');
+    } catch (err) {
+      setError(err.message || 'Doğrulama başarısız oldu.');
     } finally {
       setLoading(false);
     }
@@ -110,31 +115,39 @@ function ChangePassphraseSection({ user }) {
           </button>
         )}
 
-        {/* Adım 2: Giriş şifresiyle re-auth */}
+        {/* Adım 2: Doğrulama (Şifre veya Google) */}
         {step === 'reauth' && (
           <form onSubmit={handleReauth} className="space-y-3">
             <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-[12.5px] leading-relaxed">
-              Güvenliğiniz için önce uygulamaya giriş yaptığınız şifreyi doğrulamamız gerekiyor.
+              Güvenliğiniz için önce kimliğinizi doğrulamamız gerekiyor.
             </div>
-            <div>
-              <label className="text-[12px] font-medium text-slate-600 dark:text-slate-400 block mb-1">Giriş Şifreniz</label>
-              <div className="relative">
-                <input type={showLogin ? 'text' : 'password'} placeholder="••••••••" value={loginPassword}
-                  onChange={e => { setLoginPassword(e.target.value); setError(''); }} autoFocus
-                  className="w-full px-3 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-[14px] text-slate-900 dark:text-slate-100 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20" />
-                <button type="button" onClick={() => setShowLogin(v => !v)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">
-                  {showLogin ? <Icon.EyeOff size={15} /> : <Icon.Eye size={15} />}
-                </button>
+
+            {isPasswordUser ? (
+              <div>
+                <label className="text-[12px] font-medium text-slate-600 dark:text-slate-400 block mb-1">Giriş Şifreniz</label>
+                <div className="relative">
+                  <input type={showLogin ? 'text' : 'password'} placeholder="••••••••" value={loginPassword}
+                    onChange={e => { setLoginPassword(e.target.value); setError(''); }} autoFocus
+                    className="w-full px-3 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-[14px] text-slate-900 dark:text-slate-100 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20" />
+                  <button type="button" onClick={() => setShowLogin(v => !v)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">
+                    {showLogin ? <Icon.EyeOff size={15} /> : <Icon.Eye size={15} />}
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="text-[13px] text-slate-600 dark:text-slate-400 text-center py-2">
+                Devam etmek için Google hesabınızla tekrar giriş yapmalısınız.
+              </div>
+            )}
+
             <div className="flex gap-2">
               <button type="button" onClick={reset}
                 className="px-4 py-2.5 rounded-xl text-[13px] font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                 İptal
               </button>
-              <button type="submit" disabled={loading || !loginPassword}
-                className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-[13.5px] font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                {loading ? 'Doğrulanıyor…' : 'Kimliği Doğrula →'}
+              <button type="submit" disabled={loading || (isPasswordUser && !loginPassword)}
+                className="flex-1 py-2.5 flex items-center justify-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-[13.5px] font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                {loading ? 'Doğrulanıyor…' : (isPasswordUser ? 'Kimliği Doğrula →' : <><Icon.Fingerprint size={16} /> Google ile Doğrula</>)}
               </button>
             </div>
           </form>
@@ -302,7 +315,7 @@ export function SettingsModal({ user, fontSize, onFontSizeChange, onClose }) {
           </section>
 
           {/* Kilit Şifresi — sadece giriş yapan kullanıcılar için */}
-          {user && <ChangePassphraseSection user={user} />}
+          {user && <ChangePassphraseSection user={user} isPasswordUser={isPasswordUser} />}
 
           {/* Giriş Şifresi Değiştirme — sadece e-posta+şifre ile kayıtlılar için */}
           {isPasswordUser && (

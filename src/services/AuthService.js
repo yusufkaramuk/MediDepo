@@ -10,6 +10,7 @@ import {
     signInWithPopup,
     updatePassword as firebaseUpdatePassword,
     reauthenticateWithCredential,
+    reauthenticateWithPopup,
     EmailAuthProvider
 } from 'firebase/auth';
 import { auth } from './FirebaseClient';
@@ -110,6 +111,19 @@ export const AuthService = {
             await reauthenticateWithCredential(user, credential);
         } catch (error) {
             throw new Error(getErrorMessage(error.code, 'updatePassword'));
+        }
+    },
+
+    reauthenticateWithGoogle: async () => {
+        const user = auth.currentUser;
+        if (!user) throw new Error('Oturum açık değil');
+        try {
+            await reauthenticateWithPopup(user, googleProvider);
+        } catch (error) {
+            if (error.code === 'auth/popup-closed-by-user') {
+                throw new Error('Google doğrulama penceresi kapatıldı.');
+            }
+            throw new Error('Google ile doğrulama başarısız oldu.');
         }
     },
 
