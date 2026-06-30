@@ -3,10 +3,10 @@ import React from 'react';
 // ── Gizlilik Politikası & Aydınlatma Metni ─────────────────────────────────────
 export function PrivacyPolicy() {
   return (
-    <LegalPage title="KVKK Aydınlatma Metni ve Gizlilik Politikası" lastUpdated="Haziran 2026">
-      <Section title="1. Veri Sorumlusu">
-        <p>Bu uygulama, Yusuf Karamuk tarafından ev kullanımı ve eğitim amacıyla geliştirilmiştir.
-        KVKK kapsamında veri sorumlusu olarak kişisel verilerinizi aşağıda açıklanan şekilde işlemekteyiz.</p>
+    <LegalPage title="Gizlilik Politikası ve Aydınlatma Metni" lastUpdated="Haziran 2026">
+      <Section title="1. Uygulama Geliştiricisi">
+        <p>Bu uygulama, Yusuf Karamuk tarafından ev kullanımı, kişisel organizasyon ve eğitim amacıyla geliştirilmiştir.
+        Kişisel verilerinizin gizliliğine önem veriyor ve uygulamamızı kullanırken sağladığınız bilgileri yalnızca uygulamanın temel işlevlerini yerine getirmek amacıyla koruyoruz.</p>
       </Section>
 
       <Section title="2. Toplanan Veriler">
@@ -44,23 +44,17 @@ export function PrivacyPolicy() {
         Paylaşım linkleri 7 gün sonra otomatik olarak geçersiz hale gelir.</p>
       </Section>
 
-      <Section title="7. KVKK Kapsamında Haklarınız">
+      <Section title="7. Verileriniz Üzerindeki Kontrolünüz">
         <ul>
-          <li>Kişisel verilerinizin işlenip işlenmediğini öğrenme hakkı</li>
-          <li>İşlenmişse buna ilişkin bilgi talep etme hakkı</li>
-          <li>Amacına uygun kullanılıp kullanılmadığını öğrenme hakkı</li>
-          <li>Yurt içinde veya yurt dışında aktarıldığı üçüncü kişileri bilme hakkı</li>
-          <li>Eksik veya yanlış işlenmiş ise düzeltilmesini isteme hakkı</li>
-          <li>Silinmesini veya yok edilmesini isteme hakkı</li>
-          <li>Verilerin düzeltilmesi/silinmesi halinde bunu üçüncü kişilere bildirmesini isteme hakkı</li>
-          <li>Otomatik sistemler vasıtasıyla oluşabilecek aleyhte sonuçlara itiraz etme hakkı</li>
-          <li>Zarara uğramanız halinde tazminat talep etme hakkı</li>
+          <li>Hesabınızdaki tüm verileri görüntüleme ve dışa aktarma hakkı</li>
+          <li>Kayıtlı ilaç bilgilerinizi düzenleme veya silme hakkı</li>
+          <li>Hesabınızı tamamen silerek tüm verilerinizi sistemden kalıcı olarak temizleme hakkı</li>
         </ul>
-        <p>Bu haklarınızı kullanmak için GitHub üzerinden iletişime geçebilirsiniz.</p>
+        <p>Bu konularda veya uygulamayla ilgili diğer sorularınız için GitHub üzerinden iletişime geçebilirsiniz.</p>
       </Section>
 
-      <Section title="8. Veri İhlali Bildirimi">
-        <p>Olası bir siber saldırı, veri sızıntısı veya güvenlik ihlali durumunda, durumun tespit edilmesinden itibaren en geç 72 saat içerisinde kayıtlı e-posta adresiniz üzerinden tarafınıza ve (gerekiyorsa) Kişisel Verileri Koruma Kurumu'na (KVKK) bildirim yapılacaktır.</p>
+      <Section title="8. Güvenlik İhlali Bildirimi">
+        <p>Olası bir siber saldırı, veri sızıntısı veya güvenlik ihlali durumunda, durumun tespit edilmesinden itibaren en kısa sürede kayıtlı e-posta adresiniz üzerinden tarafınıza bildirim yapılacaktır.</p>
       </Section>
     </LegalPage>
   );
