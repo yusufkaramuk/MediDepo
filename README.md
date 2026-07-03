@@ -2,7 +2,7 @@
 
 Modern, güvenli ve kullanıcı dostu bir web uygulaması. Evinizdeki ilaçları dijital ortamda takip edin, son kullanma tarihlerini kontrol edin ve aile üyeleriyle paylaşın.
 
-**Canlı Demo:** [https://ilac-stok-takip.web.app](https://ilac-stok-takip.web.app)
+**Kullanmak İçin:** [https://medidepo.org.tr)
 
 ---
 
