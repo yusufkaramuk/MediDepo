@@ -1,4 +1,4 @@
-# İlaç Stok Takip Sistemi
+# MediDepo
 
 Modern, güvenli ve kullanıcı dostu bir web uygulaması. Evinizdeki ilaçları dijital ortamda takip edin, son kullanma tarihlerini kontrol edin ve aile üyeleriyle paylaşın.
 
