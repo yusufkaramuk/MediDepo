@@ -1,5 +1,8 @@
 name: SKT Bildirim Gönder
 
+permissions:
+  contents: read
+
 on:
   schedule:
     # Her gün 07:00 UTC (Türkiye 10:00)

@@ -24,15 +24,13 @@ function readServiceAccount(filePath, expectedProjectId, label) {
   const resolved = path.resolve(process.cwd(), filePath);
 
   if (!fs.existsSync(resolved)) {
-    throw new Error(`${label} service account bulunamadı: ${resolved}`);
+    throw new Error(`${label} service account dosyası bulunamadı veya erişilemedi.`);
   }
 
   const serviceAccount = require(resolved);
 
   if (serviceAccount.project_id !== expectedProjectId) {
-    throw new Error(
-      `${label} service account yanlış projeye ait. Beklenen: ${expectedProjectId}, dosyadaki: ${serviceAccount.project_id || 'yok'}`
-    );
+    throw new Error(`${label} service account yapılandırması yanlış projeye ait.`);
   }
 
   return serviceAccount;
