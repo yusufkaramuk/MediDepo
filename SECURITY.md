@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Only the latest deployed version of İlaç Takip is actively maintained. Older releases are **not** patched.
+Only the latest deployed version of DrDepo is actively maintained. Older releases are **not** patched.
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -18,7 +18,7 @@ Only the latest deployed version of İlaç Takip is actively maintained. Older r
 
 ### How to Report
 
-Send a detailed report to **[GitHub Private Security Advisory](https://github.com/yusufkaramuk/ilacStokTakipSistemi/security/advisories/new)** or, if that is unavailable, reach out via a private GitHub message.
+Send a detailed report to **[GitHub Private Security Advisory](https://github.com/yusufkaramuk/DrDepo/security/advisories/new)** or, if that is unavailable, reach out via a private GitHub message.
 
 ### What to Include
 

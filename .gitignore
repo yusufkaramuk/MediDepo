@@ -37,6 +37,9 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 *.log
+*-anahtar.json
+service-account*.json
+firebase-service-account*.json
 
 # Build outputs
 dist/

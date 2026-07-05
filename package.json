@@ -1,11 +1,14 @@
 {
-  "name": "ilac-stok-takip-sistemi",
+  "name": "drdepo",
   "version": "2.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "migrate:firebase": "node migrate_db.cjs",
+    "migrate:firebase:dry": "node migrate_db.cjs --dry-run",
+    "verify:migration": "node scripts/verify-migration.cjs",
     "test:rules": "firebase emulators:exec --only firestore --config firebase.json \"vitest run tests/firestore.rules.test.js\"",
     "test:security": "npm audit --audit-level=moderate && npm run test:rules && npm run build"
   },

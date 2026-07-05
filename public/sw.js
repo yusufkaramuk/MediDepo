@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ilac-stok-v6';
+const CACHE_NAME = 'drdepo-v7';
 
 // App shell — cache edilecek statik dosyalar
 const APP_SHELL = ['/'];
@@ -62,14 +62,14 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   if (!event.data) return;
   let payload;
-  try { payload = event.data.json(); } catch { payload = { title: 'İlaç Takip', body: event.data.text() }; }
+  try { payload = event.data.json(); } catch { payload = { title: 'DrDepo', body: event.data.text() }; }
 
   event.waitUntil(
-    self.registration.showNotification(payload.title || 'İlaç Takip', {
+    self.registration.showNotification(payload.title || 'DrDepo', {
       body: payload.body || '',
       icon: '/icon.svg',
       badge: '/icon.svg',
-      tag: payload.tag || 'ilac-bildirim',
+      tag: payload.tag || 'drdepo-bildirim',
       data: payload.data || {},
       actions: payload.actions || [],
     })

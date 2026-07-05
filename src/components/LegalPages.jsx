@@ -65,7 +65,7 @@ export function TermsOfService() {
   return (
     <LegalPage title="Kullanım Koşulları ve Sorumluluk Reddi" lastUpdated="Haziran 2026">
       <Section title="1. Uygulamanın Amacı ve Kapsamı">
-        <p>İlaç Takip uygulaması, kullanıcıların kişisel ilaç stoklarını takip edebilmeleri amacıyla
+        <p>DrDepo uygulaması, kullanıcıların kişisel ilaç stoklarını takip edebilmeleri amacıyla
         tasarlanmış <strong>ev kullanımı ve eğitim amaçlı</strong> bir kişisel organizasyon aracıdır.
         Ticari bir sağlık hizmeti değildir.</p>
       </Section>
@@ -141,7 +141,7 @@ function LegalPage({ title, lastUpdated, children }) {
 
         {/* Footer */}
         <div className="mt-12 pt-6 border-t border-slate-200 dark:border-slate-700 text-center text-[12px] text-slate-400 dark:text-slate-500">
-          <p>İlaç Takip · Ev kullanımı ve eğitim amaçlıdır</p>
+          <p>DrDepo · Ev kullanımı ve eğitim amaçlıdır</p>
           <div className="mt-2 flex justify-center gap-4">
             <a href="/gizlilik" className="hover:underline hover:text-slate-600 dark:hover:text-slate-300">Gizlilik Politikası</a>
             <a href="/kosullar" className="hover:underline hover:text-slate-600 dark:hover:text-slate-300">Kullanım Koşulları</a>

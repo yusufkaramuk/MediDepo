@@ -9,7 +9,7 @@ This project has optional Firebase App Check support for public production use.
 3. Register the web app.
 4. Choose **reCAPTCHA v3**.
 5. Add your public domains, for example:
-   - `ilac-stok-takip.web.app`
+   - `drdepo.com.tr`
    - `localhost` for local verification if needed
 6. Copy the reCAPTCHA v3 site key.
 
@@ -18,9 +18,16 @@ This project has optional Firebase App Check support for public production use.
 In `.env`:
 
 ```env
-VITE_ENABLE_APP_CHECK=true
+VITE_ENABLE_APP_CHECK=false
 VITE_RECAPTCHA_V3_SITE_KEY=your_recaptcha_v3_site_key
 ```
+
+Google ile giriş veya e-posta girişi çalışmıyorsa App Check'i geçici olarak kapalı tutun. `appCheck/recaptcha-error` hatası reCAPTCHA anahtarındaki izinli domainlerin eksik veya hatalı olduğunu gösterir.
+
+App Check'i açmadan önce Firebase Console'da **Build > App Check** altında web app için kullanılan reCAPTCHA v3 sağlayıcısında şu domainlerin kayıtlı olduğundan emin olun:
+
+- `drdepo.com.tr`
+- `localhost` ve `127.0.0.1` sadece yerel test gerekiyorsa
 
 Keep emulator runs disabled for App Check:
 

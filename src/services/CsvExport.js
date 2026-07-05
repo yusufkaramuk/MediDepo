@@ -49,7 +49,7 @@ export function exportMedicinesToCsv(medicines) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `ilac-listesi-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `drdepo-listesi-${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

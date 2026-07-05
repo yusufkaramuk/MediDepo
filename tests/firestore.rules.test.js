@@ -18,7 +18,7 @@ import {
     writeBatch
 } from 'firebase/firestore';
 
-const PROJECT_ID = 'ilac-stok-takip';
+const PROJECT_ID = 'drdepo-18481';
 const RULES = fs.readFileSync('firestore.rules', 'utf8');
 const FIRESTORE_EMULATOR_PORT = Number(process.env.FIRESTORE_EMULATOR_PORT || 8080);
 

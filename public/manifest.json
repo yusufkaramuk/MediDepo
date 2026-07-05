@@ -1,6 +1,6 @@
 {
-    "name": "İlaç Takip Sistemi",
-    "short_name": "İTS",
+    "name": "DrDepo",
+    "short_name": "DrDepo",
     "description": "Evinizdeki ilaçları dijital ortamda takip edin. Son kullanma tarihleri, etken maddeler ve stok yönetimi.",
     "start_url": "/",
     "scope": "/",
@@ -35,14 +35,14 @@
             "sizes": "1280x800",
             "type": "image/png",
             "form_factor": "wide",
-            "label": "İlaç Takip Sistemi - Masaüstü"
+            "label": "DrDepo - Masaüstü"
         },
         {
             "src": "/screenshot-mobile.png",
             "sizes": "1024x1536",
             "type": "image/png",
             "form_factor": "narrow",
-            "label": "İlaç Takip Sistemi - Mobil"
+            "label": "DrDepo - Mobil"
         }
     ],
     "categories": [

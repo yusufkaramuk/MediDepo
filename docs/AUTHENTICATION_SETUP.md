@@ -12,7 +12,23 @@ Bu doküman Firebase Authentication ve Firestore Rules yayınlama adımlarını 
 6. **Password-less sign-in** seçeneğini kapalı bırakın.
 7. Google ile giriş kullanılacaksa **Google** sağlayıcısını da etkinleştirin.
 
-## 2. Firestore Rules'u Güncelleyin
+## 2. Google Giriş İçin Yetkili Domainleri Kontrol Edin
+
+Google Cloud Console'daki OAuth ayarları tek başına yeterli değildir. Firebase Authentication tarafında da domain yetkisi gerekir.
+
+Firebase Console'da:
+
+1. **Authentication > Settings > Authorized domains** bölümüne girin.
+2. Aşağıdaki domainlerin listede olduğundan emin olun:
+   - `drdepo.com.tr`
+   - `drdepo-18481.firebaseapp.com`
+   - `drdepo-18481.web.app`
+3. Domainleri protokolsüz girin. Doğru: `drdepo.com.tr`, yanlış: `https://drdepo.com.tr`.
+4. Değişiklikten sonra uygulamayı yeniden build edip deploy edin.
+
+> Not: Google Cloud Console'daki **OAuth 2.0 Client ID > Authorized JavaScript origins / Authorized redirect URIs** ekranı bu hata için yeterli değildir. `auth/unauthorized-domain` hatasını çözen liste Firebase Console içindeki **Authentication > Settings > Authorized domains** listesidir.
+
+## 3. Firestore Rules'u Güncelleyin
 
 Aktif uygulama artık yalnızca `users/{userId}/medicines` koleksiyonundan oluşmuyor. Aile modu, davetler, QR ile katılma, paylaşım linkleri, push abonelikleri, barkod alanı ve E2EE anahtar zarfları için ek kurallar var.
 
@@ -48,7 +64,7 @@ Mevcut `firestore.rules` şu akışları bozmadan korur:
 - Paylaşım linkleri yalnızca oluşturan kullanıcı tarafından yazılır/silinir.
 - Push abonelikleri yalnızca ilgili kullanıcı tarafından yönetilir.
 
-## 3. Deployment
+## 4. Deployment
 
 ```bash
 npm run build

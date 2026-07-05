@@ -165,6 +165,18 @@ service cloud.firestore {
         request.resource.data.usedAt is string;
     }
 
+    function validSharedLinkCreate(data) {
+      return data.keys().hasOnly(['userId', 'medicineId', 'expiresAt', 'createdAt', 'encryptedMedicine', 'medicine']) &&
+        data.userId == request.auth.uid &&
+        data.medicineId is string &&
+        data.expiresAt is string &&
+        data.createdAt is string &&
+        (
+          (data.keys().hasAny(['encryptedMedicine']) && data.encryptedMedicine is string) ||
+          (data.keys().hasAny(['medicine']) && data.medicine is map)
+        );
+    }
+
     match /users/{userId}/medicines/{medicineId} {
       allow read: if isOwner(userId) ||
         (isSignedIn() &&
@@ -242,9 +254,7 @@ service cloud.firestore {
 
     match /sharedLinks/{token} {
       allow read: if true;
-      allow create: if isSignedIn() &&
-        request.resource.data.userId == request.auth.uid &&
-        request.resource.data.keys().hasOnly(['userId', 'medicineId', 'expiresAt', 'createdAt', 'medicine']);
+      allow create: if isSignedIn() && validSharedLinkCreate(request.resource.data);
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 

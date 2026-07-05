@@ -123,9 +123,9 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
         {/* Left: brand */}
         <div className="space-y-7 hidden lg:block">
           <div className="inline-flex items-center gap-2.5">
-            <img src={appLogo} alt="İlaç Takip" className="w-16 h-16 object-contain rounded-2xl bg-[var(--brand-50)] p-1"/>
+            <img src={appLogo} alt="DrDepo" className="w-16 h-16 object-contain rounded-2xl bg-[var(--brand-50)] p-1"/>
             <div>
-              <div className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">İlaç Takip Sistemi</div>
+              <div className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">DrDepo</div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 dark:text-slate-500 -mt-0.5">v2 · 2026</div>
             </div>
           </div>
@@ -164,8 +164,8 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
 
             {/* Mobile logo */}
             <div className="flex items-center gap-2 mb-5 lg:hidden">
-              <img src={appLogo} alt="İlaç Takip" className="w-12 h-12 object-contain rounded-xl bg-[var(--brand-50)] p-1"/>
-              <span className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">İlaç Takip Sistemi</span>
+              <img src={appLogo} alt="DrDepo" className="w-12 h-12 object-contain rounded-xl bg-[var(--brand-50)] p-1"/>
+              <span className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">DrDepo</span>
             </div>
 
             {/* Mode toggle */}
@@ -279,7 +279,7 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
 
                   {showDisclaimer && (
                     <div className="mt-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-3 text-[11.5px] text-slate-600 dark:text-slate-300 leading-relaxed space-y-2 max-h-48 overflow-y-auto">
-                      <p className="font-semibold text-slate-800 dark:text-slate-100">📋 Sorumluluk Reddi & Kullanım Koşulları</p>
+                      <p className="font-semibold text-slate-800 dark:text-slate-100"> Sorumluluk Reddi & Kullanım Koşulları</p>
                       <p><strong>1. Amaç ve Kapsam:</strong> Bu uygulama, kişisel ilaç stoğunuzu takip etmenize yardımcı olmak amacıyla tasarlanmış bir <strong>ev kullanımı ve eğitim amaçlı</strong> bireysel organizasyon aracıdır.</p>
                       <p><strong>2. Tıbbi Tavsiye Değildir:</strong> Bu uygulama bir sağlık hizmeti ya da tıbbi cihaz değildir. Sunulan hiçbir bilgi, tıbbi tanı, tedavi tavsiyesi veya ilaç reçetesi yerine geçmez. Her türlü sağlık kararı için mutlaka bir hekim veya eczacıya danışınız.</p>
                       <p><strong>3. Sorumluluk Reddi:</strong> Geliştirici(ler), uygulamanın kullanımından kaynaklanabilecek geç alınan ilaç, yanlış doz, son kullanma tarihi hatası veya başka herhangi bir sağlık sorununa dair hiçbir hukuki sorumluluk kabul etmez.</p>

@@ -13,7 +13,7 @@ const OUTPUT_PATH = join(__dirname, '..', 'public', 'medicines.json');
 // TİTCK ruhsatlı ürünler sayfası — URL her güncellemede değiştiği için dinamik bulunur
 const TITCK_PAGE_URL = 'https://www.titck.gov.tr/dinamikmodul/85';
 const TITCK_FALLBACK_URL = 'https://titck.gov.tr/storage/Archive/2026/dynamicModulesAttachment/RuhsatlBeeriTbbirnlerListesi08.05.2026_e3963db4-c158-4353-aa3b-fcec018ee8c8.xlsx';
-const HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; ilac-stok-bot/1.0)' };
+const HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; drdepo-bot/1.0)' };
 
 async function findLatestXlsxUrl() {
   try {

@@ -1,0 +1,12 @@
+﻿{
+  "hosting": {
+    "public": "eski-yonlendirme",
+    "redirects": [
+      {
+        "source": "**",
+        "destination": "https://drdepo.com.tr",
+        "type": 301
+      }
+    ]
+  }
+}

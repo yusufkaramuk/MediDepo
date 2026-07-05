@@ -2,9 +2,9 @@ import React from 'react';
 import { X } from 'lucide-react';
 
 const LAST_UPDATED = '10 Mayıs 2026';
-const APP_NAME = 'İlaç Takip Sistemi';
+const APP_NAME = 'DrDepo';
 const CONTACT_EMAIL = 'info@yusufkaramuk.com.tr';
-const APP_URL = 'https://ilac-stok-takip.web.app';
+const APP_URL = 'https://drdepo.com.tr';
 
 export const PrivacyModal = ({ onClose }) => (
   <LegalModal title="Gizlilik Politikası" onClose={onClose}>

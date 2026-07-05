@@ -1,6 +1,7 @@
 import { MAX_IMPORT_FILE_BYTES, normalizeMedicine, normalizeMedicineList } from './MedicineValidation';
 
-const STORAGE_KEY = 'ilac_stok_data';
+const STORAGE_KEY = 'drdepo_data';
+const LEGACY_STORAGE_KEYS = ['medidepo_data', ['ilac', 'stok', 'data'].join('_')];
 
 const withLocalId = (medicine, index = 0) => ({
     id: medicine.id || `${Date.now()}-${index}`,
@@ -22,7 +23,15 @@ export const StorageManager = {
 
     load: () => {
         try {
-            const data = localStorage.getItem(STORAGE_KEY);
+            let data = localStorage.getItem(STORAGE_KEY);
+            if (!data) {
+                const legacyKey = LEGACY_STORAGE_KEYS.find((key) => localStorage.getItem(key));
+                if (legacyKey) {
+                    data = localStorage.getItem(legacyKey);
+                    localStorage.setItem(STORAGE_KEY, data);
+                    localStorage.removeItem(legacyKey);
+                }
+            }
             const parsed = data ? JSON.parse(data) : [];
             if (!Array.isArray(parsed)) return [];
             const normalized = parsed
@@ -42,7 +51,7 @@ export const StorageManager = {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `ilac-stok-yedek-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `drdepo-yedek-${new Date().toISOString().split('T')[0]}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

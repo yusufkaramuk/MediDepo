@@ -75,7 +75,7 @@ export function ShareView({ token, encKey }) {
               <path d="m8.5 8.5 7 7"/>
             </svg>
           </div>
-          <span className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">İlaç Takip</span>
+          <span className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">DrDepo</span>
         </div>
 
         {state === 'loading' && (
@@ -87,7 +87,7 @@ export function ShareView({ token, encKey }) {
 
         {state === 'invalid' && (
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 p-8 text-center shadow-sm">
-            <div className="text-[40px] mb-3">🔗</div>
+            <div className="text-[40px] mb-3"></div>
             <div className="text-[17px] font-semibold text-slate-900 dark:text-slate-100">Link bulunamadı</div>
             <div className="text-[13.5px] text-slate-500 dark:text-slate-400 mt-2">Bu paylaşım linki geçersiz veya silinmiş.</div>
           </div>
@@ -95,7 +95,7 @@ export function ShareView({ token, encKey }) {
 
         {state === 'nokey' && (
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-amber-200 dark:border-amber-800 p-8 text-center shadow-sm">
-            <div className="text-[40px] mb-3">🔐</div>
+            <div className="text-[40px] mb-3"></div>
             <div className="text-[17px] font-semibold text-slate-900 dark:text-slate-100">Veri şifrelenmiş</div>
             <div className="text-[13.5px] text-slate-500 dark:text-slate-400 mt-2">Tam linki kullanın — paylaşım linki kesilmiş veya eksik.</div>
           </div>
@@ -159,7 +159,7 @@ export function ShareView({ token, encKey }) {
         )}
 
         <div className="mt-4 text-center text-[12px] text-slate-400 dark:text-slate-500">
-          İlaç Takip · Salt okunur paylaşım
+          DrDepo · Salt okunur paylaşım
         </div>
         <div className="mt-3 flex justify-center gap-4 text-[11px] text-slate-400 dark:text-slate-500">
           <a href="/gizlilik" className="hover:underline hover:text-slate-600 dark:hover:text-slate-300">Gizlilik Politikası ve Aydınlatma Metni</a>

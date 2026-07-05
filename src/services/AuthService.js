@@ -16,6 +16,18 @@ import {
 import { auth } from './FirebaseClient';
 
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+const logAuthError = (context, error) => {
+    console.error(`[AuthService] ${context} failed`, {
+        code: error?.code,
+        message: error?.message,
+        customData: error?.customData,
+        authDomain: auth?.app?.options?.authDomain,
+        projectId: auth?.app?.options?.projectId,
+        currentOrigin: window.location.origin
+    });
+};
 
 export const AuthService = {
     signUp: async (email, password, displayName) => {
@@ -58,10 +70,11 @@ export const AuthService = {
             const userCredential = await signInWithPopup(auth, googleProvider);
             return userCredential.user;
         } catch (error) {
+            logAuthError('Google sign-in popup', error);
             if (error.code === 'auth/popup-closed-by-user') {
                 throw new Error('Google girisi iptal edildi');
             }
-            throw new Error(getErrorMessage(error.code, 'signin'));
+            throw new Error(getErrorMessage(error.code, 'googleSignin'));
         }
     },
 
@@ -120,10 +133,11 @@ export const AuthService = {
         try {
             await reauthenticateWithPopup(user, googleProvider);
         } catch (error) {
+            logAuthError('Google reauthentication popup', error);
             if (error.code === 'auth/popup-closed-by-user') {
                 throw new Error('Google doğrulama penceresi kapatıldı.');
             }
-            throw new Error('Google ile doğrulama başarısız oldu.');
+            throw new Error(getErrorMessage(error.code, 'googleSignin'));
         }
     },
 
@@ -163,6 +177,25 @@ const getErrorMessage = (errorCode, action = 'default') => {
 
     if (action === 'signin') {
         return 'E-posta veya sifre hatali';
+    }
+
+    if (action === 'googleSignin') {
+        switch (errorCode) {
+            case 'auth/unauthorized-domain':
+                return 'Bu alan adi Firebase Authentication icin yetkilendirilmemis. Firebase Console > Authentication > Settings > Authorized domains listesinde drdepo.com.tr, drdepo-18481.firebaseapp.com ve drdepo-18481.web.app adreslerini kontrol edin.';
+            case 'auth/popup-blocked':
+                return 'Tarayici Google giris penceresini engelledi. Pop-up iznini acip tekrar deneyin.';
+            case 'auth/popup-closed-by-user':
+                return 'Google girisi iptal edildi';
+            case 'auth/operation-not-allowed':
+                return 'Firebase Console uzerinde Google giris saglayicisi aktif degil.';
+            case 'auth/cancelled-popup-request':
+                return 'Devam eden Google giris istegi iptal edildi. Lutfen tekrar deneyin.';
+            case 'auth/internal-error':
+                return 'Google girisi sirasinda dahili hata olustu. Console detaylarinda authDomain, projectId ve CSP hatalarini kontrol edin.';
+            default:
+                return `Google girisi basarisiz oldu${errorCode ? ` (${errorCode})` : ''}`;
+        }
     }
 
     if (action === 'reset') {

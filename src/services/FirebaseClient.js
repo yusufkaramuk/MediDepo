@@ -6,6 +6,13 @@ import { firebaseConfig } from '../config/firebase';
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
+console.info('[FirebaseClient] Firebase app initialized', {
+  projectId: app.options.projectId,
+  authDomain: app.options.authDomain,
+  storageBucket: app.options.storageBucket,
+  currentOrigin: window.location.origin
+});
+
 export const auth = getAuth(app);
 
 // Offline persistence — yeni API

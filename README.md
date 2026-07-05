@@ -1,107 +1,114 @@
-# MediDepo
+﻿# DrDepo
 
 Modern, güvenli ve kullanıcı dostu bir web uygulaması. Evinizdeki ilaçları dijital ortamda takip edin, son kullanma tarihlerini kontrol edin ve aile üyeleriyle paylaşın.
 
-**Kullanmak İçin:** https://medidepo.org.tr
+**Canlı Demo:** [https://drdepo.com.tr](https://drdepo.com.tr)
 
+**GitHub:** [yusufkaramuk/DrDepo](https://github.com/yusufkaramuk/DrDepo)
 ---
 
-## Özellikler
+## Ã–zellikler
 
-### Kullanıcı Yönetimi
-- Firebase Authentication ile e-posta/şifre ve Google girişi
-- Kullanıcı izolasyonu — her kullanıcı yalnızca kendi verilerine erişir
-- E-posta doğrulama ve şifre sıfırlama
-- Firebase App Check + reCAPTCHA v3 ile bot koruması
+### KullanÄ±cÄ± YÃ¶netimi
+- Firebase Authentication ile e-posta/ÅŸifre ve Google giriÅŸi
+- KullanÄ±cÄ± izolasyonu â€” her kullanÄ±cÄ± yalnÄ±zca kendi verilerine eriÅŸir
+- E-posta doÄŸrulama ve ÅŸifre sÄ±fÄ±rlama
+- Firebase App Check + reCAPTCHA v3 ile bot korumasÄ±
 
-### İlaç Yönetimi
-- İlaç ekleme, düzenleme, silme ve listeleme (CRUD)
-- Her ilaç için 3 farklı etken madde kaydı
-- Akıllı gruplama: aynı bilgilere sahip ilaçlar otomatik gruplanır (×2, ×3 gösterimi)
-- Toplu ekleme: birden fazla ilacı tek seferde JSON ile içe aktarın
-- Gelişmiş silme: gruptan istediğiniz kadar ilacı seçerek silin
-- Etiket sistemi: ilaçlara özel etiket ekleyin ve etiketle filtreleyin
+### Ä°laÃ§ YÃ¶netimi
+- Ä°laÃ§ ekleme, dÃ¼zenleme, silme ve listeleme (CRUD)
+- Her ilaÃ§ iÃ§in 3 farklÄ± etken madde kaydÄ±
+- AkÄ±llÄ± gruplama: aynÄ± bilgilere sahip ilaÃ§lar otomatik gruplanÄ±r (Ã—2, Ã—3 gÃ¶sterimi)
+- Toplu ekleme: birden fazla ilacÄ± tek seferde JSON ile iÃ§e aktarÄ±n
+- GeliÅŸmiÅŸ silme: gruptan istediÄŸiniz kadar ilacÄ± seÃ§erek silin
+- Etiket sistemi: ilaÃ§lara Ã¶zel etiket ekleyin ve etiketle filtreleyin
 
-### Karekod (QR) & Barkod Tarama ve TİTCK Entegrasyonu
-- İlaç ekleme ve Toplu Ekleme ekranlarında Karekod (QR) ve normal Barkod okuma seçeneği
-- 22.000+ ilaç kaydı içeren TİTCK veritabanı ile otomatik eşleştirme
-- Barkod/Karekod okunduğunda ticari ad, doz, form ve etken maddeler otomatik doldurulur
-- Karekod okunduğunda Son Kullanım Tarihi otomatik ayıklanır
-- Veriler IndexedDB'de önbelleğe alınır — offline çalışır
+### Karekod (QR) & Barkod Tarama ve TÄ°TCK Entegrasyonu
+- Ä°laÃ§ ekleme ve Toplu Ekleme ekranlarÄ±nda Karekod (QR) ve normal Barkod okuma seÃ§eneÄŸi
+- 22.000+ ilaÃ§ kaydÄ± iÃ§eren TÄ°TCK veritabanÄ± ile otomatik eÅŸleÅŸtirme
+- Barkod/Karekod okunduÄŸunda ticari ad, doz, form ve etken maddeler otomatik doldurulur
+- Karekod okunduÄŸunda Son KullanÄ±m Tarihi otomatik ayÄ±klanÄ±r
+- Veriler IndexedDB'de Ã¶nbelleÄŸe alÄ±nÄ±r â€” offline Ã§alÄ±ÅŸÄ±r
 
 ### Aile Modu
-- E-posta ile aile üyesi daveti (7 günlük geçerlilik)
-- Aile üyeleri birbirinin ilaç stoğunu görebilir
-- **Özel İlaç** seçeneği — işaretlenen ilaçlar aile üyelerine gizlenir
-- Admin/üye rol sistemi: sadece admin yeni üye davet edebilir
+- E-posta ile aile Ã¼yesi daveti (7 gÃ¼nlÃ¼k geÃ§erlilik)
+- Aile Ã¼yeleri birbirinin ilaÃ§ stoÄŸunu gÃ¶rebilir
+- **Ã–zel Ä°laÃ§** seÃ§eneÄŸi â€” iÅŸaretlenen ilaÃ§lar aile Ã¼yelerine gizlenir
+- Admin/Ã¼ye rol sistemi: sadece admin yeni Ã¼ye davet edebilir
 
-### Akıllı Arama ve Sıralama
-- Fuzzy Search: yanlış yazımlara toleranslı arama (Levenshtein algoritması)
-- İlaç adı ve tüm etken maddeler üzerinde anlık arama
-- 8 farklı sıralama seçeneği (tarih, alfabetik, son kullanma, kopya sayısı)
-- Durum filtresi: Tümü / Süresi Geçmiş / Yakında Bitiyor / Güvenli
+### AkÄ±llÄ± Arama ve SÄ±ralama
+- Fuzzy Search: yanlÄ±ÅŸ yazÄ±mlara toleranslÄ± arama (Levenshtein algoritmasÄ±)
+- Ä°laÃ§ adÄ± ve tÃ¼m etken maddeler Ã¼zerinde anlÄ±k arama
+- 8 farklÄ± sÄ±ralama seÃ§eneÄŸi (tarih, alfabetik, son kullanma, kopya sayÄ±sÄ±)
+- Durum filtresi: TÃ¼mÃ¼ / SÃ¼resi GeÃ§miÅŸ / YakÄ±nda Bitiyor / GÃ¼venli
 
 ### Son Kullanma Takibi
-- Otomatik renk uyarıları: Kırmızı (geçmiş) · Turuncu (30 gün) · Yeşil (güvenli)
-- Ay/Yıl formatında sayısal (Örn: 05 / 2026) pratik tarih girişi
-- Türkçe metin tarih gösterimi ve kalan gün sayacı
+- Otomatik renk uyarÄ±larÄ±: KÄ±rmÄ±zÄ± (geÃ§miÅŸ) Â· Turuncu (30 gÃ¼n) Â· YeÅŸil (gÃ¼venli)
+- Ay/YÄ±l formatÄ±nda sayÄ±sal (Ã–rn: 05 / 2026) pratik tarih giriÅŸi
+- TÃ¼rkÃ§e metin tarih gÃ¶sterimi ve kalan gÃ¼n sayacÄ±
 
 ### Push Bildirimleri
-- Son kullanma tarihi yaklaşan ilaçlar için otomatik bildirim
-- Web Push (VAPID) ile tarayıcı bildirimi desteği
-- GitHub Actions ile zamanlanmış günlük kontrol
+- Son kullanma tarihi yaklaÅŸan ilaÃ§lar iÃ§in otomatik bildirim
+- Web Push (VAPID) ile tarayÄ±cÄ± bildirimi desteÄŸi
+- GitHub Actions ile zamanlanmÄ±ÅŸ gÃ¼nlÃ¼k kontrol
 
-### Salt Okunur Paylaşım Linki
-- Seçili bir ilacı şifre gerektirmeden paylaşın
-- 7 günlük geçerlilik süresi olan benzersiz token
-- Paylaşılan ilaç verisi Firestore'da saklanır, okuyan kullanıcı hesabı gerektirmez
+### Salt Okunur PaylaÅŸÄ±m Linki
+- SeÃ§ili bir ilacÄ± ÅŸifre gerektirmeden paylaÅŸÄ±n
+- 7 gÃ¼nlÃ¼k geÃ§erlilik sÃ¼resi olan benzersiz token
+- PaylaÅŸÄ±lan ilaÃ§ verisi Firestore'da saklanÄ±r, okuyan kullanÄ±cÄ± hesabÄ± gerektirmez
 
-### Veri Yönetimi
-- CSV ve JSON ile dışa aktarma
-- JSON ile toplu içe aktarma (yedek geri yükleme)
-- Her değişiklik anında otomatik kaydedilir
+### Veri YÃ¶netimi
+- CSV ve JSON ile dÄ±ÅŸa aktarma
+- JSON ile toplu iÃ§e aktarma (yedek geri yÃ¼kleme)
+- Her deÄŸiÅŸiklik anÄ±nda otomatik kaydedilir
 
 ### Progressive Web App (PWA)
-- Ana ekrana eklenebilir — telefonda uygulama gibi çalışır
-- Offline çalışma desteği (IndexedDB + Service Worker)
-- Responsive tasarım (mobil ve masaüstü)
+- Ana ekrana eklenebilir â€” telefonda uygulama gibi Ã§alÄ±ÅŸÄ±r
+- Offline Ã§alÄ±ÅŸma desteÄŸi (IndexedDB + Service Worker)
+- Responsive tasarÄ±m (mobil ve masaÃ¼stÃ¼)
 
-### Arayüz ve Kişiselleştirme
-- Gelişmiş Karanlık Mod (Dark Mode) / Açık Mod
-- Kullanıcı Ayarları paneli (Şifre değiştirme)
-- Dinamik Yazı Boyutu ayarı (Responsive tipografi)
-- Liste ve grid görünümü
-- Türkçe arayüz
+### ArayÃ¼z ve KiÅŸiselleÅŸtirme
+- GeliÅŸmiÅŸ KaranlÄ±k Mod (Dark Mode) / AÃ§Ä±k Mod
+- KullanÄ±cÄ± AyarlarÄ± paneli (Åifre deÄŸiÅŸtirme)
+- Dinamik YazÄ± Boyutu ayarÄ± (Responsive tipografi)
+- Liste ve grid gÃ¶rÃ¼nÃ¼mÃ¼
+- TÃ¼rkÃ§e arayÃ¼z
 
 ---
 
-## Hızlı Başlangıç
+## HÄ±zlÄ± BaÅŸlangÄ±Ã§
 
-### Ön Gereksinimler
+### Ã–n Gereksinimler
 - Node.js 18+
-- Firebase hesabı (ücretsiz)
+- Firebase hesabÄ± (Ã¼cretsiz)
 
 ### Kurulum
 
-**1. Projeyi klonlayın**
+**1. Projeyi klonlayÄ±n**
 ```bash
-git clone https://github.com/yusufkaramuk/ilacStokTakipSistemi.git
-cd ilacStokTakipSistemi
+git clone https://github.com/yusufkaramuk/DrDepo.git
+cd DrDepo
 ```
 
-**2. Bağımlılıkları yükleyin**
+Eski repo adÄ±yla klonlanmÄ±ÅŸ mevcut bir klasÃ¶rde Ã§alÄ±ÅŸÄ±yorsanÄ±z, `git pull` Ã¶ncesi remote adresini gÃ¼ncelleyin:
+```bash
+git remote set-url origin https://github.com/yusufkaramuk/DrDepo.git
+git pull origin main
+```
+
+**2. BaÄŸÄ±mlÄ±lÄ±klarÄ± yÃ¼kleyin**
 ```bash
 npm install
 ```
 
-**3. Firebase yapılandırması**
+**3. Firebase yapÄ±landÄ±rmasÄ±**
 
-`.env.example` dosyasını `.env` olarak kopyalayın:
+`.env.example` dosyasÄ±nÄ± `.env` olarak kopyalayÄ±n:
 ```bash
 cp .env.example .env
 ```
 
-Firebase bilgilerinizi `.env` dosyasına girin:
+Firebase bilgilerinizi `.env` dosyasÄ±na girin:
 ```env
 VITE_FIREBASE_API_KEY=your_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
@@ -110,28 +117,28 @@ VITE_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 
-# Opsiyonel — Firebase App Check
+# Opsiyonel â€” Firebase App Check
 VITE_RECAPTCHA_V3_SITE_KEY=your_recaptcha_key
 VITE_ENABLE_APP_CHECK=true
 
-# Opsiyonel — Web Push bildirimleri (VAPID)
+# Opsiyonel â€” Web Push bildirimleri (VAPID)
 VITE_VAPID_PUBLIC_KEY=your_vapid_public_key
 
-# Opsiyonel — Firebase Emulators (yerel geliştirme)
+# Opsiyonel â€” Firebase Emulators (yerel geliÅŸtirme)
 VITE_USE_FIREBASE_EMULATORS=false
 ```
 
-**4. Kurulum kılavuzları**
-- [docs/FIREBASE_SETUP.md](docs/FIREBASE_SETUP.md) — Firebase proje kurulumu
-- [docs/AUTHENTICATION_SETUP.md](docs/AUTHENTICATION_SETUP.md) — Authentication aktifleştirme
-- [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) — Production deployment
+**4. Kurulum kÄ±lavuzlarÄ±**
+- [docs/FIREBASE_SETUP.md](docs/FIREBASE_SETUP.md) â€” Firebase proje kurulumu
+- [docs/AUTHENTICATION_SETUP.md](docs/AUTHENTICATION_SETUP.md) â€” Authentication aktifleÅŸtirme
+- [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) â€” Production deployment
 
-**5. Uygulamayı başlatın**
+**5. UygulamayÄ± baÅŸlatÄ±n**
 ```bash
 npm run dev
 ```
 
-Tarayıcınızda `http://localhost:5173` adresini açın.
+TarayÄ±cÄ±nÄ±zda `http://localhost:5173` adresini aÃ§Ä±n.
 
 ---
 
@@ -142,7 +149,7 @@ npm run build
 npx firebase deploy
 ```
 
-TİTCK ilaç veritabanını güncellemek için:
+TÄ°TCK ilaÃ§ veritabanÄ±nÄ± gÃ¼ncellemek iÃ§in:
 ```bash
 node scripts/fetch-titck-data.js
 ```
@@ -152,102 +159,102 @@ node scripts/fetch-titck-data.js
 ## Teknolojiler
 
 ### Frontend
-| Teknoloji | Versiyon | Amaç |
+| Teknoloji | Versiyon | AmaÃ§ |
 |-----------|----------|-------|
 | React | 18 | UI framework |
 | Vite | 7 | Build tool |
 | Tailwind CSS | 3 | Styling |
-| Lucide React | latest | İkonlar |
+| Lucide React | latest | Ä°konlar |
 
-### Backend & Veritabanı
-| Teknoloji | Amaç |
+### Backend & VeritabanÄ±
+| Teknoloji | AmaÃ§ |
 |-----------|-------|
-| Firebase Authentication | Kullanıcı yönetimi |
-| Firebase Firestore | NoSQL bulut veritabanı |
+| Firebase Authentication | KullanÄ±cÄ± yÃ¶netimi |
+| Firebase Firestore | NoSQL bulut veritabanÄ± |
 | Firebase Hosting | Statik web hosting |
-| Firebase App Check | Bot ve kötüye kullanım koruması |
+| Firebase App Check | Bot ve kÃ¶tÃ¼ye kullanÄ±m korumasÄ± |
 
 ### PWA & Offline
-| Teknoloji | Amaç |
+| Teknoloji | AmaÃ§ |
 |-----------|-------|
 | Service Worker | Offline caching |
-| IndexedDB | TİTCK ilaç veritabanı önbelleği |
+| IndexedDB | TÄ°TCK ilaÃ§ veritabanÄ± Ã¶nbelleÄŸi |
 | Web Push (VAPID) | Push bildirimleri |
 
 ### Algoritmalar
-| Teknoloji | Amaç |
+| Teknoloji | AmaÃ§ |
 |-----------|-------|
 | Levenshtein Distance | Fuzzy search |
-| ExcelJS | TİTCK Excel ayrıştırma |
+| ExcelJS | TÄ°TCK Excel ayrÄ±ÅŸtÄ±rma |
 
 ---
 
-## Proje Yapısı
+## Proje YapÄ±sÄ±
 
 ```
-ilacStokTakipSistemi/
-├── docs/                            # Kurulum ve deployment kılavuzları
-├── public/
-│   ├── manifest.json                # PWA manifest
-│   └── sw.js                        # Service Worker
-├── scripts/
-│   ├── fetch-titck-data.js          # TİTCK Excel → medicines.json
-│   └── send-notifications.js        # Push bildirim gönderici
-├── src/
-│   ├── components/
-│   │   ├── AddMedicineModal.jsx     # İlaç ekleme/düzenleme
-│   │   ├── AddedMedicineSuccessModal.jsx # Başarılı ekleme uyarısı
-│   │   ├── AuthModal.jsx            # Giriş/Kayıt
-│   │   ├── BarcodeScanner.jsx       # Kamera barkod okuyucu
-│   │   ├── BulkAddModal.jsx         # Toplu JSON import ve barkod ekleme
-│   │   ├── DeleteModal.jsx          # Silme onay
-│   │   ├── FamilyModal.jsx          # Aile modu yönetimi
-│   │   ├── MedicineCard.jsx         # İlaç kartı
-│   │   ├── MonthYearPicker.jsx      # Sayısal ay ve yıl seçici
-│   │   ├── SettingsModal.jsx        # Kullanıcı ayarları (Yazı boyutu, şifre)
-│   │   ├── ShareView.jsx            # Paylaşım link görünümü
-│   │   └── ui/
-│   │       └── BaseComponents.jsx   # Ortak UI bileşenleri
-│   ├── config/
-│   │   └── firebase.js              # Firebase yapılandırması
-│   ├── services/
-│   │   ├── AuthService.js           # Firebase Auth işlemleri
-│   │   ├── CsvExport.js             # CSV dışa aktarma
-│   │   ├── FamilyService.js         # Aile modu işlemleri
-│   │   ├── FirebaseClient.js        # Firebase başlatma & App Check
-│   │   ├── FirebaseService.js       # Firestore CRUD
-│   │   ├── FuzzySearch.js           # Levenshtein arama
-│   │   ├── MedicineDatabase.js      # TİTCK IndexedDB yönetimi
-│   │   ├── MedicineValidation.js    # Veri doğrulama & normalize
-│   │   ├── NotificationService.js   # Web Push yönetimi
-│   │   └── StorageManager.js        # LocalStorage yönetimi
-│   ├── App.jsx                      # Ana uygulama bileşeni
-│   ├── main.jsx                     # Entry point
-│   └── index.css                    # Global stiller
-├── tests/
-│   └── firestore.rules.test.js      # Güvenlik kuralı testleri
-├── .env.example
-├── firebase.json
-├── firestore.indexes.json
-├── firestore.rules
-├── index.html
-└── package.json
+DrDepo/
+â”œâ”€â”€ docs/                            # Kurulum ve deployment kÄ±lavuzlarÄ±
+â”œâ”€â”€ public/
+â”‚   â”œâ”€â”€ manifest.json                # PWA manifest
+â”‚   â””â”€â”€ sw.js                        # Service Worker
+â”œâ”€â”€ scripts/
+â”‚   â”œâ”€â”€ fetch-titck-data.js          # TÄ°TCK Excel â†’ medicines.json
+â”‚   â””â”€â”€ send-notifications.js        # Push bildirim gÃ¶nderici
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ components/
+â”‚   â”‚   â”œâ”€â”€ AddMedicineModal.jsx     # Ä°laÃ§ ekleme/dÃ¼zenleme
+â”‚   â”‚   â”œâ”€â”€ AddedMedicineSuccessModal.jsx # BaÅŸarÄ±lÄ± ekleme uyarÄ±sÄ±
+â”‚   â”‚   â”œâ”€â”€ AuthModal.jsx            # GiriÅŸ/KayÄ±t
+â”‚   â”‚   â”œâ”€â”€ BarcodeScanner.jsx       # Kamera barkod okuyucu
+â”‚   â”‚   â”œâ”€â”€ BulkAddModal.jsx         # Toplu JSON import ve barkod ekleme
+â”‚   â”‚   â”œâ”€â”€ DeleteModal.jsx          # Silme onay
+â”‚   â”‚   â”œâ”€â”€ FamilyModal.jsx          # Aile modu yÃ¶netimi
+â”‚   â”‚   â”œâ”€â”€ MedicineCard.jsx         # Ä°laÃ§ kartÄ±
+â”‚   â”‚   â”œâ”€â”€ MonthYearPicker.jsx      # SayÄ±sal ay ve yÄ±l seÃ§ici
+â”‚   â”‚   â”œâ”€â”€ SettingsModal.jsx        # KullanÄ±cÄ± ayarlarÄ± (YazÄ± boyutu, ÅŸifre)
+â”‚   â”‚   â”œâ”€â”€ ShareView.jsx            # PaylaÅŸÄ±m link gÃ¶rÃ¼nÃ¼mÃ¼
+â”‚   â”‚   â””â”€â”€ ui/
+â”‚   â”‚       â””â”€â”€ BaseComponents.jsx   # Ortak UI bileÅŸenleri
+â”‚   â”œâ”€â”€ config/
+â”‚   â”‚   â””â”€â”€ firebase.js              # Firebase yapÄ±landÄ±rmasÄ±
+â”‚   â”œâ”€â”€ services/
+â”‚   â”‚   â”œâ”€â”€ AuthService.js           # Firebase Auth iÅŸlemleri
+â”‚   â”‚   â”œâ”€â”€ CsvExport.js             # CSV dÄ±ÅŸa aktarma
+â”‚   â”‚   â”œâ”€â”€ FamilyService.js         # Aile modu iÅŸlemleri
+â”‚   â”‚   â”œâ”€â”€ FirebaseClient.js        # Firebase baÅŸlatma & App Check
+â”‚   â”‚   â”œâ”€â”€ FirebaseService.js       # Firestore CRUD
+â”‚   â”‚   â”œâ”€â”€ FuzzySearch.js           # Levenshtein arama
+â”‚   â”‚   â”œâ”€â”€ MedicineDatabase.js      # TÄ°TCK IndexedDB yÃ¶netimi
+â”‚   â”‚   â”œâ”€â”€ MedicineValidation.js    # Veri doÄŸrulama & normalize
+â”‚   â”‚   â”œâ”€â”€ NotificationService.js   # Web Push yÃ¶netimi
+â”‚   â”‚   â””â”€â”€ StorageManager.js        # LocalStorage yÃ¶netimi
+â”‚   â”œâ”€â”€ App.jsx                      # Ana uygulama bileÅŸeni
+â”‚   â”œâ”€â”€ main.jsx                     # Entry point
+â”‚   â””â”€â”€ index.css                    # Global stiller
+â”œâ”€â”€ tests/
+â”‚   â””â”€â”€ firestore.rules.test.js      # GÃ¼venlik kuralÄ± testleri
+â”œâ”€â”€ .env.example
+â”œâ”€â”€ firebase.json
+â”œâ”€â”€ firestore.indexes.json
+â”œâ”€â”€ firestore.rules
+â”œâ”€â”€ index.html
+â””â”€â”€ package.json
 ```
 
 ---
 
-## Güvenlik
+## GÃ¼venlik
 
-- **Firestore Security Rules** — kullanıcı ve aile bazlı veri izolasyonu
-- **Firebase App Check** — reCAPTCHA v3 ile bot koruması
-- **HTTPS** — Firebase Hosting tarafından otomatik
-- **Input Validation** — `MedicineValidation` servisi ile her yazma öncesi doğrulama
-- `.env` dosyası `.gitignore` ile korunur
+- **Firestore Security Rules** â€” kullanÄ±cÄ± ve aile bazlÄ± veri izolasyonu
+- **Firebase App Check** â€” reCAPTCHA v3 ile bot korumasÄ±
+- **HTTPS** â€” Firebase Hosting tarafÄ±ndan otomatik
+- **Input Validation** â€” `MedicineValidation` servisi ile her yazma Ã¶ncesi doÄŸrulama
+- `.env` dosyasÄ± `.gitignore` ile korunur
 
-### Güvenlik Testleri
+### GÃ¼venlik Testleri
 ```bash
-npm run test:rules     # Firestore kural testlerini çalıştır
-npm run test:security  # Tam güvenlik kontrolü
+npm run test:rules     # Firestore kural testlerini Ã§alÄ±ÅŸtÄ±r
+npm run test:security  # Tam gÃ¼venlik kontrolÃ¼
 ```
 
 ---
@@ -255,84 +262,84 @@ npm run test:security  # Tam güvenlik kontrolü
 ## Changelog
 
 ### v2.6.0
-- **Karekod (QR) Desteği**: İlaç ekleme ve Toplu Ekleme ekranlarına QR (Karekod) okuma desteği eklendi. Barkod ile kullanım akışı sadeleştirildi ve QR bilgilendirme ekranı oluşturuldu. QR üzerinden son kullanma tarihi otomatik ayıklanıyor.
-- **Kullanıcı Ayarları**: Şifre değiştirme alanı ayarlar içerisine taşındı (Google girişi yapanlar için gizlendi).
-- **Erişilebilirlik**: Dinamik REM tabanlı ölçeklendirme ile Yazı Boyutu ayarı eklendi, taşma ve hizalama sorunları giderildi.
-- **Karanlık Tema (Dark Mode)**: Tüm popup pencereleri, form elemanları ve butonlar karanlık tema ile tam uyumlu hale getirildi. Beyaz arkaplan patlamaları düzeltildi.
-- **Son Kullanma Tarihi**: Ay seçimi sayısal (01-12) formata (MonthYearPicker) geçirildi. Ana ekranda kullanıcı dostu ay adı gösterimi korundu.
-- **Sadeleştirme**: Kullanım geçmişi özellikleri sistemden çıkarılarak arayüz temizlendi.
-- **Düzeltmeler**: Toplu ilaç ekleme ekranındaki QR ayrıştırma ve barkod sorgulama hataları düzeltildi.
+- **Karekod (QR) DesteÄŸi**: Ä°laÃ§ ekleme ve Toplu Ekleme ekranlarÄ±na QR (Karekod) okuma desteÄŸi eklendi. Barkod ile kullanÄ±m akÄ±ÅŸÄ± sadeleÅŸtirildi ve QR bilgilendirme ekranÄ± oluÅŸturuldu. QR Ã¼zerinden son kullanma tarihi otomatik ayÄ±klanÄ±yor.
+- **KullanÄ±cÄ± AyarlarÄ±**: Åifre deÄŸiÅŸtirme alanÄ± ayarlar iÃ§erisine taÅŸÄ±ndÄ± (Google giriÅŸi yapanlar iÃ§in gizlendi).
+- **EriÅŸilebilirlik**: Dinamik REM tabanlÄ± Ã¶lÃ§eklendirme ile YazÄ± Boyutu ayarÄ± eklendi, taÅŸma ve hizalama sorunlarÄ± giderildi.
+- **KaranlÄ±k Tema (Dark Mode)**: TÃ¼m popup pencereleri, form elemanlarÄ± ve butonlar karanlÄ±k tema ile tam uyumlu hale getirildi. Beyaz arkaplan patlamalarÄ± dÃ¼zeltildi.
+- **Son Kullanma Tarihi**: Ay seÃ§imi sayÄ±sal (01-12) formata (MonthYearPicker) geÃ§irildi. Ana ekranda kullanÄ±cÄ± dostu ay adÄ± gÃ¶sterimi korundu.
+- **SadeleÅŸtirme**: KullanÄ±m geÃ§miÅŸi Ã¶zellikleri sistemden Ã§Ä±karÄ±larak arayÃ¼z temizlendi.
+- **DÃ¼zeltmeler**: Toplu ilaÃ§ ekleme ekranÄ±ndaki QR ayrÄ±ÅŸtÄ±rma ve barkod sorgulama hatalarÄ± dÃ¼zeltildi.
 
-### v2.5.0 — Kişisel/Aile Depo Ayrımı & QR Davet Düzeltmeleri
-- **Kişisel & Aile Deposu**: Modern geçiş butonu (Segmented Control) ile depolar tamamen ayrıldı. İlaç listesi, filtreler ve istatistikler dinamik olarak güncelleniyor.
-- **Aile Modu Düzeltmeleri**: QR kod ile aileye katıl ekranında kameranın yanlış açılması engellendi ve Firestore yetkilendirme (permission-denied) hataları düzeltildi.
-- **İyileştirmeler**: Kişisel ve aile ilaçlarının birbirine karışmasına neden olan sorunlar giderildi; depolar arası geçiş çok daha güvenli ve hızlı hale getirildi.
+### v2.5.0 â€” KiÅŸisel/Aile Depo AyrÄ±mÄ± & QR Davet DÃ¼zeltmeleri
+- **KiÅŸisel & Aile Deposu**: Modern geÃ§iÅŸ butonu (Segmented Control) ile depolar tamamen ayrÄ±ldÄ±. Ä°laÃ§ listesi, filtreler ve istatistikler dinamik olarak gÃ¼ncelleniyor.
+- **Aile Modu DÃ¼zeltmeleri**: QR kod ile aileye katÄ±l ekranÄ±nda kameranÄ±n yanlÄ±ÅŸ aÃ§Ä±lmasÄ± engellendi ve Firestore yetkilendirme (permission-denied) hatalarÄ± dÃ¼zeltildi.
+- **Ä°yileÅŸtirmeler**: KiÅŸisel ve aile ilaÃ§larÄ±nÄ±n birbirine karÄ±ÅŸmasÄ±na neden olan sorunlar giderildi; depolar arasÄ± geÃ§iÅŸ Ã§ok daha gÃ¼venli ve hÄ±zlÄ± hale getirildi.
 
-### v2.4.0 — QR Davetleri, GS1 Barkod & E2EE Güvenlik Pre-release
-- **Barkod**: GS1 DataMatrix desteği eklendi. Barkod ile mevcut ilaç arama, manuel giriş alanı ve ayrıştırıcı (GTIN-14, EAN-13, Seri No vb.) eklendi. Leading zero (baştaki sıfır) kaybı sorunu çözüldü.
-- **Aile Modu**: QR Kod ile tek kullanımlık güvenli aile daveti ve QR okutarak aileye katılma eklendi.
-- **Kimlik Doğrulama**: Manuel kayıt için zorunlu e-posta doğrulama eklendi. Doğrulanmamış kullanıcı sorunları giderildi.
-- **Güvenlik (E2EE)**: Uçtan Uca Şifreleme (E2EE) altyapısına geçildi. Şifreleme anahtarları güvenli kasaya taşındı, Recovery Passphrase altyapısı eklendi.
-- **Firestore Güvenliği**: Aile bilgileri sadece üyelere okunabilir hale getirildi, QR davetleri transaction tabanlı tek kullanımlık yapıldı ve sızıntılar kapatıldı.
+### v2.4.0 â€” QR Davetleri, GS1 Barkod & E2EE GÃ¼venlik Pre-release
+- **Barkod**: GS1 DataMatrix desteÄŸi eklendi. Barkod ile mevcut ilaÃ§ arama, manuel giriÅŸ alanÄ± ve ayrÄ±ÅŸtÄ±rÄ±cÄ± (GTIN-14, EAN-13, Seri No vb.) eklendi. Leading zero (baÅŸtaki sÄ±fÄ±r) kaybÄ± sorunu Ã§Ã¶zÃ¼ldÃ¼.
+- **Aile Modu**: QR Kod ile tek kullanÄ±mlÄ±k gÃ¼venli aile daveti ve QR okutarak aileye katÄ±lma eklendi.
+- **Kimlik DoÄŸrulama**: Manuel kayÄ±t iÃ§in zorunlu e-posta doÄŸrulama eklendi. DoÄŸrulanmamÄ±ÅŸ kullanÄ±cÄ± sorunlarÄ± giderildi.
+- **GÃ¼venlik (E2EE)**: UÃ§tan Uca Åifreleme (E2EE) altyapÄ±sÄ±na geÃ§ildi. Åifreleme anahtarlarÄ± gÃ¼venli kasaya taÅŸÄ±ndÄ±, Recovery Passphrase altyapÄ±sÄ± eklendi.
+- **Firestore GÃ¼venliÄŸi**: Aile bilgileri sadece Ã¼yelere okunabilir hale getirildi, QR davetleri transaction tabanlÄ± tek kullanÄ±mlÄ±k yapÄ±ldÄ± ve sÄ±zÄ±ntÄ±lar kapatÄ±ldÄ±.
 
 
 ### v2.3.0
-- **Aile Modu**: e-posta daveti, aile üyesi ilaç görüntüleme, Özel İlaç gizleme
-- **Barkod düzeltmeleri**: TİTCK 2026 URL dinamik keşif, mobil IndexedDB timeout çözümü
-- **Firestore**: cross-user okuma kuralları, davet kabul izni, `persistentLocalCache` geçişi
-- Proje dosya yapısı temizlendi (`docs/` klasörü, gereksiz dosyalar silindi)
+- **Aile Modu**: e-posta daveti, aile Ã¼yesi ilaÃ§ gÃ¶rÃ¼ntÃ¼leme, Ã–zel Ä°laÃ§ gizleme
+- **Barkod dÃ¼zeltmeleri**: TÄ°TCK 2026 URL dinamik keÅŸif, mobil IndexedDB timeout Ã§Ã¶zÃ¼mÃ¼
+- **Firestore**: cross-user okuma kurallarÄ±, davet kabul izni, `persistentLocalCache` geÃ§iÅŸi
+- Proje dosya yapÄ±sÄ± temizlendi (`docs/` klasÃ¶rÃ¼, gereksiz dosyalar silindi)
 
 ### v2.2.0
-- **Barkod Tarama**: kamera ile barkod okuma, TİTCK veritabanı entegrasyonu (22.000+ ilaç)
-- **Kullanım Geçmişi**: ilaç bazlı kayıt (kullanıldı, bitti, eklendi, düzenlendi)
-- **Push Bildirimleri**: Web Push VAPID ile son kullanma tarihi uyarıları
-- **Paylaşım Linki**: salt okunur, 7 günlük token bazlı paylaşım
+- **Barkod Tarama**: kamera ile barkod okuma, TÄ°TCK veritabanÄ± entegrasyonu (22.000+ ilaÃ§)
+- **KullanÄ±m GeÃ§miÅŸi**: ilaÃ§ bazlÄ± kayÄ±t (kullanÄ±ldÄ±, bitti, eklendi, dÃ¼zenlendi)
+- **Push Bildirimleri**: Web Push VAPID ile son kullanma tarihi uyarÄ±larÄ±
+- **PaylaÅŸÄ±m Linki**: salt okunur, 7 gÃ¼nlÃ¼k token bazlÄ± paylaÅŸÄ±m
 - Offline-First PWA: IndexedDB chunked yazma, Service Worker v5
 
 ### v2.1.1
-- Firebase güvenlik tabanı sertleştirildi (App Check, gelişmiş Firestore kuralları)
-- Güvenlik test altyapısı eklendi
+- Firebase gÃ¼venlik tabanÄ± sertleÅŸtirildi (App Check, geliÅŸmiÅŸ Firestore kurallarÄ±)
+- GÃ¼venlik test altyapÄ±sÄ± eklendi
 
 ### v2.1.0
-- Firebase Authentication ile kullanıcı kayıt/giriş sistemi
-- Google ile giriş
-- Etiket sistemi ve gelişmiş filtreleme
-- Karanlık mod
-- CSV dışa aktarma
-- 8 farklı sıralama seçeneği
+- Firebase Authentication ile kullanÄ±cÄ± kayÄ±t/giriÅŸ sistemi
+- Google ile giriÅŸ
+- Etiket sistemi ve geliÅŸmiÅŸ filtreleme
+- KaranlÄ±k mod
+- CSV dÄ±ÅŸa aktarma
+- 8 farklÄ± sÄ±ralama seÃ§eneÄŸi
 
 ### v2.0.0
-- PWA desteği (Progressive Web App)
-- Fuzzy Search (Levenshtein algoritması)
+- PWA desteÄŸi (Progressive Web App)
+- Fuzzy Search (Levenshtein algoritmasÄ±)
 - Firebase Firestore entegrasyonu
-- Toplu ilaç ekleme, akıllı gruplama
+- Toplu ilaÃ§ ekleme, akÄ±llÄ± gruplama
 
 ### v1.0.0
-- İlk sürüm: temel CRUD, LocalStorage, son kullanma takibi
+- Ä°lk sÃ¼rÃ¼m: temel CRUD, LocalStorage, son kullanma takibi
 
 ---
 
-## Katkıda Bulunma
+## KatkÄ±da Bulunma
 
-1. Fork yapın
-2. Feature branch oluşturun (`git checkout -b feature/ozellik-adi`)
-3. Değişikliklerinizi commit edin (`git commit -m 'feat: Özellik açıklaması'`)
+1. Fork yapÄ±n
+2. Feature branch oluÅŸturun (`git checkout -b feature/ozellik-adi`)
+3. DeÄŸiÅŸikliklerinizi commit edin (`git commit -m 'feat: Ã–zellik aÃ§Ä±klamasÄ±'`)
 4. Branch'inizi push edin (`git push origin feature/ozellik-adi`)
-5. Pull Request açın
+5. Pull Request aÃ§Ä±n
 
 ---
 
 ## Lisans
 
-MIT License — ayrıntılar için [LICENSE](LICENSE) dosyasına bakın.
+MIT License â€” ayrÄ±ntÄ±lar iÃ§in [LICENSE](LICENSE) dosyasÄ±na bakÄ±n.
 
 ---
 
-## İletişim
+## Ä°letiÅŸim
 
-- **Geliştirici**: Yusuf Karamuk
+- **GeliÅŸtirici**: Yusuf Karamuk
 - **GitHub**: [@yusufkaramuk](https://github.com/yusufkaramuk)
 
 ---
 
-> Bu proje ev kullanımı ve eğitim amaçlıdır.
+> Bu proje ev kullanÄ±mÄ± ve eÄŸitim amaÃ§lÄ±dÄ±r.

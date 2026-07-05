@@ -4,7 +4,7 @@
 
 1. [Firebase Console](https://console.firebase.google.com/) adresine gidin
 2. "Add project" veya "Proje Ekle" butonuna tıklayın
-3. Proje adı: `ilac-stok-takip` (veya istediğiniz bir isim)
+3. Proje adı: `drdepo-18481`
 4. Google Analytics'i kapatabilirsiniz (opsiyonel)
 5. "Create project" tıklayın
 
@@ -23,11 +23,11 @@ Ekranda şuna benzer bir kod bloğu göreceksiniz:
 ```javascript
 const firebaseConfig = {
   apiKey: "AIza...",
-  authDomain: "ilac-stok-takip.firebaseapp.com",
-  projectId: "ilac-stok-takip",
-  storageBucket: "ilac-stok-takip.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123"
+  authDomain: "drdepo-18481.firebaseapp.com",
+  projectId: "drdepo-18481",
+  storageBucket: "drdepo-18481.firebasestorage.app",
+  messagingSenderId: "574793183660",
+  appId: "1:574793183660:web:bcf9d8343f562905610a09"
 };
 ```
 
@@ -49,4 +49,4 @@ const firebaseConfig = {
 
 ---
 
-Yukarıdaki adımları tamamlayın ve **firebaseConfig** bilgilerini bana gönderin, backend'i kodlara entegre edeceğim! 🚀
+Yukarıdaki adımları tamamlayın ve **firebaseConfig** bilgilerini bana gönderin, backend'i kodlara entegre edeceğim! 

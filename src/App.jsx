@@ -309,9 +309,9 @@ const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut,
   <header className="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-700/80">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
       <div className="flex items-center gap-2.5">
-        <img src={appLogo} alt="İlaç Takip" className="w-10 h-10 object-contain rounded-xl bg-[var(--brand-50)] p-0.5"/>
+        <img src={appLogo} alt="DrDepo" className="w-10 h-10 object-contain rounded-xl bg-[var(--brand-50)] p-0.5"/>
         <div className="leading-tight">
-          <div className="text-[14.5px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">İlaç Takip Sistemi</div>
+          <div className="text-[14.5px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">DrDepo</div>
           <div className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">{totalCount} kayıtlı ilaç · {user.displayName || user.email?.split('@')[0]}</div>
         </div>
       </div>
@@ -930,7 +930,7 @@ function App() {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="text-center">
-          <img src={appLogo} alt="İlaç Takip" className="w-20 h-20 object-contain mx-auto mb-4 rounded-2xl bg-[var(--brand-50)] p-1"/>
+          <img src={appLogo} alt="DrDepo" className="w-20 h-20 object-contain mx-auto mb-4 rounded-2xl bg-[var(--brand-50)] p-1"/>
           <div className="w-6 h-6 border-2 border-[var(--brand-200)] border-t-[var(--brand-600)] rounded-full animate-spin mx-auto"/>
         </div>
       </div>
@@ -1030,7 +1030,7 @@ function App() {
               <Icon.Heart size={12}/> {todayLabel()}
             </div>
             <h1 className="mt-2 text-[24px] sm:text-[28px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-              Merhaba, {firstName} 👋
+              Merhaba, {firstName} 
             </h1>
             {stats.warning > 0 ? (
               <p className="text-[13.5px] sm:text-[14px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -1328,7 +1328,7 @@ function App() {
 
       {/* Legal Footer */}
       <footer className="mt-8 pb-6 text-center text-[11.5px] text-slate-400 dark:text-slate-500 space-y-1">
-        <p>İlaç Takip · Ev kullanımı ve eğitim amaçlıdır · Tıbbi tavsiye değildir</p>
+        <p>DrDepo · Ev kullanımı ve eğitim amaçlıdır · Tıbbi tavsiye değildir</p>
         <div className="flex justify-center gap-4">
           <a href="/gizlilik" className="hover:underline hover:text-slate-600 dark:hover:text-slate-300 transition-colors">Gizlilik Politikası ve Aydınlatma Metni</a>
           <span className="text-slate-300 dark:text-slate-600">·</span>
