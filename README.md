@@ -262,6 +262,13 @@ npm run test:security  # Tam güvenlik kontrolü
 
 ## Changelog
 
+### v2.6.1
+- **Güvenlik (Dependabot)**: `uuid` paketindeki "Missing buffer bounds check" zafiyeti giderildi ve `firebase-tools` alt bağımlılıkları güvenli sürüme güncellendi.
+- **Statik Kod Analizi (CodeQL)**: Veritabanı aktarım scriptlerinde (`verify-migration.cjs`, `migrate_db.cjs`) hassas bilgilerin konsola sızmasına yol açan "Clear-text logging" uyarısı çözüldü; hata fırlatma (throw) mantığı güvenli ve statik metinlerle yeniden yazıldı.
+- **CI/CD İzinleri**: GitHub Actions iş akışlarındaki (`security-checks.yml`, `send-notifications.yml`) GITHUB_TOKEN yetkileri, "en az yetki prensibi" doğrultusunda salt okunur (`contents: read`) olarak sınırlandırıldı.
+- **Düzeltmeler**: `README.md` dosyasındaki Türkçe karakter bozulmaları ve format hataları giderildi.
+- **İsimlendirme**: Proje adı tüm sistemde, kaynak kodlarda ve belgelerde resmi olarak **DrDepo** olarak güncellendi.
+
 ### v2.6.0
 - **Karekod (QR) Desteği**: İlaç ekleme ve Toplu Ekleme ekranlarına QR (Karekod) okuma desteği eklendi. Barkod ile kullanım akışı sadeleştirildi ve QR bilgilendirme ekranı oluşturuldu. QR üzerinden son kullanma tarihi otomatik ayıklanıyor.
 - **Kullanıcı Ayarları**: Şifre değiştirme alanı ayarlar içerisine taşındı (Google girişi yapanlar için gizlendi).
