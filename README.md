@@ -231,6 +231,7 @@ Yeniden kullanım veya lisanslama talepleri için önceden yazılı izin gerekli
 
 - **Geliştirici**: Yusuf Karamuk
 - **GitHub**: [@yusufkaramuk](https://github.com/yusufkaramuk)
+- **E-posta**: [info@yusufkaramuk.com.tr](mailto:info@yusufkaramuk.com.tr?cc=yusufkaramuk10@gmail.com)
 
 ---
 
