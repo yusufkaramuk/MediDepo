@@ -21,7 +21,6 @@ Modern, güvenli ve kullanıcı dostu bir web uygulaması. Evinizdeki ilaçları
 - Her ilaç için 3 farklı etken madde kaydı
 - Akıllı gruplama: aynı bilgilere sahip ilaçlar otomatik gruplanır (×2, ×3 gösterimi)
 - Toplu ekleme: birden fazla ilacı tek seferde JSON ile içe aktarın
-- Gelişmiş silme: gruptan istediğiniz kadar ilacı seçerek silin
 - Etiket sistemi: ilaçlara özel etiket ekleyin ve etiketle filtreleyin
 
 ### Karekod (QR) & Barkod Tarama ve TİTCK Entegrasyonu
@@ -85,7 +84,7 @@ Kaynak kodu; teknik inceleme, şeffaflık ve portföy/referans amaçlarıyla Git
 
 GitHub'ın veya kullanılan barındırma platformunun işlevleri ve şartları kapsamında zorunlu olarak sağlanan sınırlı haklar dışında, kaynak kodunun herkese açık olması; kodu kopyalama, değiştirme, uyarlama, deploy etme, barındırma, dağıtma, yeniden yayınlama, yeniden markalama, ticari olarak kullanma veya Yazılımı ya da esaslı bir bölümünü başka bir uygulama, servis, yazılım ürünü veya türev çalışmanın temeli olarak kullanma izni vermez.
 
-Kod katkısı, yeniden kullanım veya ticari lisanslama talepleri için proje sahibinden önceden yazılı izin alınmalıdır. Geliştirme ve production deployment dokümantasyonu herkese açık olarak sunulmamaktadır.
+Yeniden kullanım veya ticari lisanslama talepleri için proje sahibinden önceden yazılı izin alınmalıdır. Geliştirme ve production deployment dokümantasyonu herkese açık olarak sunulmamaktadır.
 
 Geçerli kullanım şartları için [LICENSE.md](LICENSE.md) dosyasını inceleyin.
 
@@ -224,7 +223,7 @@ npm run test:security  # Tam güvenlik kontrolü
 
 Hata bildirimi, öneri ve güvenlik geri bildirimleri issue üzerinden kabul edilir.
 
-Kod katkısı, yeniden kullanım veya lisanslama talepleri için önceden yazılı izin gereklidir. Geçerli kullanım şartları için [LICENSE.md](LICENSE.md) dosyasını inceleyin.
+Yeniden kullanım veya lisanslama talepleri için önceden yazılı izin gereklidir. Geçerli kullanım şartları için [LICENSE.md](LICENSE.md) dosyasını inceleyin.
 
 ---
 
