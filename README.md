@@ -136,6 +136,18 @@ DrDepo, React tabanlı bir PWA mimarisi kullanır.
 
 ---
 
+## İlaç Verisi Kaynağı
+
+DrDepo, ilaç adı, barkod/karekod eşleştirme ve ilgili yardımcı bilgiler için Türkiye İlaç ve Tıbbi Cihaz Kurumu (TİTCK) tarafından yayımlanan ilaç verilerini referans veri kaynağı olarak kullanır.
+
+TİTCK ilaç verisinin işlenmesi ve uygulama içinde kullanılabilir hale getirilmesi sürecinde [tugcantopaloglu/turkish-medicine-api](https://github.com/tugcantopaloglu/turkish-medicine-api) projesinden teknik referans olarak yararlanılmıştır.
+
+TİTCK verileri; kullanıcıya ilaç kaydı sırasında kolaylık sağlamak, barkod/karekoddan temel ilaç bilgilerini eşleştirmek ve yerel önbellekleme ile hızlı arama deneyimi sunmak amacıyla işlenir. DrDepo, TİTCK ile bağlantılı, onaylı veya resmi bir TİTCK uygulaması değildir.
+
+TİTCK kaynaklı veriler ve üçüncü taraf veri kaynakları kendi yayımlanma koşullarına, güncellik durumlarına ve ilgili mevzuata tabidir. DrDepo bu verileri tıbbi tavsiye, teşhis veya tedavi amacıyla sunmaz; ilaç kullanımıyla ilgili kararlar için yetkili bir sağlık profesyoneline danışılmalıdır.
+
+---
+
 ## Güvenlik
 
 - **Firestore Security Rules** — kullanıcı ve aile bazlı veri izolasyonu
