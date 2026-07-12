@@ -1,33 +1,88 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  /* ---- DrDepo tasarım token'ları (MediDepo tasarım sistemi) ----
+     Açık tema: ana teal #0F6E56, ikincil #1D9E75, açık ton #5DCAA5,
+     vurgu turuncu #D85A30, arka plan #F5F7F6.
+     Koyu tema: teal #1D9E75, vurgu #F0997B, arka plan #0D1412,
+     yüzey #151C18, metin #F1EFE8. */
   :root {
-    --brand-50: #eef2ff;
-    --brand-100: #e0e7ff;
-    --brand-500: #6366f1;
-    --brand-600: #4f46e5;
-    --brand-700: #4338ca;
-    --brand-shadow: rgba(79, 70, 229, 0.35);
-    --brand-accent: #312e81;
+    --brand-50:  #e9f5f0;
+    --brand-100: #d3ebe1;
+    --brand-200: #aedcc9;
+    --brand-300: #5dcaa5;
+    --brand-400: #35b489;
+    --brand-500: #1d9e75;
+    --brand-600: #0f6e56;
+    --brand-700: #0b5442;
+    --brand-800: #083e32;
+    --brand-900: #052a22;
+    --brand-shadow: rgba(15, 110, 86, 0.30);
+    --brand-accent: #d85a30;
+    --brand-accent-soft: #fbe9e2;
+
+    --surface: #ffffff;
+    --surface-alt: #f5f7f6;
+    --surface-raised: #ffffff;
+    --text-main: #15211c;
+    --text-muted: #5b6f66;
+
+    /* Ortak yüzey/derinlik token'ları */
+    --radius-card: 1.25rem;
+    --radius-sheet: 1.5rem;
+    --shadow-card: 0 1px 2px rgba(5, 42, 34, 0.05), 0 4px 16px rgba(5, 42, 34, 0.06);
+    --shadow-float: 0 8px 30px rgba(5, 42, 34, 0.16);
+    --blur-backdrop: 8px;
+    --duration-fast: 0.18s;
+    --duration-normal: 0.25s;
+  }
+
+  /* Koyu tema: skala ters-eşlenir; brand-50/100 çip zeminleri koyu teal
+     yüzeye, brand-700 metinleri açık teal'e döner. Böylece
+     bg-[var(--brand-50)] + text-[var(--brand-700)] deseni iki temada da
+     otomatik okunaklıdır. */
+  .dark {
+    --brand-50:  #16211c;
+    --brand-100: #1c2b25;
+    --brand-200: #24382f;
+    --brand-300: #2e4a3e;
+    --brand-400: #3fa183;
+    --brand-500: #2bb489;
+    --brand-600: #1d9e75;
+    --brand-700: #5dcaa5;
+    --brand-800: #a8e2cc;
+    --brand-900: #d3ebe1;
+    --brand-shadow: rgba(29, 158, 117, 0.35);
+    --brand-accent: #f0997b;
+    --brand-accent-soft: #33221b;
+
+    --surface: #151c18;
+    --surface-alt: #0d1412;
+    --surface-raised: #1a231e;
+    --text-main: #f1efe8;
+    --text-muted: #9db3a9;
+
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.35);
+    --shadow-float: 0 8px 30px rgba(0, 0, 0, 0.5);
   }
 
   html, body {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
-    color: #0f172a;
+    color: var(--text-main);
   }
 
   body {
-    background: #f8fafc;
+    background: var(--surface-alt);
   }
 
   .dark body {
-    background: #020617;
-    color: #f1f5f9;
+    background: var(--surface-alt);
+    color: var(--text-main);
   }
 }
 
@@ -46,8 +101,29 @@
   50%       { top: calc(100% - 2px); }
 }
 
-.animate-fade     { animation: fade 0.18s ease; }
-.animate-slide-up { animation: slideUp 0.25s cubic-bezier(0.22, 0.61, 0.36, 1); }
+@keyframes gentlePulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+}
+
+.animate-fade     { animation: fade var(--duration-fast) ease; }
+.animate-slide-up { animation: slideUp var(--duration-normal) cubic-bezier(0.22, 0.61, 0.36, 1); }
+.animate-gentle-pulse { animation: gentlePulse 1.6s ease-in-out infinite; }
+
+/* Hareket azaltma tercihi: animasyon ve geçişler kapatılır */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade,
+  .animate-slide-up,
+  .animate-gentle-pulse {
+    animation: none;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 :where(button, a, input, select, textarea):focus-visible {
   outline: 2px solid var(--brand-500);

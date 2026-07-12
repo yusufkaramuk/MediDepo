@@ -98,12 +98,12 @@ function todayLabel() {
 
 // ── Stat Card ─────────────────────────────────────────────────────────────────
 const ACCENT = {
-  indigo:  'from-indigo-500/10 to-indigo-500/0 text-indigo-700 border-indigo-100',
+  brand:   'from-brand-500/10 to-brand-500/0 text-brand-700 border-brand-100',
   emerald: 'from-emerald-500/10 to-emerald-500/0 text-emerald-700 border-emerald-100',
   amber:   'from-amber-500/10 to-amber-500/0 text-amber-700 border-amber-100',
   rose:    'from-rose-500/10 to-rose-500/0 text-rose-700 border-rose-100',
 };
-const StatCard = ({ label, value, sublabel, accent = 'indigo', icon }) => {
+const StatCard = ({ label, value, sublabel, accent = 'brand', icon }) => {
   const [from, to, tx, bd] = ACCENT[accent].split(' ');
   return (
     <div className="relative bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl p-4 sm:p-5 overflow-hidden shadow-[0_1px_0_rgba(15,23,42,0.04)]">
@@ -1186,7 +1186,7 @@ function App() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <StatCard label="Toplam İlaç"     value={stats.total}   sublabel={`${allMedicines.length} farklı kayıt`}         accent="indigo"  icon={<Icon.Box size={16}/>}/>
+          <StatCard label="Toplam İlaç"     value={stats.total}   sublabel={`${allMedicines.length} farklı kayıt`}         accent="brand"  icon={<Icon.Box size={16}/>}/>
           <StatCard label="Süresi Geçmiş"   value={stats.expired} sublabel={stats.expired > 0 ? 'Kontrol önerilir' : 'Şu an temiz'} accent="rose"    icon={<Icon.AlertTri size={16}/>}/>
           <StatCard label="Yakında Bitiyor" value={stats.warning} sublabel="30 gün eşiği"                               accent="amber"   icon={<Icon.Clock size={16}/>}/>
           <StatCard label="Güvenli Stokta"  value={stats.good}    sublabel="3 ay üstü süre"                             accent="emerald" icon={<Icon.Shield size={16}/>}/>

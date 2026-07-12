@@ -334,7 +334,7 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
                       <div className="flex items-center gap-1.5 shrink-0">
                         <span className={`text-[10.5px] font-medium px-2 py-0.5 rounded-full ${
                           m.role === 'admin'  ? 'bg-[var(--brand-50)] text-[var(--brand-700)]' :
-                          m.role === 'editor' ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400' :
+                          m.role === 'editor' ? 'bg-teal-50 text-teal-700 dark:bg-teal-950/30 dark:text-teal-400' :
                                                 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 dark:text-slate-500'
                         }`}>
                           {m.role === 'admin' ? 'Admin' : m.role === 'editor' ? 'Editör' : 'Üye'}
@@ -347,8 +347,8 @@ export function FamilyModal({ user, onClose, onFamilyChange }) {
                               title={m.role === 'editor' ? 'Düzenleme yetkisini geri al' : 'Düzenleme yetkisi ver'}
                               className={`p-1.5 rounded-lg transition-colors ${
                                 m.role === 'editor'
-                                  ? 'text-violet-500 bg-violet-50 dark:bg-violet-950/20 hover:bg-violet-100'
-                                  : 'text-slate-400 dark:text-slate-500 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-950/20'
+                                  ? 'text-teal-500 bg-teal-50 dark:bg-teal-950/20 hover:bg-teal-100'
+                                  : 'text-slate-400 dark:text-slate-500 hover:text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-950/20'
                               }`}>
                               <ShieldIc size={13}/>
                             </button>

@@ -343,7 +343,7 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit,
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button type="button"
               onClick={() => setShowScanner('qr')}
-              className="text-[13px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 transition-colors">
+              className="text-[13px] font-bold text-[var(--brand-600)] bg-[var(--brand-50)] hover:bg-[var(--brand-100)] px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 transition-colors">
               <CameraIc size={14}/> Karekod (QR)
             </button>
             <button type="button"
