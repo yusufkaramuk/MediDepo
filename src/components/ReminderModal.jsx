@@ -29,19 +29,22 @@ const Section = ({ title, hint, children }) => (
   </section>
 );
 
+// Tüm satır tek bir <button role="switch"> — böylece tıklama bir kez tetiklenir
+// (label + iç buton ikilisinin çift tetikleme sorunu ortadan kalkar).
 const ToggleRow = ({ label, hint, checked, onChange, id }) => (
-  <label htmlFor={id} className="flex items-center justify-between gap-3 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 cursor-pointer min-h-[56px]">
+  <button
+    type="button" id={id} role="switch" aria-checked={checked}
+    onClick={() => onChange(!checked)}
+    className="w-full flex items-center justify-between gap-3 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 min-h-[56px] text-left transition-colors hover:border-slate-300 dark:hover:border-slate-600">
     <span>
       <span className="block text-[14px] font-medium text-slate-900 dark:text-slate-100">{label}</span>
       {hint && <span className="block text-[12px] text-slate-500 dark:text-slate-400 mt-0.5">{hint}</span>}
     </span>
-    <button
-      type="button" id={id} role="switch" aria-checked={checked}
-      onClick={() => onChange(!checked)}
+    <span aria-hidden="true"
       className={`relative w-12 h-7 rounded-full transition-colors shrink-0 ${checked ? 'bg-[var(--brand-600)]' : 'bg-slate-300 dark:bg-slate-600'}`}>
-      <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-[22px]' : 'translate-x-0.5'}`}></span>
-    </button>
-  </label>
+      <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`}></span>
+    </span>
+  </button>
 );
 
 export const ReminderModal = ({ medicine, schedule, notifPermission, onClose, onSave, onRemove }) => {

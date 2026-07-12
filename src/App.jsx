@@ -398,15 +398,17 @@ const ProfileButton = ({ user, onShowSettings, onSignOut }) => {
 const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut, theme, onToggleTheme, isOnline, notifPermission, onToggleNotifications, onShowFamily, pendingInviteCount, onShowSettings, tab, onNavigate, unreadNotifCount = 0 }) => (
   <header className="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-700/80">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
-      <div className="flex items-center gap-3 min-w-0">
+      <button type="button" onClick={() => onNavigate?.('anasayfa')}
+        className="flex items-center gap-3 min-w-0 rounded-xl hover:opacity-80 transition-opacity"
+        aria-label="Ana sayfaya git">
         <img src={appLogo} alt="" aria-hidden="true" className="w-14 h-14 sm:w-16 sm:h-16 object-contain shrink-0"/>
-        <div className="leading-tight min-w-0">
+        <div className="leading-tight min-w-0 text-left">
           <div className="text-[18px] sm:text-[20px] font-semibold tracking-tight">
             <span className="text-[var(--brand-600)]">Dr</span><span className="text-slate-900 dark:text-slate-100">Depo</span>
           </div>
           <div className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">{totalCount} kayıtlı ilaç · {user.displayName || user.email?.split('@')[0]}</div>
         </div>
-      </div>
+      </button>
 
       {/* Masaüstü sekmeleri */}
       <nav aria-label="Ana gezinme" className="hidden md:flex items-center gap-1 ml-4">
