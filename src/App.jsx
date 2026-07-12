@@ -211,7 +211,7 @@ const SortMenu = ({ value, onChange }) => {
         <Icon.Filter size={14} className="text-slate-400"/>
         <span className="hidden sm:inline">Sırala:</span>
         <span className="font-medium text-slate-900 dark:text-slate-100">{current.l}</span>
-        <Icon.ChevDown size={14} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}/>
+        <Icon.ChevronDown size={14} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}/>
       </button>
       {open && (
         <>
@@ -275,7 +275,7 @@ const TagFilterMenu = ({ tags, value, onChange }) => {
         }`}>
         <Icon.Filter size={14} className={value ? 'text-[var(--brand-600)]' : 'text-slate-400'}/>
         <span className="hidden sm:inline font-medium">{value || 'Etiket'}</span>
-        <Icon.ChevDown size={14} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}/>
+        <Icon.ChevronDown size={14} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}/>
       </button>
       {open && (
         <>
@@ -305,7 +305,7 @@ const TagFilterMenu = ({ tags, value, onChange }) => {
 // ── Toast ─────────────────────────────────────────────────────────────────────
 const TOAST_MAP = {
   success: { ic: <Icon.Check size={16}/>, bg: 'bg-emerald-600' },
-  error:   { ic: <Icon.AlertTri size={16}/>, bg: 'bg-rose-600' },
+  error:   { ic: <Icon.AlertTriangle size={16}/>, bg: 'bg-rose-600' },
   info:    { ic: <Icon.Cloud size={16}/>, bg: 'bg-slate-900' },
 };
 const Toast = ({ kind = 'success', children, onClose }) => {
@@ -386,7 +386,7 @@ const ProfileButton = ({ user, onShowSettings, onSignOut }) => {
             onClick={() => { setOpen(false); onSignOut(); }}
             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] text-left text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
           >
-            <Icon.Logout size={14} className="text-slate-400"/> Çıkış Yap
+            <Icon.LogOut size={14} className="text-slate-400"/> Çıkış Yap
           </button>
         </div>
       )}
@@ -1450,7 +1450,7 @@ function App() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <StatCard label="Toplam İlaç"     value={stats.total}   sublabel={`${allMedicines.length} farklı kayıt`}         accent="brand"  icon={<Icon.Box size={16}/>}/>
-          <StatCard label="Süresi Geçmiş"   value={stats.expired} sublabel={stats.expired > 0 ? 'Kontrol önerilir' : 'Şu an temiz'} accent="rose"    icon={<Icon.AlertTri size={16}/>}/>
+          <StatCard label="Süresi Geçmiş"   value={stats.expired} sublabel={stats.expired > 0 ? 'Kontrol önerilir' : 'Şu an temiz'} accent="rose"    icon={<Icon.AlertTriangle size={16}/>}/>
           <StatCard label="Yakında Bitiyor" value={stats.warning} sublabel="30 gün eşiği"                               accent="amber"   icon={<Icon.Clock size={16}/>}/>
           <StatCard label="Güvenli Stokta"  value={stats.good}    sublabel="3 ay üstü süre"                             accent="emerald" icon={<Icon.Shield size={16}/>}/>
         </div>
