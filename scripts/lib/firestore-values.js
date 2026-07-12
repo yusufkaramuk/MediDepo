@@ -122,6 +122,7 @@ export async function getDoc(token, projectId, docPath) {
 /** JS değerini Firestore REST değer sarmalayıcısına çevirir (yazma işlemleri için). */
 export function encodeValue(v) {
   if (v === null || v === undefined) return { nullValue: null };
+  if (v instanceof Date) return { timestampValue: v.toISOString() }; // TTL alanları için
   if (typeof v === 'string') return { stringValue: v };
   if (typeof v === 'boolean') return { booleanValue: v };
   if (typeof v === 'number') {

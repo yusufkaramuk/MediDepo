@@ -1,0 +1,51 @@
+# İlaç kullanım hatırlatıcıları — 15 dakikada bir kontrol.
+#
+# NOT: GitHub Actions cron zamanlaması garanti değildir; yoğun saatlerde
+# dakikalarca gecikebilir. Script 40 dakikalık tolerans penceresi ve slot
+# başına idempotency (reminderDeliveries) kullanır: gecikme bildirimi
+# geciktirebilir ama asla çiftlemez. "Tam saat garantisi" verilmez.
+name: İlaç Hatırlatıcıları Gönder
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (bildirim gönderme, yalnızca logla)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: send-reminders
+  cancel-in-progress: false
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Repo'yu checkout et
+        uses: actions/checkout@v4
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Bağımlılıkları kur
+        run: npm install web-push@^3 --no-save
+
+      - name: Hatırlatıcıları gönder
+        env:
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          VAPID_SUBJECT: mailto:yusufkaramuk10@gmail.com
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: node scripts/send-reminders.js
