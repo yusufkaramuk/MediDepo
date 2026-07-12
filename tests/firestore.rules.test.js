@@ -245,3 +245,17 @@ describe('Firestore family and invite rules', () => {
         await assertFails(replay.commit());
     });
 });
+
+describe('Firestore account deletion job rules', () => {
+    it('blocks client reads and writes to accountDeletionJobs', async () => {
+        const db = testEnv.authenticatedContext('user-a', { email: 'a@example.com' }).firestore();
+        const jobRef = doc(db, 'accountDeletionJobs/user-a');
+
+        await assertFails(setDoc(jobRef, {
+            uid: 'user-a',
+            status: 'in_progress',
+            startedAt: '2026-05-09T10:00:00.000Z'
+        }));
+        await assertFails(getDoc(jobRef));
+    });
+});

@@ -37,6 +37,7 @@ export function PassphraseModal({ isNew, isRetry, onClose }) {
   };
 
   const handleCancel = () => {
+    if (isNew) return;
     rejectPassphraseRequest('CANCELLED');
     onClose();
   };
@@ -137,6 +138,7 @@ export function PassphraseModal({ isNew, isRetry, onClose }) {
             )}
 
             <div className="flex gap-3 mt-1">
+              {!isNew && (
               <button
                 type="button"
                 onClick={handleCancel}
@@ -144,6 +146,7 @@ export function PassphraseModal({ isNew, isRetry, onClose }) {
               >
                 İptal
               </button>
+              )}
               <button
                 type="submit"
                 disabled={isNew && !allRulesMet}

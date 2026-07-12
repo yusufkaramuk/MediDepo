@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { StorageManager } from './services/StorageManager';
 import { FirebaseService } from './services/FirebaseService';
 import { AuthService } from './services/AuthService';
@@ -15,7 +15,6 @@ import { deriveKeyFromToken, encryptShareData } from './services/ShareLinkCrypto
 import { NotificationService } from './services/NotificationService';
 import { MedicineCard } from './components/MedicineCard';
 import { AddMedicineModal } from './components/AddMedicineModal';
-import { BarcodeScanner } from './components/BarcodeScanner';
 import { BulkAddModal } from './components/BulkAddModal';
 import { DeleteModal } from './components/DeleteModal';
 import { AuthModal } from './components/AuthModal';
@@ -28,7 +27,9 @@ import { clearKeyCache, setPassphraseRequestHandler, EncryptionService } from '.
 import { AddedMedicineSuccessModal } from './components/AddedMedicineSuccessModal';
 import { SettingsModal } from './components/SettingsModal';
 import { PassphraseModal } from './components/PassphraseModal';
-import appLogo from './assets/logo.png';
+import appLogo from './assets/drdepo-logo.svg';
+
+const BarcodeScanner = lazy(() => import('./components/BarcodeScanner').then(m => ({ default: m.BarcodeScanner })));
 
 // ── Icons (inline SVG, matches design handoff) ──────────────────────────────
 const Ic = ({ d, size = 18, stroke = 2, className = '', extra = null }) => (
@@ -217,6 +218,36 @@ const SortMenu = ({ value, onChange }) => {
 };
 
 // ── Tag Filter Menu ───────────────────────────────────────────────────────────
+const getUserPhotoURL = (user) => (
+  user?.photoURL ||
+  user?.providerData?.find((provider) => provider.providerId === 'google.com' && provider.photoURL)?.photoURL ||
+  ''
+);
+
+const UserAvatar = ({ user }) => {
+  const [imageFailed, setImageFailed] = useState(false);
+  const photoURL = getUserPhotoURL(user);
+  const initial = (user?.displayName || user?.email || 'U').slice(0, 1).toUpperCase();
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [photoURL]);
+
+  if (photoURL && !imageFailed) {
+    return (
+      <img
+        src={photoURL}
+        alt=""
+        referrerPolicy="no-referrer"
+        onError={() => setImageFailed(true)}
+        className="w-full h-full rounded-full object-cover"
+      />
+    );
+  }
+
+  return <span>{initial}</span>;
+};
+
 const TagFilterMenu = ({ tags, value, onChange }) => {
   const [open, setOpen] = useState(false);
   return (
@@ -305,13 +336,58 @@ const EmptyState = ({ searching, onAdd, onBulk }) => (
 );
 
 // ── Header ────────────────────────────────────────────────────────────────────
+const ProfileButton = ({ user, onShowSettings, onSignOut }) => {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setOpen((value) => !value)}
+        className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--brand-100)] to-[var(--brand-50)] text-[var(--brand-700)] grid place-items-center text-[12px] font-semibold ring-1 ring-[var(--brand-100)] hover:opacity-80 transition-opacity overflow-hidden"
+        aria-label="Profil menusu"
+        aria-expanded={open}
+      >
+        <UserAvatar user={user} />
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-56 z-40 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-1 animate-[slideUp_.15s_ease]">
+          <button
+            onClick={() => { setOpen(false); onShowSettings(); }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] text-left text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+          >
+            <Icon.Settings size={14} className="text-slate-400"/> Ayarlar
+          </button>
+          <button
+            onClick={() => { setOpen(false); onSignOut(); }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] text-left text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+          >
+            <Icon.Logout size={14} className="text-slate-400"/> Çıkış Yap
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut, theme, onToggleTheme, isOnline, notifPermission, onToggleNotifications, onShowFamily, pendingInviteCount, onShowSettings }) => (
   <header className="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-700/80">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
-      <div className="flex items-center gap-2.5">
-        <img src={appLogo} alt="DrDepo" className="w-10 h-10 object-contain rounded-xl bg-[var(--brand-50)] p-0.5"/>
-        <div className="leading-tight">
-          <div className="text-[14.5px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">DrDepo</div>
+      <div className="flex items-center gap-3 min-w-0">
+        <img src={appLogo} alt="" aria-hidden="true" className="w-14 h-14 sm:w-16 sm:h-16 object-contain shrink-0"/>
+        <div className="leading-tight min-w-0">
+          <div className="text-[18px] sm:text-[20px] font-semibold tracking-tight">
+            <span style={{ color: '#087269' }}>Dr</span><span style={{ color: '#1F272A' }}>Depo</span>
+          </div>
           <div className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">{totalCount} kayıtlı ilaç · {user.displayName || user.email?.split('@')[0]}</div>
         </div>
       </div>
@@ -362,12 +438,11 @@ const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut,
           aria-label={theme === 'dark' ? 'Açık mod' : 'Karanlık mod'}>
           {theme === 'dark' ? <Icon.Sun size={17}/> : <Icon.Moon size={17}/>}
         </button>
-        <button onClick={onShowSettings} className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--brand-100)] to-[var(--brand-50)] text-[var(--brand-700)] grid place-items-center text-[12px] font-semibold ring-1 ring-[var(--brand-100)] hover:opacity-80 transition-opacity" aria-label="Ayarlar">
-          {(user.displayName || user.email || 'U').slice(0, 1).toUpperCase()}
-        </button>
-        <button onClick={onSignOut} className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100" aria-label="Çıkış">
-          <Icon.Logout size={17}/>
-        </button>
+        <ProfileButton
+          user={user}
+          onShowSettings={onShowSettings}
+          onSignOut={onSignOut}
+        />
       </div>
     </div>
   </header>
@@ -1308,11 +1383,13 @@ function App() {
       )}
 
       {showSearchScanner && (
-        <BarcodeScanner
-          mode={showSearchScanner}
-          onResult={(res) => handleSearchBarcode(res, showSearchScanner)}
-          onClose={() => setShowSearchScanner(false)}
-        />
+        <Suspense fallback={null}>
+          <BarcodeScanner
+            mode={showSearchScanner}
+            onResult={(res) => handleSearchBarcode(res, showSearchScanner)}
+            onClose={() => setShowSearchScanner(false)}
+          />
+        </Suspense>
       )}
 
       {addedSuccessData && (

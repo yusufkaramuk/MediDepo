@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Mail, Lock, User, AlertCircle, CheckCircle, Shield, Bell, Cloud, Camera } from 'lucide-react';
-import appLogo from '../assets/logo.png';
+import appLogoName from '../assets/drdepo-logo-name.svg';
 
 const AUTH_COOLDOWN_MS = 5000;
 
@@ -122,13 +122,7 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
       <div className="max-w-6xl mx-auto px-5 sm:px-8 py-10 sm:py-16 grid lg:grid-cols-2 gap-10 items-center min-h-screen">
         {/* Left: brand */}
         <div className="space-y-7 hidden lg:block">
-          <div className="inline-flex items-center gap-2.5">
-            <img src={appLogo} alt="DrDepo" className="w-16 h-16 object-contain rounded-2xl bg-[var(--brand-50)] p-1"/>
-            <div>
-              <div className="text-[15px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">DrDepo</div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 dark:text-slate-500 -mt-0.5">v2 · 2026</div>
-            </div>
-          </div>
+          <img src={appLogoName} alt="DrDepo" className="h-20 w-auto max-w-[300px] object-contain"/>
 
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-1 text-[12px] font-medium text-slate-600 dark:text-slate-300 shadow-sm">
@@ -164,8 +158,7 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
 
             {/* Mobile logo */}
             <div className="flex items-center gap-2 mb-5 lg:hidden">
-              <img src={appLogo} alt="DrDepo" className="w-12 h-12 object-contain rounded-xl bg-[var(--brand-50)] p-1"/>
-              <span className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">DrDepo</span>
+              <img src={appLogoName} alt="DrDepo" className="h-12 w-auto max-w-[180px] object-contain"/>
             </div>
 
             {/* Mode toggle */}
@@ -318,7 +311,12 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
             </div>
 
             <div className="mt-6 pt-5 border-t border-dashed border-slate-200 dark:border-slate-700 text-[11.5px] text-slate-500 dark:text-slate-400 dark:text-slate-500 text-center">
-              Verileriniz cihazınızda şifrelenir, yalnızca sizin hesabınızla senkronize olur.
+              <p>Verileriniz cihazınızda şifrelenir, yalnızca sizin hesabınızla senkronize olur.</p>
+              <div className="mt-2 flex justify-center gap-3">
+                <a href="/privacy" className="hover:underline hover:text-slate-700 dark:hover:text-slate-300">Gizlilik Sözleşmesi</a>
+                <span className="opacity-50">•</span>
+                <a href="/terms" className="hover:underline hover:text-slate-700 dark:hover:text-slate-300">Kullanım Koşulları</a>
+              </div>
             </div>
           </div>
         </div>

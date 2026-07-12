@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/FirebaseClient';
 import { deriveKeyFromToken, decryptShareData } from '../services/ShareLinkCrypto';
+import appLogoName from '../assets/drdepo-logo-name.svg';
 
 const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 function fmtExpiry(s) { if (!s) return '—'; const [y, m] = s.split('-'); return `${TR_MONTHS[+m - 1]} ${y}`; }
@@ -69,13 +70,7 @@ export function ShareView({ token, encKey }) {
       <div className="w-full max-w-md">
         {/* Brand */}
         <div className="flex items-center gap-2.5 mb-6 justify-center">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--brand-500)] to-[var(--brand-700)] grid place-items-center shadow-lg">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/>
-              <path d="m8.5 8.5 7 7"/>
-            </svg>
-          </div>
-          <span className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">DrDepo</span>
+          <img src={appLogoName} alt="DrDepo" className="h-11 w-auto max-w-[180px] object-contain"/>
         </div>
 
         {state === 'loading' && (

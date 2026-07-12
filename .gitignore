@@ -69,3 +69,6 @@ skills-lock.json
 ilac-stok-yedek-*.json
 .claude/
 public/medicines.json
+
+# Orphaned Cloud Functions draft (requires Blaze; not wired into firebase.json)
+functions/

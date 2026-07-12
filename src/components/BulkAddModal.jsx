@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef, Suspense, useCallback } from 'react';
-import { BarcodeScanner } from './BarcodeScanner';
+import React, { useState, useEffect, useRef, Suspense, useCallback, lazy } from 'react';
 import { MedicineDatabase } from '../services/MedicineDatabase';
 import { BarcodeParser } from '../services/BarcodeParser';
 import { MonthYearPicker } from './MonthYearPicker';
+
+const BarcodeScanner = lazy(() => import('./BarcodeScanner').then(m => ({ default: m.BarcodeScanner })));
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const Ic = ({ d, size = 18, stroke = 2, className = '', extra = null }) => (
