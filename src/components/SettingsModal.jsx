@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import * as Icon from 'lucide-react';
 import { AuthService } from '../services/AuthService';
 import { EncryptionService } from '../services/EncryptionService';
+import { ModalShell } from './ui/ModalShell';
 
 const FONT_SIZES = [
   { label: 'Küçük', value: '14px' },
@@ -262,17 +263,12 @@ export function SettingsModal({ user, fontSize, onFontSizeChange, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] animate-[fade_.18s_ease]"></div>
-      <div
-        className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90dvh] animate-[slideUp_.25s_ease]"
-        onClick={e => e.stopPropagation()}
-      >
+    <ModalShell onClose={onClose} labelledBy="settings-modal-title" maxWidth="max-w-md">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
-          <h2 className="text-[16px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <h2 id="settings-modal-title" className="text-[16px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <Icon.Settings size={18} className="text-slate-400 dark:text-slate-500"/> Ayarlar
           </h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">
+          <button onClick={onClose} aria-label="Ayarları kapat" className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">
             <Icon.X size={16}/>
           </button>
         </div>
@@ -347,7 +343,6 @@ export function SettingsModal({ user, fontSize, onFontSizeChange, onClose }) {
             </section>
           )}
         </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 }

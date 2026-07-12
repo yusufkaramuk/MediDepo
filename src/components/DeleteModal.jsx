@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ModalShell } from './ui/ModalShell';
 
 const Ic = ({ d, size = 18, stroke = 2, className = '', extra = null }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
@@ -19,19 +20,14 @@ export const DeleteModal = ({ medicine, onClose, onConfirm }) => {
   if (!medicine) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] animate-[fade_.18s_ease]"></div>
-      <div
-        className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 animate-[slideUp_.25s_cubic-bezier(.22,.61,.36,1)]"
-        onClick={e => e.stopPropagation()}
-      >
+    <ModalShell onClose={onClose} labelledBy="delete-modal-title" maxWidth="max-w-md">
         <div className="p-6">
           <div className="flex items-start gap-3">
             <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 grid place-items-center ring-1 ring-rose-100 shrink-0">
               <AlertTri size={20}/>
             </div>
             <div className="flex-1">
-              <h2 className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">İlacı sil?</h2>
+              <h2 id="delete-modal-title" className="text-[17px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight">İlacı sil?</h2>
               <p className="mt-1 text-[13.5px] text-slate-600 dark:text-slate-300 leading-relaxed">
                 <span className="font-semibold text-slate-900 dark:text-slate-100">{medicine.name}</span>
                 {medicine.quantity ? ` (${medicine.quantity})` : ''} kalıcı olarak listenizden kaldırılacak.
@@ -64,7 +60,6 @@ export const DeleteModal = ({ medicine, onClose, onConfirm }) => {
             <TrashIc size={15}/> {n > 1 ? `${n} adet sil` : 'Sil'}
           </button>
         </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 };

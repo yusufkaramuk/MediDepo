@@ -296,11 +296,11 @@ const TOAST_MAP = {
 const Toast = ({ kind = 'success', children, onClose }) => {
   const m = TOAST_MAP[kind] || TOAST_MAP.info;
   return (
-    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] animate-[slideUp_.25s_cubic-bezier(.22,.61,.36,1)]">
+    <div role="status" aria-live="polite" className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] animate-[slideUp_.25s_cubic-bezier(.22,.61,.36,1)]">
       <div className={`flex items-center gap-2.5 ${m.bg} text-white text-[13.5px] font-medium px-4 py-2.5 rounded-full shadow-2xl ring-1 ring-black/5`}>
         <span className="grid place-items-center w-5 h-5 rounded-full bg-white/15">{m.ic}</span>
         <span>{children}</span>
-        <button onClick={onClose} className="ml-2 opacity-70 hover:opacity-100"><Icon.X size={14}/></button>
+        <button onClick={onClose} aria-label="Bildirimi kapat" className="ml-2 p-1.5 -m-1 opacity-70 hover:opacity-100"><Icon.X size={14}/></button>
       </div>
     </div>
   );
