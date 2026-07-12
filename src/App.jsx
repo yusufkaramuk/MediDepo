@@ -80,6 +80,7 @@ const Icon = {
   Bell:     (p) => <Ic {...p} extra={<><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></>}/>,
   BellOff:  (p) => <Ic {...p} extra={<><path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 1 .6 5"/><path d="M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><line x1="2" x2="22" y1="2" y2="22"/></>}/>,
   Users:    (p) => <Ic {...p} extra={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>}/>,
+  Inbox:    (p) => <Ic {...p} extra={<><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></>}/>,
 };
 
 // ── Status helpers ────────────────────────────────────────────────────────────
@@ -211,7 +212,7 @@ const SortMenu = ({ value, onChange }) => {
         <Icon.Filter size={14} className="text-slate-400"/>
         <span className="hidden sm:inline">Sırala:</span>
         <span className="font-medium text-slate-900 dark:text-slate-100">{current.l}</span>
-        <Icon.ChevronDown size={14} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}/>
+        <Icon.ChevDown size={14} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}/>
       </button>
       {open && (
         <>
@@ -275,7 +276,7 @@ const TagFilterMenu = ({ tags, value, onChange }) => {
         }`}>
         <Icon.Filter size={14} className={value ? 'text-[var(--brand-600)]' : 'text-slate-400'}/>
         <span className="hidden sm:inline font-medium">{value || 'Etiket'}</span>
-        <Icon.ChevronDown size={14} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}/>
+        <Icon.ChevDown size={14} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}/>
       </button>
       {open && (
         <>
@@ -305,7 +306,7 @@ const TagFilterMenu = ({ tags, value, onChange }) => {
 // ── Toast ─────────────────────────────────────────────────────────────────────
 const TOAST_MAP = {
   success: { ic: <Icon.Check size={16}/>, bg: 'bg-emerald-600' },
-  error:   { ic: <Icon.AlertTriangle size={16}/>, bg: 'bg-rose-600' },
+  error:   { ic: <Icon.AlertTri size={16}/>, bg: 'bg-rose-600' },
   info:    { ic: <Icon.Cloud size={16}/>, bg: 'bg-slate-900' },
 };
 const Toast = ({ kind = 'success', children, onClose }) => {
@@ -386,7 +387,7 @@ const ProfileButton = ({ user, onShowSettings, onSignOut }) => {
             onClick={() => { setOpen(false); onSignOut(); }}
             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] text-left text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
           >
-            <Icon.LogOut size={14} className="text-slate-400"/> Çıkış Yap
+            <Icon.Logout size={14} className="text-slate-400"/> Çıkış Yap
           </button>
         </div>
       )}
@@ -1450,7 +1451,7 @@ function App() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <StatCard label="Toplam İlaç"     value={stats.total}   sublabel={`${allMedicines.length} farklı kayıt`}         accent="brand"  icon={<Icon.Box size={16}/>}/>
-          <StatCard label="Süresi Geçmiş"   value={stats.expired} sublabel={stats.expired > 0 ? 'Kontrol önerilir' : 'Şu an temiz'} accent="rose"    icon={<Icon.AlertTriangle size={16}/>}/>
+          <StatCard label="Süresi Geçmiş"   value={stats.expired} sublabel={stats.expired > 0 ? 'Kontrol önerilir' : 'Şu an temiz'} accent="rose"    icon={<Icon.AlertTri size={16}/>}/>
           <StatCard label="Yakında Bitiyor" value={stats.warning} sublabel="30 gün eşiği"                               accent="amber"   icon={<Icon.Clock size={16}/>}/>
           <StatCard label="Güvenli Stokta"  value={stats.good}    sublabel="3 ay üstü süre"                             accent="emerald" icon={<Icon.Shield size={16}/>}/>
         </div>
