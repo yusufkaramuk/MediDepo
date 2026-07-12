@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil, Trash2, Calendar, Clock, Droplets, Share2 } from 'lucide-react';
+import { Pencil, Trash2, Calendar, Clock, Droplets, Share2, Bell, BellRing } from 'lucide-react';
 
 const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
@@ -42,7 +42,7 @@ const StatusPill = ({ status, daysLeft }) => {
   );
 };
 
-export const MedicineCard = ({ medicine, onEdit, onDelete, onShare }) => {
+export const MedicineCard = ({ medicine, onEdit, onDelete, onShare, onReminder, hasReminder = false }) => {
   const st = calcStatus(medicine.expiryDate);
   const s = STATUS[st.key] || STATUS.unknown;
   const ingredients = [medicine.activeIngredient1, medicine.activeIngredient2, medicine.activeIngredient3].filter(Boolean);
@@ -79,6 +79,13 @@ export const MedicineCard = ({ medicine, onEdit, onDelete, onShare }) => {
                 className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors" aria-label="Düzenle">
                 <Pencil size={15} />
               </button>
+              {onReminder && (
+                <button onClick={() => onReminder(medicine)}
+                  className={`p-1.5 rounded-lg transition-colors ${hasReminder ? 'text-[var(--brand-600)] bg-[var(--brand-50)] hover:bg-[var(--brand-100)]' : 'text-slate-500 hover:text-[var(--brand-600)] hover:bg-[var(--brand-50)]'}`}
+                  aria-label={hasReminder ? 'Hatırlatıcıyı düzenle' : 'Hatırlatıcı kur'}>
+                  {hasReminder ? <BellRing size={15} /> : <Bell size={15} />}
+                </button>
+              )}
               <button onClick={handleDelete}
                 className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" aria-label="Sil">
                 <Trash2 size={15} />

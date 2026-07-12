@@ -2,7 +2,73 @@ import React, { useState } from 'react';
 import * as Icon from 'lucide-react';
 import { AuthService } from '../services/AuthService';
 import { EncryptionService } from '../services/EncryptionService';
+import { NotificationService } from '../services/NotificationService';
 import { ModalShell } from './ui/ModalShell';
+
+// ── Bildirim ayarları ve test bildirimi ──────────────────────────────────────
+function NotificationSection() {
+  const supported = NotificationService.isSupported();
+  const permission = supported ? NotificationService.getPermission() : 'unsupported';
+  const actionsSupported = typeof Notification !== 'undefined' && 'actions' in (Notification.prototype || {});
+  const [testState, setTestState] = useState('');
+
+  const sendTest = async (mode) => {
+    setTestState('sending');
+    const result = await NotificationService.showTestNotification(mode);
+    setTestState(result?.ok ? 'ok' : 'error');
+    setTimeout(() => setTestState(''), 4000);
+  };
+
+  return (
+    <section>
+      <h3 className="text-[12px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Bildirimler</h3>
+      <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3">
+        <div className="space-y-1.5 text-[13px]">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-700 dark:text-slate-300">Cihaz desteği</span>
+            <span className={`font-medium ${supported ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+              {supported ? 'Push destekleniyor' : 'Push desteklenmiyor'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-700 dark:text-slate-300">Bildirim izni</span>
+            <span className={`font-medium ${permission === 'granted' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+              {permission === 'granted' ? 'Verildi' : permission === 'denied' ? 'Reddedildi' : permission === 'unsupported' ? '—' : 'Sorulmadı'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-700 dark:text-slate-300">Bildirim düğmeleri (Aldım/Ertele)</span>
+            <span className="font-medium text-slate-600 dark:text-slate-400">
+              {actionsSupported ? 'Destekleniyor' : 'Bu cihazda uygulama içinde gösterilir'}
+            </span>
+          </div>
+        </div>
+        <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed">
+          Hatırlatıcılar bir PWA üzerinden gönderilir; işletim sistemi alarmı garantisi yoktur ve
+          bildirimler birkaç dakika gecikebilir. Uygulama açıkken hatırlatmalar tam zamanında ekranda gösterilir.
+        </p>
+        {supported && permission === 'granted' ? (
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => sendTest('generic')} disabled={testState === 'sending'}
+              className="px-4 py-2.5 rounded-xl text-[13.5px] font-medium bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] disabled:opacity-50 transition-colors min-h-[44px]">
+              Test bildirimi gönder
+            </button>
+            <button type="button" onClick={() => sendTest('named')} disabled={testState === 'sending'}
+              className="px-4 py-2.5 rounded-xl text-[13.5px] font-medium bg-[var(--brand-50)] text-[var(--brand-700)] hover:bg-[var(--brand-100)] disabled:opacity-50 transition-colors min-h-[44px]">
+              İsimli örneği dene
+            </button>
+          </div>
+        ) : (
+          <p className="text-[12.5px] text-amber-700 dark:text-amber-400">
+            Test bildirimi için önce üst menüden bildirim iznini açın.
+          </p>
+        )}
+        {testState === 'ok' && <p role="status" className="text-[12.5px] font-medium text-emerald-600 dark:text-emerald-400">Bildirim gönderildi — cihazınızın bildirim alanını kontrol edin.</p>}
+        {testState === 'error' && <p role="alert" className="text-[12.5px] font-medium text-rose-600 dark:text-rose-400">Bildirim gösterilemedi. İzinleri kontrol edin.</p>}
+      </div>
+    </section>
+  );
+}
 
 const FONT_SIZES = [
   { label: 'Küçük', value: '14px' },
@@ -288,6 +354,8 @@ export function SettingsModal({ user, fontSize, onFontSizeChange, onClose }) {
               </div>
             </div>
           </section>
+
+          <NotificationSection />
 
           {/* Erişilebilirlik */}
           <section>

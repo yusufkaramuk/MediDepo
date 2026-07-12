@@ -29,6 +29,8 @@ import { SettingsModal } from './components/SettingsModal';
 import { PassphraseModal } from './components/PassphraseModal';
 import { useHashRoute } from './hooks/useHashRoute';
 import { BottomNav } from './components/layout/BottomNav';
+import { ScheduleService } from './services/ScheduleService';
+import { ReminderModal } from './components/ReminderModal';
 import appLogo from './assets/drdepo-logo.svg';
 
 const BarcodeScanner = lazy(() => import('./components/BarcodeScanner').then(m => ({ default: m.BarcodeScanner })));
@@ -143,7 +145,7 @@ const StatusPill = ({ status, daysLeft }) => {
 };
 
 // ── Medicine Row (list view) ──────────────────────────────────────────────────
-const MedicineRow = ({ medicine, onEdit, onDelete }) => {
+const MedicineRow = ({ medicine, onEdit, onDelete, onReminder, hasReminder = false }) => {
   const st = statusOf(medicine);
   const ings = [medicine.activeIngredient1, medicine.activeIngredient2, medicine.activeIngredient3].filter(Boolean);
   const dotColor = st.key === 'expired' ? 'bg-rose-500' : st.key === 'warning' ? 'bg-amber-500' : st.key === 'soon' ? 'bg-sky-500' : 'bg-emerald-500';
@@ -169,6 +171,13 @@ const MedicineRow = ({ medicine, onEdit, onDelete }) => {
       <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
         {medicine.canEdit !== false && <>
           <button onClick={() => onEdit(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100" aria-label="Düzenle"><Icon.Edit size={14}/></button>
+          {onReminder && (
+            <button onClick={() => onReminder(medicine)}
+              className={`p-1.5 rounded-lg transition-colors ${hasReminder ? 'text-[var(--brand-600)] bg-[var(--brand-50)]' : 'text-slate-500 hover:bg-[var(--brand-50)] hover:text-[var(--brand-600)]'}`}
+              aria-label={hasReminder ? 'Hatırlatıcıyı düzenle' : 'Hatırlatıcı kur'}>
+              <Icon.Bell size={14}/>
+            </button>
+          )}
           <button onClick={() => onDelete(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-600" aria-label="Sil"><Icon.Trash size={14}/></button>
         </>}
         {medicine.isOwn === false && <span className="text-[11px] text-slate-400 px-1">{medicine.ownerName}</span>}
@@ -573,6 +582,44 @@ function App() {
   const [notifPermission, setNotifPermission] = useState(
     NotificationService.isSupported() ? NotificationService.getPermission() : 'unsupported'
   );
+  const [schedules, setSchedules] = useState([]);
+  const [reminderMedicine, setReminderMedicine] = useState(null); // Hatırlatıcı modalı açık ilaç
+
+  // Hatırlatıcı planlarını yükle (opt-in; yoksa boş liste)
+  const loadSchedules = useCallback(async () => {
+    if (!user) { setSchedules([]); return; }
+    try {
+      setSchedules(await ScheduleService.list(user.uid));
+    } catch {
+      setSchedules([]); // hatırlatıcılar yüklenemese de uygulama çalışmaya devam eder
+    }
+  }, [user]);
+  useEffect(() => { loadSchedules(); }, [loadSchedules]);
+
+  const scheduleByMedicine = useMemo(() => {
+    const map = new Map();
+    for (const s of schedules) map.set(s.medicineId, s);
+    return map;
+  }, [schedules]);
+
+  const handleOpenReminder = (medicine) => setReminderMedicine(medicine);
+
+  const handleSaveReminder = async (input) => {
+    const existing = scheduleByMedicine.get(input.medicineId) || null;
+    await ScheduleService.save(user.uid, input, existing);
+    await loadSchedules();
+    setToast({ kind: 'success', text: input.enabled ? 'Hatırlatıcı kaydedildi' : 'Hatırlatıcı kapatıldı' });
+  };
+
+  const handleRemoveReminder = async (scheduleId) => {
+    try {
+      await ScheduleService.remove(user.uid, scheduleId);
+      await loadSchedules();
+      setToast({ kind: 'info', text: 'Hatırlatıcı silindi' });
+    } catch {
+      setToast({ kind: 'error', text: 'Hatırlatıcı silinemedi' });
+    }
+  };
 
   // Toast auto-dismiss
   useEffect(() => {
@@ -1249,7 +1296,9 @@ function App() {
               ) : (
                 <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
                   {upcoming.map(({ m }) => (
-                    <MedicineRow key={m.id} medicine={m} onEdit={handleEdit} onDelete={handleDeleteRequest}/>
+                    <MedicineRow key={m.id} medicine={m} onEdit={handleEdit} onDelete={handleDeleteRequest}
+                      onReminder={user && m.isOwn !== false ? handleOpenReminder : null}
+                      hasReminder={scheduleByMedicine.has(m.id)}/>
                   ))}
                 </div>
               )}
@@ -1352,14 +1401,18 @@ function App() {
         ) : view === 'list' ? (
           <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
             {filteredMedicines.map(m => (
-              <MedicineRow key={m.id} medicine={m} onEdit={handleEdit} onDelete={handleDeleteRequest}/>
+              <MedicineRow key={m.id} medicine={m} onEdit={handleEdit} onDelete={handleDeleteRequest}
+                onReminder={user && m.isOwn !== false ? handleOpenReminder : null}
+                hasReminder={scheduleByMedicine.has(m.id)}/>
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredMedicines.map(m => (
               <MedicineCard key={m.id} medicine={m} onEdit={handleEdit} onDelete={handleDeleteRequest}
-                onShare={useCloud && user ? handleShare : null}/>
+                onShare={useCloud && user ? handleShare : null}
+                onReminder={user && m.isOwn !== false ? handleOpenReminder : null}
+                hasReminder={scheduleByMedicine.has(m.id)}/>
             ))}
           </div>
         )}
@@ -1407,6 +1460,17 @@ function App() {
         onClose={() => setDeletingMedicine(null)}
         onConfirm={handleDeleteConfirm}
       />
+
+      {reminderMedicine && user && (
+        <ReminderModal
+          medicine={reminderMedicine}
+          schedule={scheduleByMedicine.get(reminderMedicine.id) || null}
+          notifPermission={notifPermission}
+          onClose={() => setReminderMedicine(null)}
+          onSave={handleSaveReminder}
+          onRemove={handleRemoveReminder}
+        />
+      )}
 
       {passphraseRequest && (
         <PassphraseModal 
