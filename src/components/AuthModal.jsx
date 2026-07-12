@@ -88,7 +88,7 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
   // E-posta doğrulama bekliyor ekranı
   if (verificationSent) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-800">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-alt dark:bg-surface-alt">
         <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md p-8 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.25)] border border-slate-200 dark:border-slate-700 flex flex-col items-center gap-4 text-center">
           <div className="w-14 h-14 rounded-2xl bg-emerald-50 ring-1 ring-emerald-100 grid place-items-center">
             <CheckCircle size={28} className="text-emerald-600" />
@@ -111,12 +111,11 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-50 dark:bg-slate-800">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-surface-alt dark:bg-surface-alt">
       {/* Background blobs */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 -left-32 w-[460px] h-[460px] rounded-full blur-3xl opacity-40" style={{background:'radial-gradient(closest-side, var(--brand-500), transparent)'}}></div>
-        <div className="absolute top-40 -right-40 w-[520px] h-[520px] rounded-full blur-3xl opacity-20" style={{background:'radial-gradient(closest-side, #14b8a6, transparent)'}}></div>
-        <div className="absolute inset-0" style={{backgroundImage:'radial-gradient(circle at 1px 1px, rgba(15,23,42,0.04) 1px, transparent 0)', backgroundSize:'24px 24px'}}></div>
+        <div className="absolute -top-32 -left-32 w-[460px] h-[460px] rounded-full blur-3xl opacity-30" style={{background:'radial-gradient(closest-side, var(--brand-500), transparent)'}}></div>
+        <div className="absolute top-40 -right-40 w-[520px] h-[520px] rounded-full blur-3xl opacity-20" style={{background:'radial-gradient(closest-side, var(--brand-300), transparent)'}}></div>
       </div>
 
       <div className="max-w-6xl mx-auto px-5 sm:px-8 py-10 sm:py-16 grid lg:grid-cols-2 gap-10 items-center min-h-screen">
@@ -128,11 +127,11 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-1 text-[12px] font-medium text-slate-600 dark:text-slate-300 shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Sağlığınız için sade ve güvenli
             </span>
-            <h1 className="mt-4 text-[38px] leading-[1.05] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-              Evdeki ilaçlar için <span className="text-[var(--brand-600)]">temiz, sezgisel</span> bir kontrol paneli.
+            <h1 className="mt-4 text-[38px] leading-[1.1] font-bold tracking-tight text-slate-900 dark:text-slate-100">
+              İlaçlarını takip et,<br/><span className="text-[var(--brand-600)]">sağlığını güvende tut.</span>
             </h1>
             <p className="mt-4 text-[15px] text-slate-600 dark:text-slate-300 leading-relaxed max-w-lg">
-              Stoğunuzu görün, son kullanma tarihlerini takip edin, israfı azaltın. Yerel veya bulutta — siz seçin.
+              Stoğunuzu görün, son kullanma tarihlerini takip edin, hatırlatıcı kurun. Yerel veya bulutta — siz seçin.
             </p>
           </div>
 

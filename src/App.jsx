@@ -191,6 +191,57 @@ const MedicineRow = ({ medicine, onEdit, onDelete, onReminder, hasReminder = fal
   );
 };
 
+// ── Kompakt istatistik pill'i (ana sayfa, mockup düzeni) ───────────────────────
+const STAT_TONE = {
+  total:   { num: 'text-slate-900 dark:text-slate-100', lbl: 'text-slate-500 dark:text-slate-400' },
+  expired: { num: 'text-rose-600 dark:text-rose-400',   lbl: 'text-rose-500 dark:text-rose-400' },
+  warning: { num: 'text-[var(--brand-accent)]',          lbl: 'text-[var(--brand-accent)]' },
+  good:    { num: 'text-[var(--brand-600)] dark:text-[var(--brand-500)]', lbl: 'text-[var(--brand-600)] dark:text-[var(--brand-500)]' },
+};
+const StatTile = ({ tone, label, value, onClick }) => {
+  const t = STAT_TONE[tone] || STAT_TONE.total;
+  return (
+    <button type="button" onClick={onClick}
+      className="flex flex-col items-center justify-center gap-1 py-3.5 px-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/70 shadow-[0_1px_2px_rgba(5,42,34,0.05)] hover:border-[var(--brand-300)] transition-colors min-h-[76px]">
+      <span className={`text-[10.5px] sm:text-[11px] font-medium text-center leading-tight ${t.lbl}`}>{label}</span>
+      <span className={`text-[24px] sm:text-[26px] font-bold tabular-nums leading-none ${t.num}`}>{value}</span>
+    </button>
+  );
+};
+
+// ── İlaç kart resmi yer tutucusu (mockup'taki kutu görseli yerine marka ikonu) ──
+const MedThumb = ({ className = '' }) => (
+  <div className={`shrink-0 rounded-xl bg-gradient-to-br from-[var(--brand-50)] to-[var(--brand-100)] ring-1 ring-[var(--brand-100)] grid place-items-center ${className}`}>
+    <Icon.Pill size={22} className="text-[var(--brand-600)]"/>
+  </div>
+);
+
+// ── Ana sayfa "yakında bitecekler" kartı (mockup düzeni) ───────────────────────
+const HomeMedCard = ({ medicine, onOpen }) => {
+  const st = statusOf(medicine);
+  const ings = [medicine.activeIngredient1, medicine.activeIngredient2, medicine.activeIngredient3].filter(Boolean);
+  const badge = st.key === 'expired'
+    ? { text: `${Math.abs(st.daysLeft)} gün geçti`, cls: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' }
+    : { text: `${st.daysLeft} gün kaldı`, cls: 'bg-[var(--brand-accent-soft)] text-[var(--brand-accent)]' };
+  return (
+    <button type="button" onClick={() => onOpen(medicine)}
+      className="w-full flex items-center gap-3 px-3.5 py-3 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors text-left">
+      <MedThumb className="w-12 h-12"/>
+      <div className="flex-1 min-w-0">
+        <div className="text-[14.5px] font-semibold text-slate-900 dark:text-slate-100 truncate">{medicine.name}</div>
+        {ings.length > 0 && <div className="text-[12.5px] text-slate-500 dark:text-slate-400 truncate">{ings.join(', ')}</div>}
+        <div className="mt-0.5 flex items-center gap-1 text-[11.5px] text-slate-400 dark:text-slate-500">
+          <Icon.Calendar size={12}/> {fmtExpiry(medicine.expiryDate)}
+        </div>
+      </div>
+      <div className="flex flex-col items-end gap-1.5 shrink-0">
+        <Icon.ChevDown size={16} className="text-slate-300 dark:text-slate-600 -rotate-90"/>
+        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${badge.cls}`}>{badge.text}</span>
+      </div>
+    </button>
+  );
+};
+
 // ── Sort dropdown ─────────────────────────────────────────────────────────────
 const SORT_OPTS = [
   { v: 'date-desc',   l: 'En yeni eklenenler',   ic: <Icon.Clock size={14}/> },
@@ -1369,96 +1420,23 @@ function App() {
         )}
 
         {tab === 'anasayfa' && (<>
-        {/* Hero / greeting */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
-          <div>
-            <div className="text-[12.5px] font-medium text-[var(--brand-700)] inline-flex items-center gap-1.5 bg-[var(--brand-50)] ring-1 ring-[var(--brand-100)] px-2.5 py-1 rounded-full">
-              <Icon.Heart size={12}/> {todayLabel()}
-            </div>
-            <h1 className="mt-2 text-[24px] sm:text-[28px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-              Merhaba, {firstName} 
-            </h1>
-            {stats.warning > 0 ? (
-              <p className="text-[13.5px] sm:text-[14px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Bugün <span className="font-semibold text-amber-700">{stats.warning}</span> ilacınız 30 gün içinde sona eriyor.
-              </p>
-            ) : stats.expired > 0 ? (
-              <p className="text-[13.5px] sm:text-[14px] text-slate-500 dark:text-slate-400 mt-0.5">
-                <span className="font-semibold text-rose-700">{stats.expired}</span> ilacınızın süresi dolmuş, kontrol etmeniz önerilir.
-              </p>
-            ) : (
-              <p className="text-[13.5px] sm:text-[14px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Stoğunuz güvende görünüyor. İyi günler!
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={() => { setEditingId(null); setModalInitialData(null); setIsAddModalOpen(true); }}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-semibold text-white bg-[var(--brand-600)] hover:bg-[var(--brand-700)] shadow-[0_8px_20px_-8px_var(--brand-shadow)] transition-colors">
-              <Icon.Plus size={15}/> Yeni ilaç
-            </button>
-            <button onClick={() => setIsBulkModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors">
-              <Icon.List size={15}/> <span className="hidden sm:inline">Toplu ekle</span>
-            </button>
-
-            {/* Masaüstü: CSV / JSON / İçe aktar düz göster */}
-            <button onClick={handleExportCsv}
-              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors"
-              title="CSV olarak indir">
-              <Icon.Download size={15}/> CSV
-            </button>
-            <button onClick={handleExportJson}
-              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors"
-              title="JSON yedeği al">
-              <Icon.Download size={15}/> JSON
-            </button>
-            <label className="hidden sm:block cursor-pointer">
-              <span className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors">
-                <Icon.Upload size={15}/> İçe aktar
-              </span>
-              <input type="file" accept=".json" onChange={handleImport} className="hidden"/>
-            </label>
-
-            {/* Mobil: ⋯ açılır menü */}
-            <div className="relative sm:hidden" ref={exportMenuRef}>
-              <button
-                onClick={() => setShowExportMenu(v => !v)}
-                className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[14px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors"
-                aria-label="Daha fazla">
-                <Icon.Download size={15}/> Dışa aktar
-              </button>
-              {showExportMenu && (
-                <div className="absolute right-0 top-full mt-1.5 z-40 w-44 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden">
-                  <button onClick={() => { handleExportCsv(); setShowExportMenu(false); }}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 text-[13.5px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                    <Icon.Download size={14}/> CSV olarak indir
-                  </button>
-                  <button onClick={() => { handleExportJson(); setShowExportMenu(false); }}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 text-[13.5px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-t border-slate-100 dark:border-slate-800">
-                    <Icon.Download size={14}/> JSON yedeği al
-                  </button>
-                  <label className="block border-t border-slate-100 dark:border-slate-800 cursor-pointer">
-                    <span className="w-full flex items-center gap-2.5 px-4 py-3 text-[13.5px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                      <Icon.Upload size={14}/> JSON içe aktar
-                    </span>
-                    <input type="file" accept=".json" onChange={(e) => { handleImport(e); setShowExportMenu(false); }} className="hidden"/>
-                  </label>
-                </div>
-              )}
-            </div>
-          </div>
+        {/* Karşılama (mockup: Merhaba, X 👋 + durum alt başlığı) */}
+        <div className="mb-5">
+          <h1 className="text-[24px] sm:text-[28px] font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            Merhaba, {firstName} <span aria-hidden="true">👋</span>
+          </h1>
+          <p className="text-[13.5px] text-slate-500 dark:text-slate-400 mt-0.5">İlaçlarınızın durumu</p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <StatCard label="Toplam İlaç"     value={stats.total}   sublabel={`${allMedicines.length} farklı kayıt`}         accent="brand"  icon={<Icon.Box size={16}/>}/>
-          <StatCard label="Süresi Geçmiş"   value={stats.expired} sublabel={stats.expired > 0 ? 'Kontrol önerilir' : 'Şu an temiz'} accent="rose"    icon={<Icon.AlertTri size={16}/>}/>
-          <StatCard label="Yakında Bitiyor" value={stats.warning} sublabel="30 gün eşiği"                               accent="amber"   icon={<Icon.Clock size={16}/>}/>
-          <StatCard label="Güvenli Stokta"  value={stats.good}    sublabel="3 ay üstü süre"                             accent="emerald" icon={<Icon.Shield size={16}/>}/>
+        {/* Kompakt istatistik pill'leri (tek sıra) */}
+        <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-6">
+          <StatTile tone="total"   label="Toplam"        value={stats.total}   onClick={() => navigate('ilaclar')}/>
+          <StatTile tone="expired" label="Süresi Geçmiş"  value={stats.expired} onClick={() => navigate('ilaclar', { filtre: 'yaklasan' })}/>
+          <StatTile tone="warning" label="Yakında Bitecek" value={stats.warning} onClick={() => navigate('ilaclar', { filtre: 'yaklasan' })}/>
+          <StatTile tone="good"    label="Güvenli"        value={stats.good}    onClick={() => navigate('ilaclar')}/>
         </div>
 
-        {/* Yakında bitecekler önizlemesi (ana sayfa) */}
+        {/* Yakında bitecekler önizlemesi */}
         {(() => {
           const upcoming = filteredMedicines
             .map(m => ({ m, st: statusOf(m) }))
@@ -1469,28 +1447,38 @@ function App() {
             <section aria-labelledby="upcoming-title" className="mb-6">
               <div className="flex items-center justify-between mb-3">
                 <h2 id="upcoming-title" className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Yakında bitecekler</h2>
-                <button onClick={() => navigate('ilaclar', { filtre: 'yaklasan' })}
-                  className="text-[13px] font-medium text-[var(--brand-600)] hover:underline min-h-[44px] px-2">
-                  Tümünü gör
-                </button>
+                {upcoming.length > 0 && (
+                  <button onClick={() => navigate('ilaclar', { filtre: 'yaklasan' })}
+                    className="text-[13px] font-medium text-[var(--brand-600)] hover:underline min-h-[44px] px-2">
+                    Tümünü gör
+                  </button>
+                )}
               </div>
               {upcoming.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-5 py-6 text-[13.5px] text-slate-500 dark:text-slate-400 flex items-center gap-3">
-                  <span className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 grid place-items-center shrink-0"><Icon.Shield size={17}/></span>
+                  <span className="w-9 h-9 rounded-xl bg-[var(--brand-50)] text-[var(--brand-600)] grid place-items-center shrink-0"><Icon.Shield size={17}/></span>
                   30 gün içinde süresi dolacak ilacınız yok. Stoğunuz güvende görünüyor.
                 </div>
               ) : (
-                <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+                <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 shadow-card overflow-hidden">
                   {upcoming.map(({ m }) => (
-                    <MedicineRow key={m.id} medicine={m} onEdit={handleEdit} onDelete={handleDeleteRequest}
-                      onReminder={user && m.isOwn !== false ? handleOpenReminder : null}
-                      hasReminder={scheduleByMedicine.has(m.id)}/>
+                    <HomeMedCard key={m.id} medicine={m} onOpen={handleEdit}/>
                   ))}
                 </div>
               )}
             </section>
           );
         })()}
+
+        {/* Tam genişlik "İlaç Ekle" CTA (mockup) */}
+        <button onClick={() => { setEditingId(null); setModalInitialData(null); setIsAddModalOpen(true); }}
+          className="w-full inline-flex items-center justify-center gap-2 py-4 rounded-2xl text-[16px] font-semibold text-white bg-[var(--brand-600)] hover:bg-[var(--brand-700)] shadow-[0_10px_24px_-10px_var(--brand-shadow)] transition-colors mb-2">
+          <Icon.Plus size={19}/> İlaç Ekle
+        </button>
+        <button onClick={() => setIsBulkModalOpen(true)}
+          className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-2xl text-[14px] font-medium text-[var(--brand-700)] dark:text-[var(--brand-500)] bg-[var(--brand-50)] hover:bg-[var(--brand-100)] transition-colors mb-6">
+          <Icon.List size={16}/> Toplu ilaç ekle
+        </button>
         </>)}
 
         {tab === 'bildirimler' && (
@@ -1505,6 +1493,37 @@ function App() {
         )}
 
         {tab === 'ilaclar' && (<>
+        {/* İlaçlarım başlık + veri menüsü (dışa/içe aktarma) */}
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-[22px] font-bold tracking-tight text-slate-900 dark:text-slate-100">İlaçlarım</h1>
+          <div className="relative" ref={exportMenuRef}>
+            <button
+              onClick={() => setShowExportMenu(v => !v)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors min-h-[40px]"
+              aria-label="Dışa / içe aktar" aria-expanded={showExportMenu}>
+              <Icon.Download size={15}/> <span className="hidden sm:inline">Aktar</span>
+            </button>
+            {showExportMenu && (
+              <div className="absolute right-0 top-full mt-1.5 z-40 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden">
+                <button onClick={() => { handleExportCsv(); setShowExportMenu(false); }}
+                  className="w-full flex items-center gap-2.5 px-4 py-3 text-[13.5px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                  <Icon.Download size={14}/> CSV olarak indir
+                </button>
+                <button onClick={() => { handleExportJson(); setShowExportMenu(false); }}
+                  className="w-full flex items-center gap-2.5 px-4 py-3 text-[13.5px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-t border-slate-100 dark:border-slate-800">
+                  <Icon.Download size={14}/> JSON yedeği al
+                </button>
+                <label className="block border-t border-slate-100 dark:border-slate-800 cursor-pointer">
+                  <span className="w-full flex items-center gap-2.5 px-4 py-3 text-[13.5px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    <Icon.Upload size={14}/> JSON içe aktar
+                  </span>
+                  <input type="file" accept=".json" onChange={(e) => { handleImport(e); setShowExportMenu(false); }} className="hidden"/>
+                </label>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Search + sort + view toggle */}
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="relative flex-1">
