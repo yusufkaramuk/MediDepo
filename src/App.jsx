@@ -600,11 +600,13 @@ function App() {
     return () => clearTimeout(t);
   }, [searchTerm]);
 
-  // Bildirimden gelen derin bağlantı: #/ilaclar?filtre=yaklasan
+  // Bildirimden/ana sayfadan gelen derin bağlantı: #/ilaclar?filtre=yaklasan
+  // Not: filtre parametresi yoksa "Tümü"ye döner — aksi hâlde bir kez
+  // uygulanan filtre kalıcılaşıp sonraki normal İlaçlarım ziyaretlerinde
+  // ilgisiz ilaçları gizler ("verilerim kayboldu" hissi verir).
   useEffect(() => {
-    if (tab === 'ilaclar' && routeParams.get('filtre') === 'yaklasan') {
-      setStatusFilter('warning');
-    }
+    if (tab !== 'ilaclar') return;
+    setStatusFilter(routeParams.get('filtre') === 'yaklasan' ? 'warning' : 'all');
   }, [tab, routeParams]);
 
   // TITCK veritabanını arka planda güncelle
