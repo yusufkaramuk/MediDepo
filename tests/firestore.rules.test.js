@@ -246,6 +246,71 @@ describe('Firestore family and invite rules', () => {
     });
 });
 
+describe('Firestore family rename rules', () => {
+    const familyRefFor = (db, familyId = 'family-a') => doc(db, `families/${familyId}`);
+    const familyWithRoles = () => ({
+        name: 'Karamuk Ailesi',
+        createdBy: 'user-a',
+        createdAt: '2026-05-09T10:00:00.000Z',
+        members: {
+            'user-a': { email: 'a@example.com', displayName: 'Admin', role: 'admin', joinedAt: '2026-05-09T10:00:00.000Z' },
+            'user-b': { email: 'b@example.com', displayName: 'Editor', role: 'editor', joinedAt: '2026-05-09T10:00:00.000Z' },
+            'user-c': { email: 'c@example.com', displayName: 'Member', role: 'member', joinedAt: '2026-05-09T10:00:00.000Z' },
+        },
+    });
+
+    it('allows admin to rename the family', async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(familyRefFor(context.firestore()), familyWithRoles());
+        });
+        const adminDb = testEnv.authenticatedContext('user-a').firestore();
+        await assertSucceeds(updateDoc(familyRefFor(adminDb), { name: 'Yeni Aile Adı' }));
+    });
+
+    it('allows editor to rename the family', async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(familyRefFor(context.firestore()), familyWithRoles());
+        });
+        const editorDb = testEnv.authenticatedContext('user-b').firestore();
+        await assertSucceeds(updateDoc(familyRefFor(editorDb), { name: 'Editörün Verdiği Ad' }));
+    });
+
+    it('blocks a plain member from renaming the family', async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(familyRefFor(context.firestore()), familyWithRoles());
+        });
+        const memberDb = testEnv.authenticatedContext('user-c').firestore();
+        await assertFails(updateDoc(familyRefFor(memberDb), { name: 'Üyenin Denemesi' }));
+    });
+
+    it('blocks a stranger (non-member) from renaming the family', async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(familyRefFor(context.firestore()), familyWithRoles());
+        });
+        const strangerDb = testEnv.authenticatedContext('user-d').firestore();
+        await assertFails(updateDoc(familyRefFor(strangerDb), { name: 'Yabancı' }));
+    });
+
+    it('rejects a rename that also touches other fields', async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(familyRefFor(context.firestore()), familyWithRoles());
+        });
+        const adminDb = testEnv.authenticatedContext('user-a').firestore();
+        await assertFails(updateDoc(familyRefFor(adminDb), { name: 'Yeni Ad', createdBy: 'user-x' }));
+        await assertFails(updateDoc(familyRefFor(adminDb), { name: 'Yeni Ad', 'members.user-c.role': 'editor' }));
+    });
+
+    it('rejects an empty or oversized name', async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(familyRefFor(context.firestore()), familyWithRoles());
+        });
+        const adminDb = testEnv.authenticatedContext('user-a').firestore();
+        await assertFails(updateDoc(familyRefFor(adminDb), { name: '' }));
+        await assertFails(updateDoc(familyRefFor(adminDb), { name: 'x'.repeat(61) }));
+        await assertSucceeds(updateDoc(familyRefFor(adminDb), { name: 'x'.repeat(60) }));
+    });
+});
+
 describe('Firestore account deletion job rules', () => {
     it('blocks client reads and writes to accountDeletionJobs', async () => {
         const db = testEnv.authenticatedContext('user-a', { email: 'a@example.com' }).firestore();

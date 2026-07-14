@@ -62,6 +62,16 @@ service cloud.firestore {
           .data.members[request.auth.uid].role == 'admin';
     }
 
+    // Aile dokümanı (ör. aile adı) üzerinde düzenleme yetkisi: admin veya editor.
+    // isFamilyEditor(userId) fonksiyonundan farklıdır — o başka bir kullanıcının
+    // ilaç belgesini düzenleme yetkisini kontrol eder, bu ise doğrudan familyId
+    // için rol kontrolü yapar.
+    function isFamilyAdminOrEditor(familyId) {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/families/$(familyId))
+          .data.members[request.auth.uid].role in ['admin', 'editor'];
+    }
+
     function isFamilyEditor(userId) {
       let myDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
       let theirDoc = get(/databases/$(database)/documents/users/$(userId));
@@ -121,6 +131,17 @@ service cloud.firestore {
       return diff.affectedKeys().hasOnly(['familyKeyring']) &&
         keyDiff.affectedKeys().hasOnly([request.auth.uid]) &&
         request.resource.data.familyKeyring[request.auth.uid] is map;
+    }
+
+    // Aile adı yeniden adlandırma: yalnızca 'name' alanı değişebilir,
+    // yalnızca admin veya editor rolündeki üyeler yapabilir.
+    function validFamilyNameUpdate(familyId) {
+      let diff = request.resource.data.diff(resource.data);
+      return diff.affectedKeys().hasOnly(['name']) &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() > 0 &&
+        request.resource.data.name.size() <= 60 &&
+        isFamilyAdminOrEditor(familyId);
     }
 
     function isEmailInvite(data) {
@@ -313,7 +334,7 @@ service cloud.firestore {
       allow create: if isSignedIn() &&
         request.resource.data.createdBy == request.auth.uid &&
         request.resource.data.members.keys().hasOnly([request.auth.uid]);
-      allow update: if isFamilyAdmin(familyId) || validSelfJoin(familyId) || validQrSelfJoin(familyId) || validSelfLeave() || (isFamilyMember(familyId) && validOwnKeyringUpdate());
+      allow update: if isFamilyAdmin(familyId) || validSelfJoin(familyId) || validQrSelfJoin(familyId) || validSelfLeave() || (isFamilyMember(familyId) && validOwnKeyringUpdate()) || validFamilyNameUpdate(familyId);
       allow delete: if isSignedIn() && resource.data.createdBy == request.auth.uid;
     }
 

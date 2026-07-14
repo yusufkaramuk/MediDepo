@@ -219,6 +219,15 @@ export const FamilyService = {
     await updateDoc(doc(db, 'invites', inviteId), { status: 'rejected' });
   },
 
+  // Aile adını değiştirir. Yetki kontrolü Firestore rules'ta zorunlu kılınır
+  // (yalnızca admin/editor rolündeki üyeler); burada yalnızca girdi temizlenir.
+  async renameFamily(familyId, newName) {
+    const trimmed = (newName || '').trim().slice(0, 60);
+    if (!trimmed) throw new Error('Aile adı boş olamaz.');
+    await updateDoc(doc(db, 'families', familyId), { name: trimmed });
+    return trimmed;
+  },
+
   async changeRole(familyId, targetUserId, newRole) {
     if (!['member', 'editor'].includes(newRole)) throw new Error('Geçersiz rol.');
     await updateDoc(doc(db, 'families', familyId), {
