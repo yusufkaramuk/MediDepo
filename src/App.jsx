@@ -1451,38 +1451,57 @@ function App() {
           <StatTile tone="good"    label="Güvenli"        value={stats.good}    onClick={() => navigate('ilaclar', { durum: 'good' })}/>
         </div>
 
-        {/* Yakında bitecekler önizlemesi */}
+        {/* Dikkat gerektiren ilaçlar: süresi geçmiş ve yakında bitecek ayrı bölümlerde.
+            Süresi geçmiş (en acil) üstte kırmızı vurguyla; her bölüm doğru filtreye gider. */}
         {(() => {
-          const upcoming = filteredMedicines
-            .map(m => ({ m, st: statusOf(m) }))
-            .filter(x => x.st.key === 'expired' || x.st.key === 'warning')
+          const withStatus = filteredMedicines.map(m => ({ m, st: statusOf(m) }));
+          // Süresi geçmiş: en çok geçmiş olan (en negatif gün) önce
+          const expired = withStatus
+            .filter(x => x.st.key === 'expired')
             .sort((a, b) => (a.st.daysLeft ?? 0) - (b.st.daysLeft ?? 0))
-            .slice(0, 5);
-          return (
-            <section aria-labelledby="upcoming-title" className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <h2 id="upcoming-title" className="text-[16px] font-semibold text-slate-900 dark:text-slate-100">Yakında bitecekler</h2>
-                {upcoming.length > 0 && (
-                  <button onClick={() => navigate('ilaclar', { filtre: 'yaklasan' })}
-                    className="text-[13px] font-medium text-[var(--brand-600)] hover:underline min-h-[44px] px-2">
-                    Tümünü gör
-                  </button>
-                )}
-              </div>
-              {upcoming.length === 0 ? (
+            .slice(0, 4);
+          // Yakında bitecek: en az günü kalan önce
+          const warning = withStatus
+            .filter(x => x.st.key === 'warning')
+            .sort((a, b) => (a.st.daysLeft ?? 0) - (b.st.daysLeft ?? 0))
+            .slice(0, 4);
+
+          if (expired.length === 0 && warning.length === 0) {
+            return (
+              <section className="mb-6">
                 <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-5 py-6 text-[13.5px] text-slate-500 dark:text-slate-400 flex items-center gap-3">
                   <span className="w-9 h-9 rounded-xl bg-[var(--brand-50)] text-[var(--brand-600)] grid place-items-center shrink-0"><Icon.Shield size={17}/></span>
-                  30 gün içinde süresi dolacak ilacınız yok. Stoğunuz güvende görünüyor.
+                  Süresi geçmiş veya 30 gün içinde bitecek ilacınız yok. Stoğunuz güvende görünüyor.
                 </div>
-              ) : (
-                <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 shadow-card overflow-hidden">
-                  {upcoming.map(({ m }) => (
-                    <HomeMedCard key={m.id} medicine={m} onOpen={handleEdit}/>
-                  ))}
-                </div>
-              )}
+              </section>
+            );
+          }
+
+          const groups = [
+            { key: 'expired', durum: 'expired', title: 'Süresi geçmiş', items: expired,
+              titleCls: 'text-rose-700 dark:text-rose-400', icon: <Icon.AlertTri size={15}/> },
+            { key: 'warning', durum: 'warning', title: 'Yakında bitecek', items: warning,
+              titleCls: 'text-slate-900 dark:text-slate-100', icon: null },
+          ].filter(g => g.items.length > 0);
+
+          return groups.map(g => (
+            <section key={g.key} aria-labelledby={`home-${g.key}-title`} className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 id={`home-${g.key}-title`} className={`text-[16px] font-semibold flex items-center gap-1.5 ${g.titleCls}`}>
+                  {g.icon}{g.title}
+                </h2>
+                <button onClick={() => navigate('ilaclar', { durum: g.durum })}
+                  className="text-[13px] font-medium text-[var(--brand-600)] hover:underline min-h-[44px] px-2">
+                  Tümünü gör
+                </button>
+              </div>
+              <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 shadow-card overflow-hidden">
+                {g.items.map(({ m }) => (
+                  <HomeMedCard key={m.id} medicine={m} onOpen={handleEdit}/>
+                ))}
+              </div>
             </section>
-          );
+          ));
         })()}
 
         {/* Tam genişlik "İlaç Ekle" CTA (mockup) */}
