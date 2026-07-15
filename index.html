@@ -3,6 +3,23 @@
 
 <head>
   <meta charset="UTF-8" />
+  <meta name="color-scheme" content="light dark" />
+  <!-- İlk-paint arka planı: React/CSS yüklenmeden önce doğru zemini boya (koyu
+       flash'ı önler). Tema tercihi localStorage'dan okunur; ThemeContext ile
+       aynı anahtar ('theme') ve varsayılan (light). -->
+  <style>
+    html { background-color: #f5f7f6; }
+    html.dark { background-color: #0d1412; }
+  </style>
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('theme') === 'dark') {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) { /* localStorage erişilemezse light varsayılan */ }
+    })();
+  </script>
   <link rel="icon" type="image/png" sizes="512x512" href="/pwa-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/logo-192.png" />
   <link rel="icon" type="image/svg+xml" href="/icon.svg" />

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { dueSlots } from '../utils/scheduleSlots';
+import { NotificationService } from '../services/NotificationService';
 
 // Uygulama AÇIKKEN çalışan hatırlatıcı motoru.
 // Katmanlı yaklaşımın 1. katmanı: in-app zamanlayıcı + görünür alarm ekranı.
@@ -40,6 +41,29 @@ export function useInAppReminders(schedules, medicineNameById) {
   const [alarm, setAlarm] = useState(null);
   const handledRef = useRef(loadHandled());
   const snoozeRef = useRef(new Map()); // slotId → yeniden alarm zamanı (ms)
+  const osNotifiedRef = useRef(new Set()); // slot başına en fazla bir OS bildirimi
+
+  // Alarmı göster. Sekme arka plandaysa (document.hidden) ek olarak bir OS
+  // bildirimi de göster — in-app ekran o an görünmediği için. Gizlilik moduna
+  // saygı gösterir: yalnızca 'named' modda kullanıcının onayladığı displayLabel
+  // kullanılır, aksi halde genel metin (kilit ekranı sızıntısını önler).
+  const triggerAlarm = useCallback((a) => {
+    setAlarm(a);
+    const hidden = typeof document !== 'undefined' && document.hidden;
+    if (hidden && a?.slotId && !osNotifiedRef.current.has(a.slotId)) {
+      osNotifiedRef.current.add(a.slotId);
+      const label = a.schedule?.notificationPrivacyMode === 'named' && a.schedule?.displayLabel
+        ? String(a.schedule.displayLabel)
+        : null;
+      NotificationService.showLocalReminder({
+        body: label
+          ? `${label} alma zamanı geldi.`
+          : 'İlaç alma zamanınız geldi. Uygulamayı açın.',
+        tag: a.slotId,
+        scheduleId: a.schedule?.id,
+      });
+    }
+  }, []);
 
   const check = useCallback(() => {
     if (alarm) return; // ekranda alarm varken yenisini üstüne açma
@@ -52,7 +76,7 @@ export function useInAppReminders(schedules, medicineNameById) {
         const schedule = schedules.find(s => s.id === schedId);
         snoozeRef.current.delete(slotId);
         if (schedule) {
-          setAlarm({
+          triggerAlarm({
             schedule, slotId, time: slotId.split('T')[1] || '',
             medicineName: medicineNameById?.get(schedule.medicineId) || null,
             snoozed: true,
@@ -67,14 +91,14 @@ export function useInAppReminders(schedules, medicineNameById) {
       const slots = dueSlots(schedule, now, IN_APP_TOLERANCE_MIN);
       for (const slot of slots) {
         if (handledRef.current[slot.slotId] || snoozeRef.current.has(slot.slotId)) continue;
-        setAlarm({
+        triggerAlarm({
           schedule, slotId: slot.slotId, time: slot.time,
           medicineName: medicineNameById?.get(schedule.medicineId) || null,
         });
         return; // tek alarm göster; diğerleri sıradaki kontrolde
       }
     }
-  }, [alarm, schedules, medicineNameById]);
+  }, [alarm, schedules, medicineNameById, triggerAlarm]);
 
   useEffect(() => {
     const t = setInterval(check, CHECK_INTERVAL_MS);

@@ -127,4 +127,35 @@ export const NotificationService = {
       return { error: 'show-failed' };
     }
   },
+
+  /**
+   * Uygulama açık ama sekme arka plandayken (document.hidden) ilaç saati
+   * geldiğinde işletim sistemi bildirimi gösterir — in-app alarm ekranı o
+   * anda görünmediği için. İzin yoksa sessizce atlar.
+   * @param {{ title?: string, body: string, tag?: string, scheduleId?: string }} opts
+   */
+  async showLocalReminder({ title = 'İlaç zamanı', body, tag, scheduleId } = {}) {
+    if (!this.isSupported() || Notification.permission !== 'granted') return false;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification(title, {
+        body,
+        icon: '/icon.svg',
+        badge: '/icon.svg',
+        tag: tag || 'drdepo-intake',
+        renotify: true,
+        requireInteraction: true,
+        data: { url: '/#/bildirimler', type: 'intake', scheduleId: scheduleId || undefined },
+        lang: 'tr',
+        ...('vibrate' in navigator ? { vibrate: [200, 100, 200] } : {}),
+        actions: ('actions' in Notification.prototype)
+          ? [{ action: 'taken', title: 'Aldım' }, { action: 'snooze', title: 'Ertele' }]
+          : undefined,
+      });
+      return true;
+    } catch (err) {
+      console.warn('[NotificationService] Yerel hatırlatıcı hatası:', err?.name || 'bilinmeyen hata');
+      return false;
+    }
+  },
 };
