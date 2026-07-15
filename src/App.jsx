@@ -35,7 +35,7 @@ import { AlarmOverlay } from './components/AlarmOverlay';
 import { NotificationCenterView } from './views/NotificationCenterView';
 import { useInAppReminders } from './hooks/useInAppReminders';
 import { decrementRemaining } from './utils/reminderMath';
-import { calculateTotalBoxes, formatBoxes } from './utils/quantity';
+import { calculateTotalBoxes, formatBoxes, normalizeStockCount } from './utils/quantity';
 import appLogo from './assets/drdepo-logo.svg';
 
 const BarcodeScanner = lazy(() => import('./components/BarcodeScanner').then(m => ({ default: m.BarcodeScanner })));
@@ -1058,21 +1058,49 @@ function App() {
 
   const handleDeleteRequest = (medicine) => setDeletingMedicine(medicine);
 
+  // KUTU bazlı silme: n = silinecek kutu sayısı. Gruptaki dokümanlar sırayla
+  // tüketilir — bir dokümanın tüm kutuları silinecekse doküman silinir,
+  // kısmı silinecekse stockCount azaltılarak güncellenir. State aynı anda
+  // güncellendiği için "N kutu" rozeti sayfa yenilemeden doğru kalır.
   const handleDeleteConfirm = async (n) => {
     if (!deletingMedicine) return;
     const med = deletingMedicine;
-    const idsToDelete = (med.allIds || [med.id]).slice(0, n);
+    const docs = med.docs && med.docs.length > 0
+      ? med.docs
+      : [{ id: med.id, stockCount: normalizeStockCount(med.stockCount) }];
+
+    // Silme planını çıkar: hangi doküman tamamen silinecek, hangisi güncellenecek
+    let remainingToDelete = Math.max(1, Math.round(n));
+    const toDelete = [];
+    let toUpdate = null; // { id, newStockCount }
+    for (const d of docs) {
+      if (remainingToDelete <= 0) break;
+      const sc = normalizeStockCount(d.stockCount);
+      if (remainingToDelete >= sc) {
+        toDelete.push(d.id);
+        remainingToDelete -= sc;
+      } else {
+        toUpdate = { id: d.id, newStockCount: sc - remainingToDelete };
+        remainingToDelete = 0;
+      }
+    }
+    const deletedBoxes = Math.max(1, Math.round(n)) - remainingToDelete;
+
     try {
       setSyncing(true);
       if (useCloud && user) {
-        for (const id of idsToDelete) await FirebaseService.deleteMedicine(user.uid, id);
+        for (const id of toDelete) await FirebaseService.deleteMedicine(user.uid, id);
+        if (toUpdate) {
+          const raw = medicines.find(m => m.id === toUpdate.id);
+          if (raw) {
+            await FirebaseService.updateMedicine(user.uid, toUpdate.id, { ...raw, stockCount: toUpdate.newStockCount });
+          }
+        }
       }
-      if (n >= (med.count || 1)) {
-        setMedicines(prev => prev.filter(m => !idsToDelete.includes(m.id)));
-      } else {
-        setMedicines(prev => prev.map(m => m.id === med.id ? { ...m, count: (m.count || 1) - n } : m));
-      }
-      showToast('info', `${n} adet silindi`);
+      setMedicines(prev => prev
+        .filter(m => !toDelete.includes(m.id))
+        .map(m => (toUpdate && m.id === toUpdate.id) ? { ...m, stockCount: toUpdate.newStockCount } : m));
+      showToast('info', `${formatBoxes(deletedBoxes)} silindi`);
     } catch (err) {
       showToast('error', 'Silme hatası: ' + err.message);
     } finally {
@@ -1241,6 +1269,19 @@ function App() {
   const canEditFamilyMeds = myFamilyRole === 'admin' || myFamilyRole === 'editor';
 
   // ── Duplicate-group helper ────────────────────────────────────────────────
+  // Türkçe'ye duyarlı, büyük/küçük harf bağımsız karşılaştırma anahtarı.
+  // JS'in varsayılan toLowerCase'i Türkçe 'İ'yi 'i̇' (i + combining dot)
+  // yaptığı için "PAROL" ↔ "parol" eşleşse de "İBUPROFEN" ↔ "ibuprofen"
+  // eşleşmiyordu. toLocaleUpperCase('tr') + İ→I katlaması ile i/I/ı/İ
+  // tek forma iner; boşluklar da sadeleştirilir.
+  function normText(s) {
+    return (s || '')
+      .toLocaleUpperCase('tr')
+      .replace(/İ/g, 'I')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   function groupDupes(flat) {
     const grouped = [];
     const seen = new Set();
@@ -1249,18 +1290,25 @@ function App() {
       const dupes = flat.filter(m => {
         if (seen.has(m.id)) return false;
         return (
-          m.name.toLowerCase() === med.name.toLowerCase() &&
-          (m.activeIngredient1 || '').toLowerCase() === (med.activeIngredient1 || '').toLowerCase() &&
-          (m.activeIngredient2 || '').toLowerCase() === (med.activeIngredient2 || '').toLowerCase() &&
-          (m.activeIngredient3 || '').toLowerCase() === (med.activeIngredient3 || '').toLowerCase() &&
-          (m.quantity || '').toLowerCase() === (med.quantity || '').toLowerCase() &&
+          normText(m.name) === normText(med.name) &&
+          normText(m.activeIngredient1) === normText(med.activeIngredient1) &&
+          normText(m.activeIngredient2) === normText(med.activeIngredient2) &&
+          normText(m.activeIngredient3) === normText(med.activeIngredient3) &&
+          normText(m.quantity) === normText(med.quantity) &&
           m.expiryDate === med.expiryDate &&
-          (m.notes || '').toLowerCase() === (med.notes || '').toLowerCase()
+          normText(m.notes) === normText(med.notes)
         );
       });
       dupes.forEach(d => seen.add(d.id));
       // dupes primary (med) dahil grubun tüm kayıtlarını içerir → toplam kutu doğru.
-      grouped.push({ ...med, count: dupes.length, allIds: dupes.map(d => d.id), totalBoxCount: calculateTotalBoxes(dupes) });
+      // docs: kutu bazlı kısmi silme için her dokümanın kimliği + kutu sayısı.
+      grouped.push({
+        ...med,
+        count: dupes.length,
+        allIds: dupes.map(d => d.id),
+        totalBoxCount: calculateTotalBoxes(dupes),
+        docs: dupes.map(d => ({ id: d.id, stockCount: normalizeStockCount(d.stockCount) })),
+      });
     });
     return grouped;
   }
@@ -1452,9 +1500,12 @@ function App() {
         </div>
 
         {/* Dikkat gerektiren ilaçlar: süresi geçmiş ve yakında bitecek ayrı bölümlerde.
-            Süresi geçmiş (en acil) üstte kırmızı vurguyla; her bölüm doğru filtreye gider. */}
+            NOT: İlaçlarım'daki liste filtresinden (statusFilter) bağımsız olması için
+            filteredMedicines DEĞİL, filtresiz allMedicines kullanılır — aksi hâlde
+            "Süresi geçmiş → Tümünü gör" sonrası ana sayfaya dönünce yalnız o durum görünürdü.
+            Masaüstünde iki bölüm yan yana (sütun), mobilde alt alta. */}
         {(() => {
-          const withStatus = filteredMedicines.map(m => ({ m, st: statusOf(m) }));
+          const withStatus = allMedicines.map(m => ({ m, st: statusOf(m) }));
           // Süresi geçmiş: en çok geçmiş olan (en negatif gün) önce
           const expired = withStatus
             .filter(x => x.st.key === 'expired')
@@ -1484,24 +1535,28 @@ function App() {
               titleCls: 'text-slate-900 dark:text-slate-100', icon: null },
           ].filter(g => g.items.length > 0);
 
-          return groups.map(g => (
-            <section key={g.key} aria-labelledby={`home-${g.key}-title`} className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <h2 id={`home-${g.key}-title`} className={`text-[16px] font-semibold flex items-center gap-1.5 ${g.titleCls}`}>
-                  {g.icon}{g.title}
-                </h2>
-                <button onClick={() => navigate('ilaclar', { durum: g.durum })}
-                  className="text-[13px] font-medium text-[var(--brand-600)] hover:underline min-h-[44px] px-2">
-                  Tümünü gör
-                </button>
-              </div>
-              <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 shadow-card overflow-hidden">
-                {g.items.map(({ m }) => (
-                  <HomeMedCard key={m.id} medicine={m} onOpen={handleEdit}/>
-                ))}
-              </div>
-            </section>
-          ));
+          return (
+            <div className={`grid gap-4 mb-6 ${groups.length > 1 ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
+              {groups.map(g => (
+                <section key={g.key} aria-labelledby={`home-${g.key}-title`} className="min-w-0">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 id={`home-${g.key}-title`} className={`text-[16px] font-semibold flex items-center gap-1.5 ${g.titleCls}`}>
+                      {g.icon}{g.title}
+                    </h2>
+                    <button onClick={() => navigate('ilaclar', { durum: g.durum })}
+                      className="text-[13px] font-medium text-[var(--brand-600)] hover:underline min-h-[44px] px-2">
+                      Tümünü gör
+                    </button>
+                  </div>
+                  <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 shadow-card overflow-hidden">
+                    {g.items.map(({ m }) => (
+                      <HomeMedCard key={m.id} medicine={m} onOpen={handleEdit}/>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          );
         })()}
 
         {/* Tam genişlik "İlaç Ekle" CTA (mockup) */}

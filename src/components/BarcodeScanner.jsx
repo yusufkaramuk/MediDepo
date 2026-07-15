@@ -13,6 +13,8 @@ const CameraIc = (p) => <Ic {...p} extra={<><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-
 const LoaderIc = (p) => <Ic {...p} extra={<><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></>}/>;
 const CheckIc  = (p) => <Ic {...p} d="M20 6 9 17l-5-5"/>;
 const AlertIc  = (p) => <Ic {...p} extra={<><path d="m10.3 3.86-8.79 15A2 2 0 0 0 3.24 22h17.5a2 2 0 0 0 1.74-3.14l-8.78-15a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></>}/>;
+const FlashIc  = (p) => <Ic {...p} extra={<><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></>}/>;
+const FlashOffIc = (p) => <Ic {...p} extra={<><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/><line x1="2" y1="2" x2="22" y2="22"/></>}/>;
 
 const SCANNER_ID = 'ilac-barcode-scanner';
 
@@ -42,8 +44,25 @@ async function stopScanner(scanner) {
 export function BarcodeScanner({ onResult, onClose, embedded = false, mode = 'barcode' }) {
   const [status, setStatus] = useState('starting');
   const [errorMsg, setErrorMsg] = useState('');
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
   const scannerRef = useRef(null);
+  const trackRef = useRef(null);
   const resultHandled = useRef(false);
+
+  // Flaş (torch): destekleyen cihazlarda kullanıcı isteğiyle açılır.
+  // Kamera durduğunda track kapandığı için flaş otomatik söner.
+  const toggleTorch = async () => {
+    const track = trackRef.current;
+    if (!track) return;
+    const next = !torchOn;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: next }] });
+      setTorchOn(next);
+    } catch (e) {
+      console.log('Flaş değiştirilemedi:', e?.message);
+    }
+  };
 
   useEffect(() => {
     let rafId = null;
@@ -88,20 +107,24 @@ export function BarcodeScanner({ onResult, onClose, embedded = false, mode = 'ba
         );
         setStatus('scanning');
 
-        // Otomatik dijital zoom (Destekleyen cihazlarda 2x zoom yaparak daha rahat okuma sağlar)
+        // Otomatik dijital zoom + flaş (torch) desteği tespiti
         setTimeout(() => {
           try {
             const videoEl = document.querySelector(`#${SCANNER_ID} video`);
             if (videoEl && videoEl.srcObject) {
               const track = videoEl.srcObject.getVideoTracks()[0];
+              trackRef.current = track;
               const capabilities = track.getCapabilities ? track.getCapabilities() : {};
               if (capabilities && capabilities.zoom) {
                 const zoomVal = Math.min(capabilities.zoom.max, 2.0); // 2x zoom
                 track.applyConstraints({ advanced: [{ zoom: zoomVal }] });
               }
+              if (capabilities && capabilities.torch) {
+                setTorchSupported(true);
+              }
             }
           } catch (e) {
-            console.log('Zoom desteklenmiyor:', e);
+            console.log('Zoom/flaş desteklenmiyor:', e);
           }
         }, 500);
 
@@ -128,8 +151,25 @@ export function BarcodeScanner({ onResult, onClose, embedded = false, mode = 'ba
       cancelAnimationFrame(rafId);
       stopScanner(scannerRef.current);
       scannerRef.current = null;
+      trackRef.current = null; // track kapanınca flaş da otomatik söner
     };
   }, []);
+
+  // Flaş düğmesi — kamera görüntüsünün üzerine bindirilir (destekleniyorsa)
+  const torchButton = torchSupported && status === 'scanning' ? (
+    <button
+      type="button"
+      onClick={toggleTorch}
+      aria-label={torchOn ? 'Flaşı kapat' : 'Flaşı aç'}
+      aria-pressed={torchOn}
+      className={`absolute top-3 right-3 z-10 w-11 h-11 rounded-full grid place-items-center transition-colors shadow-lg ${
+        torchOn
+          ? 'bg-amber-400 text-slate-900'
+          : 'bg-slate-900/70 text-white hover:bg-slate-900/90 backdrop-blur'
+      }`}>
+      {torchOn ? <FlashIc size={19}/> : <FlashOffIc size={19}/>}
+    </button>
+  ) : null;
 
   // ── Embedded mode: sadece kamera + status ────────────────────────────────
   if (embedded) {
@@ -137,6 +177,7 @@ export function BarcodeScanner({ onResult, onClose, embedded = false, mode = 'ba
       <div className="relative w-full bg-slate-950">
         <div className="relative">
           <div id={SCANNER_ID} className="w-full" style={{ minHeight: 200 }}/>
+          {torchButton}
           {status === 'scanning' && (
             <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
               <div className="relative" style={mode === 'qr'
@@ -212,6 +253,7 @@ export function BarcodeScanner({ onResult, onClose, embedded = false, mode = 'ba
         {/* Scanner viewport */}
         <div className="relative bg-slate-950 flex-1 overflow-hidden flex flex-col justify-center" style={{ minHeight: 220 }}>
           <div id={SCANNER_ID} className="w-full"></div>
+          {torchButton}
 
           {/* Viewfinder */}
           {status === 'scanning' && (

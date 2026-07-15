@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ModalShell } from './ui/ModalShell';
+import { formatBoxes } from '../utils/quantity';
 
 const Ic = ({ d, size = 18, stroke = 2, className = '', extra = null }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
@@ -12,7 +13,8 @@ const AlertTri = (p) => <Ic {...p} extra={<><path d="m10.3 3.86-8.79 15A2 2 0 0 
 const TrashIc = (p) => <Ic {...p} extra={<><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>}/>;
 
 export const DeleteModal = ({ medicine, onClose, onConfirm }) => {
-  const total = medicine?.count || 1;
+  // Kutu bazlı silme: toplam = gruptaki tüm dokümanların kutu toplamı.
+  const total = medicine?.totalBoxCount ?? 1;
   const [n, setN] = useState(1);
 
   useEffect(() => { setN(1); }, [medicine]);
@@ -37,7 +39,7 @@ export const DeleteModal = ({ medicine, onClose, onConfirm }) => {
 
           {total > 1 && (
             <div className="mt-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 p-4">
-              <div className="text-[12px] font-medium text-slate-700 dark:text-slate-300 mb-2">Kaç adet silinsin? (toplam {total})</div>
+              <div className="text-[12px] font-medium text-slate-700 dark:text-slate-300 mb-2">Kaç kutu silinsin? (toplam {formatBoxes(total)})</div>
               <div className="flex items-center gap-3">
                 <input
                   type="range" min={1} max={total} value={n}
@@ -57,7 +59,7 @@ export const DeleteModal = ({ medicine, onClose, onConfirm }) => {
           </button>
           <button onClick={() => { onConfirm(n); onClose(); }}
             className="px-4 py-2.5 rounded-xl text-[14px] font-semibold text-white bg-rose-600 hover:bg-rose-700 inline-flex items-center gap-1.5 transition-colors">
-            <TrashIc size={15}/> {n > 1 ? `${n} adet sil` : 'Sil'}
+            <TrashIc size={15}/> {n > 1 ? `${formatBoxes(n)} sil` : 'Sil'}
           </button>
         </div>
     </ModalShell>

@@ -48,8 +48,11 @@ const ToggleRow = ({ label, hint, checked, onChange, id }) => (
 );
 
 export const ReminderModal = ({ medicine, schedule, notifPermission, onClose, onSave, onRemove }) => {
-  const [enabled, setEnabled] = useState(schedule?.enabled ?? true);
-  const [medReminder, setMedReminder] = useState(schedule?.medicationReminderEnabled ?? true);
+  // Yeni hatırlatıcıda varsayılanlar KAPALI gelir; kullanıcı bilinçli açar.
+  // Tüm seçenekler her zaman görünürdür; ana anahtar kapalıyken altındakiler
+  // gri/devre dışı gösterilir (aşağıdaki DisabledGroup sarmalayıcısı).
+  const [enabled, setEnabled] = useState(schedule?.enabled ?? false);
+  const [medReminder, setMedReminder] = useState(schedule?.medicationReminderEnabled ?? false);
   const [times, setTimes] = useState(schedule?.scheduleTimes || ['08:00']);
   const [customTime, setCustomTime] = useState('');
   const [days, setDays] = useState(schedule?.daysOfWeek || [0, 1, 2, 3, 4, 5, 6]);
@@ -160,12 +163,16 @@ export const ReminderModal = ({ medicine, schedule, notifPermission, onClose, on
           hint="Kapatırsanız bu ilaç için hiçbir hatırlatma yapılmaz."
           checked={enabled} onChange={setEnabled}/>
 
-        {enabled && (<>
+        {/* Ana anahtar kapalıyken alt seçenekler görünür ama devre dışı/gri */}
+        <div aria-disabled={!enabled}
+          className={`space-y-6 transition-opacity ${enabled ? '' : 'opacity-45 pointer-events-none select-none'}`}>
         <ToggleRow id="rem-med" label="Kullanım saati hatırlatması"
           hint="Seçtiğiniz saatlerde size haber verilir."
           checked={medReminder} onChange={setMedReminder}/>
 
-        {medReminder && (<>
+        {/* Saat/gün/doz bölümleri: kullanım hatırlatması kapalıyken gri */}
+        <div aria-disabled={!medReminder}
+          className={`space-y-6 transition-opacity ${medReminder ? '' : 'opacity-45 pointer-events-none select-none'}`}>
         <Section title="Hangi saatlerde?" hint="Bir veya birden fazla saat seçin. Hazır saatlere dokunun ya da kendi saatinizi ekleyin.">
           <div className="flex flex-wrap gap-2" role="group" aria-label="Hatırlatma saatleri">
             {[...new Set([...COMMON_TIMES, ...times])].sort().map(t => (
@@ -257,7 +264,7 @@ export const ReminderModal = ({ medicine, schedule, notifPermission, onClose, on
             </div>
           )}
         </Section>
-        </>)}
+        </div>
 
         <Section title="Kutu bitiş uyarısı" hint="Kutudaki miktarı girerseniz, ilaç bitmeden önce size haber verilir.">
           <ToggleRow id="rem-refill" label="Bitmeden uyar"
@@ -349,7 +356,7 @@ export const ReminderModal = ({ medicine, schedule, notifPermission, onClose, on
             </div>
           )}
         </Section>
-        </>)}
+        </div>
 
         {error && (
           <div role="alert" className="p-3 rounded-xl bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 text-[13px] font-medium">

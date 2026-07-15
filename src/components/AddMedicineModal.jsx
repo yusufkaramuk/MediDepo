@@ -212,11 +212,11 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit,
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] animate-[fade_.18s_ease]"></div>
       <form
         onSubmit={submit}
-        className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[92vh] overflow-y-auto animate-[slideUp_.25s_cubic-bezier(.22,.61,.36,1)]"
+        className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[92vh] flex flex-col animate-[slideUp_.25s_cubic-bezier(.22,.61,.36,1)]"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+        {/* Header — sabit */}
+        <div className="shrink-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between rounded-t-3xl">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-[var(--brand-50)] text-[var(--brand-700)] grid place-items-center ring-1 ring-[var(--brand-100)]">
               <PillIc size={18}/>
@@ -233,8 +233,8 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit,
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Body — yalnızca bu alan kayar; butonlar hep görünür kalır */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4 content-start">
           <div className="sm:col-span-2">
             <Field label="İlaç Adı" required>
               <input
@@ -340,7 +340,7 @@ export const AddMedicineModal = ({ isOpen, onClose, onSave, initialData, isEdit,
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-b-none sm:rounded-b-3xl">
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button type="button"
               onClick={() => setShowScanner('qr')}

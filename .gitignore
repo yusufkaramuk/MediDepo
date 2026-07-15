@@ -78,3 +78,4 @@ backup-*.json
 scripts/diagnose-data.cjs
 scripts/backup-stray-account.cjs
 scripts/fix-google-link.cjs
+scripts/diagnose-push.cjs
