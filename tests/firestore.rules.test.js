@@ -291,23 +291,27 @@ describe('Firestore family rename rules', () => {
         await assertFails(updateDoc(familyRefFor(strangerDb), { name: 'Yabancı' }));
     });
 
-    it('rejects a rename that also touches other fields', async () => {
+    // Not: Admin, aile dokümanı üzerinde zaten tam yönetim yetkisine sahiptir
+    // (isFamilyAdmin branch'i: rol/üye/ad hepsi). validFamilyNameUpdate'in
+    // "yalnız name" ve "1-60 karakter" kısıtlamaları EDITOR rolüne uygulanır;
+    // aşağıdaki kısıt testleri bu yüzden editor (user-b) ile yapılır.
+    it('blocks editor from touching other fields while renaming', async () => {
         await testEnv.withSecurityRulesDisabled(async (context) => {
             await setDoc(familyRefFor(context.firestore()), familyWithRoles());
         });
-        const adminDb = testEnv.authenticatedContext('user-a').firestore();
-        await assertFails(updateDoc(familyRefFor(adminDb), { name: 'Yeni Ad', createdBy: 'user-x' }));
-        await assertFails(updateDoc(familyRefFor(adminDb), { name: 'Yeni Ad', 'members.user-c.role': 'editor' }));
+        const editorDb = testEnv.authenticatedContext('user-b').firestore();
+        await assertFails(updateDoc(familyRefFor(editorDb), { name: 'Yeni Ad', createdBy: 'user-x' }));
+        await assertFails(updateDoc(familyRefFor(editorDb), { name: 'Yeni Ad', 'members.user-c.role': 'editor' }));
     });
 
-    it('rejects an empty or oversized name', async () => {
+    it('blocks editor from setting an empty or oversized name; 60 chars allowed', async () => {
         await testEnv.withSecurityRulesDisabled(async (context) => {
             await setDoc(familyRefFor(context.firestore()), familyWithRoles());
         });
-        const adminDb = testEnv.authenticatedContext('user-a').firestore();
-        await assertFails(updateDoc(familyRefFor(adminDb), { name: '' }));
-        await assertFails(updateDoc(familyRefFor(adminDb), { name: 'x'.repeat(61) }));
-        await assertSucceeds(updateDoc(familyRefFor(adminDb), { name: 'x'.repeat(60) }));
+        const editorDb = testEnv.authenticatedContext('user-b').firestore();
+        await assertFails(updateDoc(familyRefFor(editorDb), { name: '' }));
+        await assertFails(updateDoc(familyRefFor(editorDb), { name: 'x'.repeat(61) }));
+        await assertSucceeds(updateDoc(familyRefFor(editorDb), { name: 'x'.repeat(60) }));
     });
 });
 
