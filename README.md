@@ -53,14 +53,6 @@ Modern, güvenli ve kullanıcı dostu bir web uygulaması. Evinizdeki ilaçları
 - GitHub Actions ile zamanlanmış günlük kontrol
 - Güvenli bildirim boru hattı: recursive Firestore REST değer çözümleyicisi, merkezî metin sanitizasyonu (Türkçe karakter korumalı, kontrol/zero-width temizliği), SHA-256 abonelik kimlikleri, hatalı aboneliklerin (404/410) otomatik temizliği ve Service Worker payload allowlist doğrulaması
 
-### İlaç Kullanım Hatırlatıcısı ve Kutu Bitiş Uyarısı
-- Opt-in hatırlatıcı: saatler, günler, doz, erteleme, sessiz saatler
-- Uygulama açıkken tam ekran alarm (Aldım / Ertele / Atla), kapalıyken Web Push (15 dk kontrol, tam saat garantisi yok)
-- Kalan miktara göre tahmini kutu bitişi ve "bitmeden N gün önce" uyarısı
-- Bildirim gizlilik modu: varsayılan olarak ilaç adı bildirimde görünmez
-- Uygulama içi bildirim merkezi (30 gün / 100 kayıt saklama)
-- Ayrıntılar: [docs/REMINDERS.md](docs/REMINDERS.md)
-
 ### Salt Okunur Paylaşım Linki
 - Seçili bir ilacı şifre gerektirmeden paylaşın
 - 7 günlük geçerlilik süresi olan benzersiz token
@@ -79,7 +71,7 @@ Modern, güvenli ve kullanıcı dostu bir web uygulaması. Evinizdeki ilaçları
 ### Tasarım Sistemi ve Arayüz
 - Yenilenmiş, mobil öncelikli tasarım dili (teal marka paleti, Poppins tipografisi, yumuşak katman ve derinlik)
 - Merkezî design token'lar / CSS değişkenleri (renk, radius, gölge, blur, spacing, animasyon) — açık ve karanlık temaya tam uyum
-- Alt navigasyon (mobil) ve üst sekmeler (masaüstü): Ana Sayfa · İlaçlarım · Bildirimler · Aile · Ayarlar
+- Alt navigasyon (mobil) ve üst sekmeler (masaüstü): Ana Sayfa · İlaçlarım · Aile · Ayarlar
 - Ana sayfa: kompakt durum kartları, "yakında bitecekler" önizlemesi ve hızlı ilaç ekleme
 - Erişilebilirlik: ≥44px dokunma hedefleri, klavye focus, `aria` etiketleri, `prefers-reduced-motion`, alanla ilişkili form hataları
 - Gelişmiş Karanlık Mod / Açık Mod, Dinamik Yazı Boyutu, liste ve grid görünümü, tam Türkçe arayüz
@@ -177,13 +169,12 @@ npm run test:security  # Tam güvenlik kontrolü
 
 ## Changelog
 
-### v3.0.0 — Tasarım Yenilemesi, İlaç Hatırlatıcısı & Bildirim Altyapısı
+### v3.0.0 — Tasarım Yenilemesi & Bildirim Güvenliği
 - **Yeni Tasarım Sistemi**: Mobil öncelikli, teal marka paletli (MediDepo) yenilenmiş arayüz; Poppins tipografisi; merkezî design token'lar (renk/radius/gölge/blur/spacing/animasyon) ve açık/karanlık tema uyumu. Alt navigasyon (mobil) + üst sekmeler (masaüstü), yenilenmiş ana sayfa (kompakt durum kartları, "yakında bitecekler" önizlemesi).
-- **İlaç Kullanım Hatırlatıcısı**: Opt-in hatırlatıcı (saatler, günler, doz, erteleme, sessiz saatler); uygulama açıkken tam ekran alarm (Aldım / Ertele / Atla), sekme arka plandayken ve uygulama kapalıyken Web Push; kalan miktara göre tahmini kutu bitişi ve refill uyarısı. Ayrı `medicationSchedules` alt koleksiyonu, migration gerektirmez.
-- **Bildirim Merkezi & Gizlilik Modu**: Uygulama içi bildirim merkezi (sınırlı saklama); bildirimlerde varsayılan olarak ilaç adı gizli, isteğe bağlı isimli mod (açık onaylı düz metin etiket).
-- **Bildirim Boru Hattı Düzeltmesi**: "Anlamsız karakter/`[object Object]`" hatasının kök nedenleri giderildi — recursive Firestore REST decoder, merkezî `sanitizeNotificationText`, şifreli alan sızıntı emniyeti, SHA-256 abonelik kimlikleri, 404/410 temizliği, retry/backoff, dry-run; Service Worker payload allowlist + same-origin yönlendirme.
+- **Sadeleştirilmiş Bildirim Akışı**: İlaç kullanım hatırlatıcısı, kutu bitiş uyarısı ve uygulama içi Bildirimler sekmesi kaldırıldı. Bildirim altyapısı yalnızca yaklaşan son kullanma tarihleri için günlük Web Push uyarısı gönderir.
+- **Bildirim Boru Hattı Güvenliği**: Recursive Firestore REST decoder, merkezî `sanitizeNotificationText`, şifreli alan sızıntı emniyeti, SHA-256 abonelik kimlikleri, 404/410 temizliği, retry/backoff ve dry-run desteği; Service Worker payload allowlist + same-origin yönlendirme.
 - **Aile**: Aile adı sonradan değiştirilebilir (yalnızca admin/editör; yetki Firestore kurallarıyla zorlanır).
-- **Güvenlik**: Yeni koleksiyonlar (`medicationSchedules`, `reminderDeliveries`, `notifications`) için Firestore kuralları ve `pushSubscriptions` alan doğrulaması; kapsamlı birim testleri (decoder, sanitizer, slot/DST matematiği, kutu bitiş tahmini) + rules testleri.
+- **Güvenlik**: `pushSubscriptions` alan doğrulaması, kaldırılan hatırlatıcı/bildirim koleksiyonlarına istemci erişiminin kapatılması ve decoder/sanitizer ile Firestore Rules testleri.
 - **UI/SEO Düzeltmeleri**: Ana sayfa durum kartı yönlendirmeleri tek `statusBucket` kaynağıyla tutarlı hale getirildi; alt navigasyon aktif nokta hizası; karanlık temada depo seçim butonu okunurluğu; mobil footer boşluğu; ilk açılış siyah flash'ı; miktar gösterimi tek "N kutu" formatı; canonical + Open Graph + JSON-LD marka sinyalleri.
 - **Erişilebilirlik**: Ortak erişilebilir modal kabuğu (focus trap, Escape, aria), ≥44px dokunma hedefleri, `prefers-reduced-motion` desteği.
 

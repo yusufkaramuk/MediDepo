@@ -9,7 +9,7 @@ import { MedicineDatabase } from './services/MedicineDatabase';
 import { BarcodeParser } from './services/BarcodeParser';
 import { useTheme } from './context/ThemeContext';
 import { useNetworkStatus } from './hooks/useNetworkStatus';
-import { doc, setDoc, collection, getDocs, updateDoc, deleteDoc, addDoc, writeBatch } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from './services/FirebaseClient';
 import { deriveKeyFromToken, encryptShareData } from './services/ShareLinkCrypto';
 import { NotificationService } from './services/NotificationService';
@@ -29,12 +29,6 @@ import { SettingsModal } from './components/SettingsModal';
 import { PassphraseModal } from './components/PassphraseModal';
 import { useHashRoute } from './hooks/useHashRoute';
 import { BottomNav } from './components/layout/BottomNav';
-import { ScheduleService } from './services/ScheduleService';
-import { ReminderModal } from './components/ReminderModal';
-import { AlarmOverlay } from './components/AlarmOverlay';
-import { NotificationCenterView } from './views/NotificationCenterView';
-import { useInAppReminders } from './hooks/useInAppReminders';
-import { decrementRemaining } from './utils/reminderMath';
 import { calculateTotalBoxes, formatBoxes, normalizeStockCount } from './utils/quantity';
 import appLogo from './assets/drdepo-logo.svg';
 
@@ -81,7 +75,6 @@ const Icon = {
   Bell:     (p) => <Ic {...p} extra={<><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></>}/>,
   BellOff:  (p) => <Ic {...p} extra={<><path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 1 .6 5"/><path d="M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><line x1="2" x2="22" y1="2" y2="22"/></>}/>,
   Users:    (p) => <Ic {...p} extra={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>}/>,
-  Inbox:    (p) => <Ic {...p} extra={<><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></>}/>,
 };
 
 // ── Status helpers ────────────────────────────────────────────────────────────
@@ -163,7 +156,7 @@ const StatusPill = ({ status, daysLeft }) => {
 };
 
 // ── Medicine Row (list view) ──────────────────────────────────────────────────
-const MedicineRow = ({ medicine, onEdit, onDelete, onReminder, hasReminder = false }) => {
+const MedicineRow = ({ medicine, onEdit, onDelete }) => {
   const st = statusOf(medicine);
   const ings = [medicine.activeIngredient1, medicine.activeIngredient2, medicine.activeIngredient3].filter(Boolean);
   const dotColor = st.key === 'expired' ? 'bg-rose-500' : st.key === 'warning' ? 'bg-amber-500' : st.key === 'soon' ? 'bg-sky-500' : 'bg-emerald-500';
@@ -187,13 +180,6 @@ const MedicineRow = ({ medicine, onEdit, onDelete, onReminder, hasReminder = fal
       <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
         {medicine.canEdit !== false && <>
           <button onClick={() => onEdit(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100" aria-label="Düzenle"><Icon.Edit size={14}/></button>
-          {onReminder && (
-            <button onClick={() => onReminder(medicine)}
-              className={`p-1.5 rounded-lg transition-colors ${hasReminder ? 'text-[var(--brand-600)] bg-[var(--brand-50)]' : 'text-slate-500 hover:bg-[var(--brand-50)] hover:text-[var(--brand-600)]'}`}
-              aria-label={hasReminder ? 'Hatırlatıcıyı düzenle' : 'Hatırlatıcı kur'}>
-              <Icon.Bell size={14}/>
-            </button>
-          )}
           <button onClick={() => onDelete(medicine)} className="p-1.5 rounded-lg text-slate-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-600" aria-label="Sil"><Icon.Trash size={14}/></button>
         </>}
         {medicine.isOwn === false && <span className="text-[11px] text-slate-400 px-1">{medicine.ownerName}</span>}
@@ -457,7 +443,7 @@ const ProfileButton = ({ user, onShowSettings, onSignOut }) => {
   );
 };
 
-const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut, theme, onToggleTheme, isOnline, notifPermission, onToggleNotifications, onShowFamily, pendingInviteCount, onShowSettings, tab, onNavigate, unreadNotifCount = 0 }) => (
+const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut, theme, onToggleTheme, isOnline, notifPermission, onToggleNotifications, onShowFamily, pendingInviteCount, onShowSettings, tab, onNavigate }) => (
   <header className="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-700/80">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
       <button type="button" onClick={() => onNavigate?.('anasayfa')}
@@ -477,23 +463,16 @@ const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut,
         {[
           { k: 'anasayfa', l: 'Ana Sayfa' },
           { k: 'ilaclar', l: 'İlaçlarım' },
-          { k: 'bildirimler', l: 'Bildirimler', badge: unreadNotifCount },
         ].map(t => (
           <button key={t.k}
             onClick={() => onNavigate?.(t.k)}
             aria-current={tab === t.k ? 'page' : undefined}
-            aria-label={t.badge > 0 ? `${t.l} (${t.badge} okunmamış)` : undefined}
             className={`relative px-3.5 py-2 rounded-xl text-[13.5px] transition-colors min-h-[44px] ${
               tab === t.k
                 ? 'bg-[var(--brand-50)] text-[var(--brand-700)] font-semibold'
                 : 'text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}>
             {t.l}
-            {t.badge > 0 && (
-              <span aria-hidden="true" className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-[var(--brand-accent)] text-white text-[9.5px] font-bold grid place-items-center tabular-nums">
-                {t.badge > 9 ? '9+' : t.badge}
-              </span>
-            )}
           </button>
         ))}
       </nav>
@@ -520,20 +499,6 @@ const Header = ({ user, totalCount, useCloud, onToggleCloud, syncing, onSignOut,
       <div className="hidden sm:block w-px h-6 bg-slate-200 dark:bg-slate-700"/>
 
       <div className="flex items-center gap-1.5">
-        <button onClick={() => onNavigate?.('bildirimler')}
-          className={`relative p-2 rounded-xl transition-colors md:hidden ${
-            tab === 'bildirimler'
-              ? 'text-[var(--brand-600)] bg-[var(--brand-50)]'
-              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
-          }`}
-          aria-label={unreadNotifCount > 0 ? `Bildirim merkezi (${unreadNotifCount} okunmamış)` : 'Bildirim merkezi'}>
-          <Icon.Inbox size={17}/>
-          {unreadNotifCount > 0 && (
-            <span aria-hidden="true" className="absolute top-0.5 right-0.5 min-w-[15px] h-[15px] px-0.5 rounded-full bg-[var(--brand-accent)] text-white text-[9px] font-bold grid place-items-center tabular-nums">
-              {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
-            </span>
-          )}
-        </button>
         <button onClick={onShowFamily}
           className="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
           aria-label="Aile modu">
@@ -677,8 +642,6 @@ function App() {
   const [notifPermission, setNotifPermission] = useState(
     NotificationService.isSupported() ? NotificationService.getPermission() : 'unsupported'
   );
-  const [schedules, setSchedules] = useState([]);
-  const [reminderMedicine, setReminderMedicine] = useState(null); // Hatırlatıcı modalı açık ilaç
 
   // Tarayici izni acik olsa bile PushManager endpoint'i Firestore'dan silinmis
   // veya yenilenmis olabilir. Oturum acildiginda mevcut aboneligi idempotent
@@ -693,168 +656,7 @@ function App() {
     return () => { active = false; };
   }, [user?.uid, notifPermission]);
 
-  // Hatırlatıcı planlarını yükle (opt-in; yoksa boş liste)
-  const loadSchedules = useCallback(async () => {
-    if (!user) { setSchedules([]); return; }
-    try {
-      setSchedules(await ScheduleService.list(user.uid));
-    } catch {
-      setSchedules([]); // hatırlatıcılar yüklenemese de uygulama çalışmaya devam eder
-    }
-  }, [user]);
-  useEffect(() => { loadSchedules(); }, [loadSchedules]);
-
-  const scheduleByMedicine = useMemo(() => {
-    const map = new Map();
-    for (const s of schedules) map.set(s.medicineId, s);
-    return map;
-  }, [schedules]);
-
-  const handleOpenReminder = (medicine) => setReminderMedicine(medicine);
-
-  const handleSaveReminder = async (input) => {
-    const existing = scheduleByMedicine.get(input.medicineId) || null;
-    await ScheduleService.save(user.uid, input, existing);
-    await loadSchedules();
-    setToast({ kind: 'success', text: input.enabled ? 'Hatırlatıcı kaydedildi' : 'Hatırlatıcı kapatıldı' });
-  };
-
-  const handleRemoveReminder = async (scheduleId) => {
-    try {
-      await ScheduleService.remove(user.uid, scheduleId);
-      await loadSchedules();
-      setToast({ kind: 'info', text: 'Hatırlatıcı silindi' });
-    } catch {
-      setToast({ kind: 'error', text: 'Hatırlatıcı silinemedi' });
-    }
-  };
-
-  // ── Bildirim merkezi (users/{uid}/notifications) ────────────────────────────
-  const [notifications, setNotifications] = useState([]);
-  const [notifLoading, setNotifLoading] = useState(false);
-
-  const loadNotifications = useCallback(async () => {
-    if (!user) { setNotifications([]); return; }
-    setNotifLoading(true);
-    try {
-      const snap = await getDocs(collection(db, `users/${user.uid}/notifications`));
-      const items = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-
-      // Saklama politikası: 30 günden eski veya 100'ü aşan kayıtları buda
-      const cutoff = new Date(Date.now() - 30 * 86400000).toISOString();
-      const keep = [];
-      const prune = [];
-      for (const n of items) {
-        if (keep.length < 100 && (n.createdAt || '') >= cutoff) keep.push(n);
-        else prune.push(n);
-      }
-      if (prune.length > 0) {
-        const batch = writeBatch(db);
-        for (const n of prune.slice(0, 400)) {
-          batch.delete(doc(db, `users/${user.uid}/notifications/${n.id}`));
-        }
-        batch.commit().catch(() => {});
-      }
-      setNotifications(keep);
-    } catch {
-      setNotifications([]);
-    } finally {
-      setNotifLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => { loadNotifications(); }, [loadNotifications]);
-  useEffect(() => { if (tab === 'bildirimler') loadNotifications(); }, [tab, loadNotifications]);
-
-  const unreadNotifCount = useMemo(() => notifications.filter(n => !n.read).length, [notifications]);
-
-  const addLocalNotification = useCallback(async ({ type, title, body = '', medicineId = '', scheduleId = '', read = true }) => {
-    if (!user) return;
-    try {
-      const data = {
-        type,
-        title: String(title).slice(0, 80),
-        read,
-        createdAt: new Date().toISOString(),
-      };
-      if (body) data.body = String(body).slice(0, 240);
-      if (medicineId) data.medicineId = String(medicineId).slice(0, 64);
-      if (scheduleId) data.scheduleId = String(scheduleId).slice(0, 64);
-      await addDoc(collection(db, `users/${user.uid}/notifications`), data);
-      loadNotifications();
-    } catch { /* geçmiş kaydı kritik değil */ }
-  }, [user, loadNotifications]);
-
-  const handleMarkNotifRead = async (id) => {
-    try {
-      await updateDoc(doc(db, `users/${user.uid}/notifications/${id}`), { read: true });
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-    } catch { /* no-op */ }
-  };
-
-  const handleMarkAllNotifRead = async () => {
-    try {
-      const batch = writeBatch(db);
-      for (const n of notifications.filter(n => !n.read)) {
-        batch.update(doc(db, `users/${user.uid}/notifications/${n.id}`), { read: true });
-      }
-      await batch.commit();
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    } catch { /* no-op */ }
-  };
-
-  const handleDeleteNotif = async (id) => {
-    try {
-      await deleteDoc(doc(db, `users/${user.uid}/notifications/${id}`));
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    } catch { /* no-op */ }
-  };
-
-  // ── Uygulama açıkken in-app alarm (katman 1) ────────────────────────────────
-  const medicineNameById = useMemo(() => {
-    const map = new Map();
-    for (const m of medicines) map.set(m.id, m.name);
-    return map;
-  }, [medicines]);
-
-  const activeSchedules = useMemo(
-    () => schedules.filter(s => s.enabled && s.medicationReminderEnabled),
-    [schedules],
-  );
-  const { alarm, acknowledgeAlarm } = useInAppReminders(activeSchedules, medicineNameById);
-
-  const handleAlarmTaken = async () => {
-    const a = alarm;
-    acknowledgeAlarm('taken');
-    if (!a || !user) return;
-    try {
-      if (a.schedule.refillReminderEnabled && Number(a.schedule.remainingUnits) > 0) {
-        const next = decrementRemaining(a.schedule.remainingUnits, a.schedule.dosePerIntake);
-        await ScheduleService.updateRemaining(user.uid, a.schedule.id, next);
-        loadSchedules();
-      }
-      addLocalNotification({
-        type: 'intake', title: 'İlaç alındı olarak işaretlendi',
-        body: a.time ? `Planlanan saat: ${a.time}` : '',
-        medicineId: a.schedule.medicineId, scheduleId: a.schedule.id,
-      });
-    } catch { /* stok güncellenemese de alarm kapanır */ }
-  };
-
-  const handleAlarmSkip = () => {
-    const a = alarm;
-    acknowledgeAlarm('skip');
-    if (!a) return;
-    addLocalNotification({
-      type: 'intake', title: 'Doz atlandı',
-      body: a.time ? `Planlanan saat: ${a.time}` : '',
-      medicineId: a.schedule.medicineId, scheduleId: a.schedule.id,
-    });
-  };
-
-  // ── Service Worker mesajları (bildirim tıklaması + abonelik yenileme) ──────
+  // ── Service Worker mesajları (SKT bildirimi + abonelik yenileme) ───────────
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
     const handler = (event) => {
@@ -868,24 +670,11 @@ function App() {
         // Yalnızca hash kısmına yönlendir (aynı origin; SW zaten doğruladı)
         const hashIdx = typeof msg.url === 'string' ? msg.url.indexOf('#') : -1;
         if (hashIdx >= 0) window.location.hash = msg.url.slice(hashIdx);
-        if (msg.action === 'taken' && msg.scheduleId && user) {
-          const sched = schedules.find(s => s.id === msg.scheduleId);
-          if (sched && sched.refillReminderEnabled && Number(sched.remainingUnits) > 0) {
-            ScheduleService.updateRemaining(
-              user.uid, sched.id,
-              decrementRemaining(sched.remainingUnits, sched.dosePerIntake),
-            ).then(loadSchedules).catch(() => {});
-          }
-          addLocalNotification({
-            type: 'intake', title: 'İlaç alındı olarak işaretlendi',
-            scheduleId: msg.scheduleId,
-          });
-        }
       }
     };
     navigator.serviceWorker.addEventListener('message', handler);
     return () => navigator.serviceWorker.removeEventListener('message', handler);
-  }, [user, schedules, addLocalNotification, loadSchedules]);
+  }, [user]);
 
   // Toast auto-dismiss
   useEffect(() => {
@@ -1441,7 +1230,6 @@ function App() {
         pendingInviteCount={pendingInviteCount}
         tab={tab}
         onNavigate={navigate}
-        unreadNotifCount={unreadNotifCount}
       />
 
       {/* SW güncelleme bildirimi */}
@@ -1583,17 +1371,6 @@ function App() {
         </button>
         </>)}
 
-        {tab === 'bildirimler' && (
-          <NotificationCenterView
-            items={notifications}
-            loading={notifLoading}
-            medicineNameById={medicineNameById}
-            onMarkRead={handleMarkNotifRead}
-            onMarkAllRead={handleMarkAllNotifRead}
-            onDelete={handleDeleteNotif}
-          />
-        )}
-
         {tab === 'ilaclar' && (<>
         {/* İlaçlarım başlık + veri menüsü (dışa/içe aktarma) */}
         <div className="flex items-center justify-between mb-4">
@@ -1711,18 +1488,14 @@ function App() {
         ) : view === 'list' ? (
           <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
             {filteredMedicines.map(m => (
-              <MedicineRow key={m.id} medicine={m} onEdit={handleEdit} onDelete={handleDeleteRequest}
-                onReminder={user && m.isOwn !== false ? handleOpenReminder : null}
-                hasReminder={scheduleByMedicine.has(m.id)}/>
+              <MedicineRow key={m.id} medicine={m} onEdit={handleEdit} onDelete={handleDeleteRequest}/>
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredMedicines.map(m => (
               <MedicineCard key={m.id} medicine={m} onEdit={handleEdit} onDelete={handleDeleteRequest}
-                onShare={useCloud && user ? handleShare : null}
-                onReminder={user && m.isOwn !== false ? handleOpenReminder : null}
-                hasReminder={scheduleByMedicine.has(m.id)}/>
+                onShare={useCloud && user ? handleShare : null}/>
             ))}
           </div>
         )}
@@ -1770,25 +1543,6 @@ function App() {
         onClose={() => setDeletingMedicine(null)}
         onConfirm={handleDeleteConfirm}
       />
-
-      <AlarmOverlay
-        alarm={alarm}
-        onTaken={handleAlarmTaken}
-        onSnooze={() => { acknowledgeAlarm('snooze'); showToast('info', `${alarm?.schedule?.snoozeMinutes || 10} dakika sonra tekrar hatırlatılacak`); }}
-        onSkip={handleAlarmSkip}
-        onClose={() => acknowledgeAlarm('dismiss')}
-      />
-
-      {reminderMedicine && user && (
-        <ReminderModal
-          medicine={reminderMedicine}
-          schedule={scheduleByMedicine.get(reminderMedicine.id) || null}
-          notifPermission={notifPermission}
-          onClose={() => setReminderMedicine(null)}
-          onSave={handleSaveReminder}
-          onRemove={handleRemoveReminder}
-        />
-      )}
 
       {passphraseRequest && (
         <PassphraseModal 

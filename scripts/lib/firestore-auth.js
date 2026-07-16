@@ -1,5 +1,5 @@
 // Service account → OAuth2 access token (Firestore REST için).
-// send-notifications.js ve send-reminders.js tarafından paylaşılır.
+// send-notifications.js tarafından kullanılır.
 // GÜVENLİK: private_key, client_email veya token asla loglanmaz.
 
 import { createSign } from 'crypto';

@@ -9,12 +9,11 @@ import { ModalShell } from './ui/ModalShell';
 function NotificationSection() {
   const supported = NotificationService.isSupported();
   const permission = supported ? NotificationService.getPermission() : 'unsupported';
-  const actionsSupported = typeof Notification !== 'undefined' && 'actions' in (Notification.prototype || {});
   const [testState, setTestState] = useState('');
 
-  const sendTest = async (mode) => {
+  const sendTest = async () => {
     setTestState('sending');
-    const result = await NotificationService.showTestNotification(mode);
+    const result = await NotificationService.showTestNotification();
     setTestState(result?.ok ? 'ok' : 'error');
     setTimeout(() => setTestState(''), 4000);
   };
@@ -36,26 +35,16 @@ function NotificationSection() {
               {permission === 'granted' ? 'Verildi' : permission === 'denied' ? 'Reddedildi' : permission === 'unsupported' ? '—' : 'Sorulmadı'}
             </span>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-slate-700 dark:text-slate-300">Bildirim düğmeleri (Aldım/Ertele)</span>
-            <span className="font-medium text-slate-600 dark:text-slate-400">
-              {actionsSupported ? 'Destekleniyor' : 'Bu cihazda uygulama içinde gösterilir'}
-            </span>
-          </div>
         </div>
         <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed">
-          Hatırlatıcılar bir PWA üzerinden gönderilir; işletim sistemi alarmı garantisi yoktur ve
-          bildirimler birkaç dakika gecikebilir. Uygulama açıkken hatırlatmalar tam zamanında ekranda gösterilir.
+          Son kullanma tarihi yaklaşan ilaçlar günlük olarak kontrol edilir. Push bildirimleri cihaz ve
+          tarayıcı koşullarına bağlı olarak gecikebilir.
         </p>
         {supported && permission === 'granted' ? (
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => sendTest('generic')} disabled={testState === 'sending'}
+            <button type="button" onClick={sendTest} disabled={testState === 'sending'}
               className="px-4 py-2.5 rounded-xl text-[13.5px] font-medium bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] disabled:opacity-50 transition-colors min-h-[44px]">
               Test bildirimi gönder
-            </button>
-            <button type="button" onClick={() => sendTest('named')} disabled={testState === 'sending'}
-              className="px-4 py-2.5 rounded-xl text-[13.5px] font-medium bg-[var(--brand-50)] text-[var(--brand-700)] hover:bg-[var(--brand-100)] disabled:opacity-50 transition-colors min-h-[44px]">
-              İsimli örneği dene
             </button>
           </div>
         ) : (

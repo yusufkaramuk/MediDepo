@@ -104,36 +104,15 @@ describe('buildNotificationPayload', () => {
   });
 
   it('yalnızca göreli aynı-origin URL kabul eder', () => {
-    expect(buildNotificationPayload({ url: '/#/bildirimler' }).data.url).toBe('/#/bildirimler');
+    expect(buildNotificationPayload({ url: '/#/ilaclar' }).data.url).toBe('/#/ilaclar');
     expect(buildNotificationPayload({ url: 'https://evil.example/x' }).data).toBeUndefined();
     expect(buildNotificationPayload({ url: '//evil.example' }).data).toBeUndefined();
     expect(buildNotificationPayload({ url: 'javascript:alert(1)' }).data).toBeUndefined();
   });
 
-  it('bilinmeyen action reddedilir, bilinenler geçer (en fazla 3)', () => {
-    const p = buildNotificationPayload({
-      actions: [
-        { action: 'taken', title: 'Aldım' },
-        { action: 'evil', title: 'Kötü' },
-        { action: 'snooze', title: 'Ertele' },
-        { action: 'skip', title: 'Atla' },
-        { action: 'open', title: 'Aç' },
-      ],
-    });
-    expect(p.actions.map(a => a.action)).toEqual(['taken', 'snooze', 'skip']);
-  });
-
   it('tag güvenli karakterlere indirgenir', () => {
     const p = buildNotificationPayload({ tag: 'slot 2026-07-12T08:00 <x>' });
     expect(p.tag).toMatch(/^[\w:-]+$/);
-  });
-
-  it('scheduleId ve slotKey format doğrulamasından geçer', () => {
-    const ok = buildNotificationPayload({ scheduleId: 'abc-123', slotKey: 'abc_2026-07-12T08:00' });
-    expect(ok.data.scheduleId).toBe('abc-123');
-    expect(ok.data.slotKey).toBe('abc_2026-07-12T08:00');
-    const bad = buildNotificationPayload({ scheduleId: 'a b<script>', slotKey: 'x'.repeat(200) });
-    expect(bad.data).toBeUndefined();
   });
 
   it('payload asla [object Object] içermez', () => {

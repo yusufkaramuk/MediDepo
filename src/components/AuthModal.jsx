@@ -131,7 +131,7 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
               İlaçlarını takip et,<br/><span className="text-[var(--brand-600)]">sağlığını güvende tut.</span>
             </h1>
             <p className="mt-4 text-[15px] text-slate-600 dark:text-slate-300 leading-relaxed max-w-lg">
-              Stoğunuzu görün, son kullanma tarihlerini takip edin, hatırlatıcı kurun. Yerel veya bulutta — siz seçin.
+              Stoğunuzu görün ve son kullanma tarihlerini takip edin. Yerel veya bulutta — siz seçin.
             </p>
           </div>
 

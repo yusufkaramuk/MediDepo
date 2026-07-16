@@ -66,7 +66,7 @@ export function sanitizeNotificationText(value, max = LIMITS.body) {
  * Bildirim payload'ını allowlist ile kurar. Geçersiz parçalar güvenli
  * varsayılanlarla değiştirilir; asla nesne/dizi metin alanına sızmaz.
  */
-export function buildNotificationPayload({ title, body, tag, url, type, scheduleId, slotKey, actions } = {}) {
+export function buildNotificationPayload({ title, body, tag, url, type } = {}) {
   const safeTitle = sanitizeNotificationText(title, LIMITS.title) || 'DrDepo';
   const safeBody = sanitizeNotificationText(body, LIMITS.body) || 'Yeni bir bildiriminiz var.';
 
@@ -82,20 +82,7 @@ export function buildNotificationPayload({ title, body, tag, url, type, schedule
   }
   const safeType = sanitizeNotificationText(type, 32);
   if (safeType && /^[a-z-]+$/.test(safeType)) data.type = safeType;
-  const safeScheduleId = typeof scheduleId === 'string' && /^[\w-]{1,80}$/.test(scheduleId) ? scheduleId : null;
-  if (safeScheduleId) data.scheduleId = safeScheduleId;
-  const safeSlotKey = typeof slotKey === 'string' && /^[\w:.T-]{1,120}$/.test(slotKey) ? slotKey : null;
-  if (safeSlotKey) data.slotKey = safeSlotKey;
   if (Object.keys(data).length > 0) payload.data = data;
-
-  if (Array.isArray(actions)) {
-    const ALLOWED_ACTIONS = new Set(['taken', 'snooze', 'skip', 'open']);
-    const safeActions = actions
-      .filter(a => a && typeof a === 'object' && ALLOWED_ACTIONS.has(a.action))
-      .slice(0, 3)
-      .map(a => ({ action: a.action, title: sanitizeNotificationText(a.title, 24) || a.action }));
-    if (safeActions.length > 0) payload.actions = safeActions;
-  }
 
   return payload;
 }

@@ -3,12 +3,12 @@ import { useState, useEffect, useCallback } from 'react';
 // Hash tabanlı sekme yönlendirmesi.
 // Ana uygulama path tabanlı rotaları ( /share/, /gizlilik, /kosullar )
 // etkilemeden #/sekme biçimini kullanır. Örnekler:
-//   #/anasayfa (varsayılan) · #/ilaclar · #/ilaclar?filtre=yaklasan · #/bildirimler
+//   #/anasayfa (varsayılan) · #/ilaclar · #/ilaclar?filtre=yaklasan
 //
 // NOT: /share/ rotasında hash şifreleme anahtarı taşır; bu hook yalnızca
 // ana uygulamada (share dışı) mount edilir.
 
-export const TABS = ['anasayfa', 'ilaclar', 'bildirimler'];
+export const TABS = ['anasayfa', 'ilaclar'];
 
 export function parseHash(hash) {
   const raw = (hash || '').replace(/^#\/?/, '');

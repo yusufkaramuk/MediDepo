@@ -1,4 +1,4 @@
-const CACHE_NAME = 'drdepo-v8';
+const CACHE_NAME = 'drdepo-v9';
 
 // App shell — cache edilecek statik dosyalar
 const APP_SHELL = ['/'];
@@ -62,8 +62,7 @@ self.addEventListener('fetch', (event) => {
 // Sunucudan gelse bile payload'a güvenilmez; her alan tip/uzunluk/format
 // kontrolünden geçer. Hatalı JSON'da güvenli varsayılan bildirim gösterilir.
 
-const ALLOWED_ACTION_IDS = ['taken', 'snooze', 'skip', 'open'];
-const ALLOWED_DATA_TYPES = ['expiry', 'intake', 'refill', 'system', 'test'];
+const ALLOWED_DATA_TYPES = ['expiry', 'system', 'test'];
 
 function safeString(value, max) {
   if (typeof value !== 'string') return null;
@@ -90,24 +89,12 @@ function sanitizePushPayload(raw) {
     body: safeString(p.body, 240) || 'Yeni bir bildiriminiz var.',
     tag: (safeString(p.tag, 64) || 'drdepo-bildirim').replace(/[^\w:-]/g, '-'),
     data: { url: '/' },
-    actions: [],
   };
 
   const d = p.data && typeof p.data === 'object' && !Array.isArray(p.data) ? p.data : {};
   out.data.url = safeInternalUrl(d.url);
   const type = safeString(d.type, 32);
   if (type && ALLOWED_DATA_TYPES.includes(type)) out.data.type = type;
-  const scheduleId = safeString(d.scheduleId, 80);
-  if (scheduleId && /^[\w-]+$/.test(scheduleId)) out.data.scheduleId = scheduleId;
-  const slotKey = safeString(d.slotKey, 120);
-  if (slotKey && /^[\w:.T-]+$/.test(slotKey)) out.data.slotKey = slotKey;
-
-  if (Array.isArray(p.actions)) {
-    out.actions = p.actions
-      .filter(a => a && typeof a === 'object' && ALLOWED_ACTION_IDS.includes(a.action))
-      .slice(0, 3)
-      .map(a => ({ action: a.action, title: safeString(a.title, 24) || a.action }));
-  }
 
   return out;
 }
@@ -131,16 +118,6 @@ self.addEventListener('push', (event) => {
     data: safe.data,
     lang: 'tr',
   };
-  // Capability fallback: actions her platformda desteklenmez (ör. iOS Safari).
-  // Desteklenmeyen platformda bildirim tıklaması uygulamayı açar ve aynı
-  // işlemler uygulama içinde gösterilir.
-  if (safe.actions.length > 0 && 'actions' in Notification.prototype) {
-    options.actions = safe.actions;
-  }
-  if (safe.data.type === 'intake' && 'vibrate' in navigator) {
-    options.vibrate = [200, 100, 200];
-  }
-
   event.waitUntil(self.registration.showNotification(safe.title, options));
 });
 
@@ -149,17 +126,12 @@ self.addEventListener('notificationclick', (event) => {
 
   const data = event.notification.data || {};
   const targetUrl = safeInternalUrl(data.url);
-  const action = ALLOWED_ACTION_IDS.includes(event.action) ? event.action : null;
-
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cls => {
       const message = {
         type: 'notification-click',
-        action,
         url: targetUrl,
         notificationType: data.type || null,
-        scheduleId: data.scheduleId || null,
-        slotKey: data.slotKey || null,
       };
       const existing = cls.find(c => 'focus' in c);
       if (existing) {
@@ -167,8 +139,7 @@ self.addEventListener('notificationclick', (event) => {
         return existing.focus();
       }
       // Açık pencere yok: hedef URL ile yeni pencere aç (yalnızca same-origin).
-      const qs = action ? `${targetUrl.includes('?') ? '&' : '?'}bildirimAksiyon=${action}` : '';
-      return clients.openWindow(targetUrl + qs);
+      return clients.openWindow(targetUrl);
     })
   );
 });

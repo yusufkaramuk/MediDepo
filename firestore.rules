@@ -229,68 +229,6 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
-    function validHm(value) {
-      return value is string && value.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$');
-    }
-
-    function validQuietHours(data) {
-      return !data.keys().hasAny(['quietHours']) ||
-        data.quietHours == null ||
-        (data.quietHours is map &&
-          data.quietHours.keys().hasOnly(['start', 'end']) &&
-          validHm(data.quietHours.start) &&
-          validHm(data.quietHours.end));
-    }
-
-    // İlaç kullanım hatırlatıcısı doküman doğrulaması.
-    // Not: Rules dilinde liste elemanları tek tek regex'lenemez; eleman
-    // formatı istemci (ScheduleService) ve Actions scripti tarafından
-    // ayrıca doğrulanır. Burada tip, boyut ve sayısal sınırlar zorlanır.
-    function validSchedule(data) {
-      return data.keys().hasOnly([
-          'medicineId', 'enabled', 'timezone', 'scheduleTimes', 'daysOfWeek',
-          'dosePerIntake', 'unitLabel', 'unitsPerPackage', 'remainingUnits',
-          'refillLeadDays', 'refillReminderEnabled', 'medicationReminderEnabled',
-          'snoozeMinutes', 'quietHours', 'notificationPrivacyMode', 'displayLabel',
-          'caregiverEscalationEnabled', 'createdAt', 'updatedAt'
-        ]) &&
-        data.keys().hasAll(['medicineId', 'enabled', 'timezone', 'scheduleTimes', 'daysOfWeek', 'createdAt', 'updatedAt']) &&
-        data.medicineId is string && data.medicineId.size() > 0 && data.medicineId.size() <= 64 &&
-        data.enabled is bool &&
-        data.timezone is string && data.timezone.size() > 0 && data.timezone.size() <= 64 &&
-        data.scheduleTimes is list && data.scheduleTimes.size() <= 12 &&
-        data.daysOfWeek is list && data.daysOfWeek.size() <= 7 &&
-        (!data.keys().hasAny(['dosePerIntake']) || (data.dosePerIntake is number && data.dosePerIntake >= 0.25 && data.dosePerIntake <= 20)) &&
-        validOptionalString(data, 'unitLabel', 20) &&
-        (!data.keys().hasAny(['unitsPerPackage']) || (data.unitsPerPackage is int && data.unitsPerPackage >= 0 && data.unitsPerPackage <= 500)) &&
-        (!data.keys().hasAny(['remainingUnits']) || (data.remainingUnits is number && data.remainingUnits >= 0 && data.remainingUnits <= 5000)) &&
-        (!data.keys().hasAny(['refillLeadDays']) || (data.refillLeadDays is int && data.refillLeadDays >= 0 && data.refillLeadDays <= 30)) &&
-        (!data.keys().hasAny(['refillReminderEnabled']) || data.refillReminderEnabled is bool) &&
-        (!data.keys().hasAny(['medicationReminderEnabled']) || data.medicationReminderEnabled is bool) &&
-        (!data.keys().hasAny(['snoozeMinutes']) || (data.snoozeMinutes is int && data.snoozeMinutes >= 5 && data.snoozeMinutes <= 120)) &&
-        validQuietHours(data) &&
-        (!data.keys().hasAny(['notificationPrivacyMode']) || data.notificationPrivacyMode in ['generic', 'named']) &&
-        validOptionalString(data, 'displayLabel', 40) &&
-        (!data.keys().hasAny(['caregiverEscalationEnabled']) || data.caregiverEscalationEnabled is bool) &&
-        validCreatedAt(data) &&
-        data.updatedAt is string && data.updatedAt.size() >= 20 && data.updatedAt.size() <= 40;
-    }
-
-    // Uygulama içi bildirim (inbox) doğrulaması. Sunucu (service account)
-    // kuralları atlar; istemci yalnızca kendi kayıtlarını oluşturabilir ve
-    // sonradan sadece 'read' alanını değiştirebilir.
-    function validNotificationDoc(data) {
-      return data.keys().hasOnly(['type', 'title', 'body', 'medicineId', 'scheduleId', 'read', 'createdAt']) &&
-        data.keys().hasAll(['type', 'title', 'read', 'createdAt']) &&
-        data.type in ['intake', 'refill', 'expiry', 'system'] &&
-        data.title is string && data.title.size() > 0 && data.title.size() <= 80 &&
-        validOptionalString(data, 'body', 240) &&
-        validOptionalString(data, 'medicineId', 64) &&
-        validOptionalString(data, 'scheduleId', 64) &&
-        data.read is bool &&
-        validCreatedAt(data);
-    }
-
     match /users/{userId}/pushSubscriptions/{subId} {
       allow read, delete: if isOwner(userId);
       allow create, update: if isOwner(userId) &&
@@ -302,31 +240,6 @@ service cloud.firestore {
         request.resource.data.keys is map &&
         validOptionalString(request.resource.data, 'userAgent', 200) &&
         validOptionalString(request.resource.data, 'createdAt', 40);
-    }
-
-    // Hatırlatıcı planları: yalnızca sahibi. Aile üyeleri dahil kimse
-    // başkasının hatırlatıcısını göremez (kullanım geçmişi mahremiyeti).
-    match /users/{userId}/medicationSchedules/{scheduleId} {
-      allow read, delete: if isOwner(userId);
-      allow create, update: if isOwner(userId) && validSchedule(request.resource.data);
-    }
-
-    // Teslimat/idempotency kayıtları: yalnızca service account yazar
-    // (kurallar service account'a uygulanmaz). İstemci durumu okuyabilir
-    // ama sahte teslimat yazamaz/değiştiremez.
-    match /users/{userId}/reminderDeliveries/{slotId} {
-      allow read: if isOwner(userId);
-      allow write: if false;
-    }
-
-    // Uygulama içi bildirim merkezi: okuma/silme sahibine; oluşturma
-    // doğrulamalı; güncelleme YALNIZCA read alanını değiştirebilir.
-    match /users/{userId}/notifications/{notifId} {
-      allow read, delete: if isOwner(userId);
-      allow create: if isOwner(userId) && validNotificationDoc(request.resource.data);
-      allow update: if isOwner(userId) &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) &&
-        request.resource.data.read is bool;
     }
 
     match /families/{familyId} {

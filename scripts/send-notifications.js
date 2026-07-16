@@ -14,11 +14,8 @@
 
 import webpush from 'web-push';
 import { getFirestoreToken, resolveFirebaseProjectId, withRetry } from './lib/firestore-auth.js';
-import {
-  listAll, getField, decodeFields, docId, deleteDoc, createDocIfAbsent, setDoc,
-} from './lib/firestore-values.js';
-import { buildNotificationPayload, sanitizeNotificationText } from './lib/sanitize.js';
-import { estimateRunoutDate } from '../src/utils/reminderMath.js';
+import { listAll, getField, docId, deleteDoc } from './lib/firestore-values.js';
+import { buildNotificationPayload } from './lib/sanitize.js';
 
 const {
   VAPID_PUBLIC_KEY,
@@ -115,10 +112,7 @@ async function main() {
 
   const counters = {
     usersNotified: 0, sent: 0, stale: 0, failed: 0, dry: 0,
-    refillDue: 0, refillSent: 0, deliveriesCleaned: 0,
   };
-  const todayKey = new Date().toISOString().slice(0, 10); // refill idempotency (günlük)
-  const cleanupCutoff = new Date(Date.now() - 7 * 86400000).toISOString();
 
   for (const userDoc of users) {
     const userId = docId(userDoc);
@@ -167,89 +161,11 @@ async function main() {
       console.warn(`[Bildirim] Kullanıcı işlenemedi (HTTP ${err.status ?? err.statusCode ?? '?'})`);
     }
 
-    // ── 2) Kutu bitiş (refill) uyarısı — yalnızca yeterli veri varsa ─────────
-    try {
-      const schedDocs = await listAll(token, projectId, `users/${userId}/medicationSchedules`);
-      for (const schedDoc of schedDocs) {
-        const schedule = { id: docId(schedDoc), ...decodeFields(schedDoc) };
-        if (schedule.enabled !== true || schedule.refillReminderEnabled !== true) continue;
-
-        const runout = estimateRunoutDate(schedule.remainingUnits, schedule);
-        if (!runout) continue; // eksik/geçersiz veri → hesaplama yapılmaz
-        const lead = Number.isFinite(Number(schedule.refillLeadDays)) ? Number(schedule.refillLeadDays) : 7;
-        if (runout.daysLeft > lead) continue;
-        counters.refillDue++;
-        if (DRY_RUN) continue;
-
-        // Günlük idempotency anahtarı: refill_{scheduleId}_{YYYY-MM-DD}
-        const refillKey = `refill_${schedule.id}_${todayKey}`;
-        const created = await createDocIfAbsent(
-          token, projectId,
-          `users/${userId}/reminderDeliveries/${refillKey}`,
-          {
-            scheduleId: schedule.id,
-            slot: refillKey,
-            status: 'pending',
-            createdAt: new Date().toISOString(),
-            expireAt: new Date(Date.now() + 7 * 86400000),
-          },
-        );
-        if (!created) continue;
-
-        const label = schedule.notificationPrivacyMode === 'named'
-          ? sanitizeNotificationText(schedule.displayLabel, 40)
-          : null;
-        const payload = buildNotificationPayload({
-          title: 'İlaç stoğu azalıyor',
-          body: label
-            ? `${label} bitmek üzere, yenisini temin etmeyi unutmayın.`
-            : 'İlacınız bitmek üzere, yenisini temin etmeyi unutmayın.',
-          tag: refillKey,
-          url: '/#/bildirimler',
-          type: 'refill',
-          scheduleId: schedule.id,
-        });
-        const payloadJson = JSON.stringify(payload);
-
-        for (const sub of await getSubs()) {
-          const result = await sendToSubscription(token, projectId, userId, sub, payloadJson);
-          counters[result]++;
-        }
-        counters.refillSent++;
-
-        try {
-          await setDoc(token, projectId, `users/${userId}/notifications/${refillKey}`, {
-            type: 'refill',
-            title: payload.title,
-            body: payload.body,
-            scheduleId: schedule.id,
-            read: false,
-            createdAt: new Date().toISOString(),
-          });
-        } catch { /* inbox kaydı kritik değil */ }
-      }
-    } catch (err) {
-      console.warn(`[Bildirim] Refill kontrolü yapılamadı (HTTP ${err.status ?? err.statusCode ?? '?'})`);
-    }
-
-    // ── 3) Eski teslimat kayıtlarını temizle (TTL politikası yoksa fallback) ─
-    try {
-      if (DRY_RUN) continue;
-      const deliveries = await listAll(token, projectId, `users/${userId}/reminderDeliveries`);
-      for (const d of deliveries) {
-        const createdAt = getField(d, 'createdAt');
-        if (typeof createdAt === 'string' && createdAt < cleanupCutoff) {
-          await deleteDoc(token, projectId, `users/${userId}/reminderDeliveries/${docId(d)}`);
-          counters.deliveriesCleaned++;
-        }
-      }
-    } catch { /* temizlik bir sonraki koşuda tekrar denenir */ }
   }
 
   console.log(
     `[Bildirim] Tamamlandı — kullanıcı: ${counters.usersNotified}, gönderilen: ${counters.sent}, ` +
-    `refill vadesi: ${counters.refillDue}, refill gönderilen: ${counters.refillSent}, ` +
-    `temizlenen eski abonelik: ${counters.stale}, temizlenen teslimat kaydı: ${counters.deliveriesCleaned}, ` +
+    `temizlenen eski abonelik: ${counters.stale}, ` +
     `hata: ${counters.failed}` +
     (DRY_RUN ? `, dry-run atlanan: ${counters.dry}` : ''),
   );
