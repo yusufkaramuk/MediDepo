@@ -16,6 +16,7 @@ import webpush from 'web-push';
 import { getFirestoreToken, resolveFirebaseProjectId, withRetry } from './lib/firestore-auth.js';
 import { listAll, getField, docId, deleteDoc } from './lib/firestore-values.js';
 import { buildNotificationPayload } from './lib/sanitize.js';
+import { logNotificationCriticalError } from './lib/safe-logging.js';
 
 const {
   VAPID_PUBLIC_KEY,
@@ -171,7 +172,7 @@ async function main() {
   );
 }
 
-main().catch(err => {
-  console.error('[Bildirim] Kritik hata:', err.message);
+main().catch(() => {
+  logNotificationCriticalError();
   process.exit(1);
 });
