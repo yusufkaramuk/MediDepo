@@ -1,6 +1,12 @@
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './FirebaseClient';
 import { subscriptionIdFor, legacySubscriptionIdFor } from '../utils/pushId';
+import {
+  effectiveNotificationPermission,
+  PUSH_DISABLED,
+  PUSH_ENABLED,
+  PUSH_PREFERENCE_KEY,
+} from '../utils/pushPreference';
 
 // VAPID public key (private key GitHub Actions Secret olarak saklanır)
 const VAPID_PUBLIC_KEY = 'BIVfxqFgFyZ6KNT6LAGNsLdeFjHO8SlrR_nvjwFSqJYzCzpSsLpL-Hk70YAX3cT2OrQgTtfML6DC4betQcJVyPE';
@@ -12,13 +18,21 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
 }
 
+function readPushPreference() {
+  try { return localStorage.getItem(PUSH_PREFERENCE_KEY); } catch { return null; }
+}
+
+function writePushPreference(value) {
+  try { localStorage.setItem(PUSH_PREFERENCE_KEY, value); } catch { /* depolama kapali olabilir */ }
+}
+
 export const NotificationService = {
   isSupported() {
     return 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
   },
 
   getPermission() {
-    return Notification.permission; // 'default' | 'granted' | 'denied'
+    return effectiveNotificationPermission(Notification.permission, readPushPreference());
   },
 
   async requestPermission() {
@@ -57,6 +71,8 @@ export const NotificationService = {
         }
       );
 
+      writePushPreference(PUSH_ENABLED);
+
       // Eski format (btoa tabanlı) doküman varsa best-effort temizle
       const legacyId = legacySubscriptionIdFor(sub.endpoint);
       if (legacyId && legacyId !== subId && !legacyId.includes('/')) {
@@ -85,6 +101,7 @@ export const NotificationService = {
           await deleteDoc(doc(db, `users/${userId}/pushSubscriptions/${legacyId}`)).catch(() => {});
         }
       }
+      writePushPreference(PUSH_DISABLED);
       return true;
     } catch (err) {
       console.warn('[NotificationService] Abonelik kapatma hatası:', err?.name || 'bilinmeyen hata');

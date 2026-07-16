@@ -680,6 +680,19 @@ function App() {
   const [schedules, setSchedules] = useState([]);
   const [reminderMedicine, setReminderMedicine] = useState(null); // Hatırlatıcı modalı açık ilaç
 
+  // Tarayici izni acik olsa bile PushManager endpoint'i Firestore'dan silinmis
+  // veya yenilenmis olabilir. Oturum acildiginda mevcut aboneligi idempotent
+  // olarak yeniden kaydet; kullanicinin bilincli kapatma tercihi getPermission
+  // tarafindan "default" donduruldugu icin burada yeniden acilmaz.
+  useEffect(() => {
+    if (!user?.uid || notifPermission !== 'granted') return undefined;
+    let active = true;
+    NotificationService.subscribe(user.uid).then(result => {
+      if (active && result?.error) setNotifPermission('default');
+    });
+    return () => { active = false; };
+  }, [user?.uid, notifPermission]);
+
   // Hatırlatıcı planlarını yükle (opt-in; yoksa boş liste)
   const loadSchedules = useCallback(async () => {
     if (!user) { setSchedules([]); return; }
